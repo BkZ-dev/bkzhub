@@ -1,5 +1,5 @@
 -- ================================================
---  bkz HUB v3.5 | By bkz | Keys B for open !
+--  bkz HUB v3.6 | By bkz | Keys B for open !
 -- ================================================
 task.wait(1)
 
@@ -147,7 +147,7 @@ title.TextSize = 15
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 local subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v3.5  •  " .. player.Name
+subtitle.Text = "v3.6  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -50, 0, 14)
 subtitle.Position = UDim2.new(0, 15, 0, 30)
 subtitle.BackgroundTransparency = 1
@@ -1537,85 +1537,224 @@ createToggle(pages.World, "☁  Light Fog", 6, function(state)
 	}):Play()
 end)
 
--- Rain: ParticleEmitter via rbxassetid known + its ambiance
+-- Rain: multi-layer high quality system
 createToggle(pages.World, "🌧  Rain", 7, function(state)
 	RunService:UnbindFromRenderStep("AdminRain")
-	local old = workspace:FindFirstChild("AdminRain")
-	if old then old:Destroy() end
-	if not state then return end
+	for _, v in ipairs(workspace:GetChildren()) do
+		if v.Name == "AdminRain" or v.Name == "AdminRainFar" or v.Name == "AdminRainSplash" then v:Destroy() end
+	end
+	if not state then
+		-- Reset lighting
+		TweenService:Create(Lighting, TweenInfo.new(2), {
+			Brightness = 2,
+			Ambient = Color3.fromRGB(100,100,100),
+			OutdoorAmbient = Color3.fromRGB(128,128,128),
+		}):Play()
+		local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
+		if atmo then
+			TweenService:Create(atmo, TweenInfo.new(2), { Density = 0 }):Play()
+		end
+		return
+	end
 
+	-- Dark stormy ambiance
+	TweenService:Create(Lighting, TweenInfo.new(2), {
+		Brightness = 0.6,
+		Ambient = Color3.fromRGB(80, 95, 120),
+		OutdoorAmbient = Color3.fromRGB(90, 105, 130),
+	}):Play()
+	local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
+	if not atmo then atmo = Instance.new("Atmosphere", Lighting) end
+	TweenService:Create(atmo, TweenInfo.new(2), { Density = 0.45 }):Play()
+
+	-- Layer 1: heavy close rain
 	local rain = Instance.new("Part", workspace)
 	rain.Name = "AdminRain"; rain.Anchored = true
 	rain.CanCollide = false; rain.Transparency = 1
-	rain.Size = Vector3.new(300, 1, 300)
+	rain.Size = Vector3.new(160, 1, 160)
+	local ps1 = Instance.new("ParticleEmitter", rain)
+	ps1.Texture      = "rbxassetid://17628471654"
+	ps1.Rate         = 1200
+	ps1.Lifetime     = NumberRange.new(0.6, 1.0)
+	ps1.Speed        = NumberRange.new(90, 110)
+	ps1.SpreadAngle  = Vector2.new(2, 2)
+	ps1.Size         = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.07),
+		NumberSequenceKeypoint.new(1, 0.03),
+	})
+	ps1.Color        = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(180, 210, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 175, 230)),
+	})
+	ps1.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.2),
+		NumberSequenceKeypoint.new(0.8, 0.3),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	ps1.Rotation     = NumberRange.new(88, 92)
+	ps1.RotSpeed     = NumberRange.new(0, 0)
+	ps1.LightEmission = 0.05
+	ps1.LightInfluence = 0.8
 
-	local ps = Instance.new("ParticleEmitter", rain)
-	ps.Texture      = "rbxassetid://17628471654"
-	ps.Rate         = 800
-	ps.Lifetime     = NumberRange.new(0.8, 1.4)
-	ps.Speed        = NumberRange.new(80, 100)
-	ps.SpreadAngle  = Vector2.new(3, 3)
-	ps.Size         = NumberSequence.new(0.06)
-	ps.Color        = ColorSequence.new(Color3.fromRGB(180, 210, 255))
-	ps.Rotation     = NumberRange.new(90, 90)
-	ps.RotSpeed     = NumberRange.new(0, 0)
-	ps.LightEmission = 0
+	-- Layer 2: wide far rain
+	local rainFar = Instance.new("Part", workspace)
+	rainFar.Name = "AdminRainFar"; rainFar.Anchored = true
+	rainFar.CanCollide = false; rainFar.Transparency = 1
+	rainFar.Size = Vector3.new(400, 1, 400)
+	local ps2 = Instance.new("ParticleEmitter", rainFar)
+	ps2.Texture      = "rbxassetid://17628471654"
+	ps2.Rate         = 600
+	ps2.Lifetime     = NumberRange.new(1.0, 1.6)
+	ps2.Speed        = NumberRange.new(70, 85)
+	ps2.SpreadAngle  = Vector2.new(5, 5)
+	ps2.Size         = NumberSequence.new(0.04)
+	ps2.Color        = ColorSequence.new(Color3.fromRGB(160, 195, 245))
+	ps2.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	ps2.Rotation     = NumberRange.new(87, 93)
+	ps2.RotSpeed     = NumberRange.new(0, 0)
+	ps2.LightEmission = 0
+	ps2.LightInfluence = 1
 
+	-- Rain sound
 	local snd = Instance.new("Sound", rain)
-	snd.SoundId = "rbxassetid://140237752767800"
-	snd.Volume = 0.7; snd.Looped = true; snd:Play()
+	snd.SoundId = "rbxassetid://9117963093"
+	snd.Volume = 0.8; snd.Looped = true
+	TweenService:Create(snd, TweenInfo.new(1.5), { Volume = 0.8 }):Play()
+	snd:Play()
+
+	-- Thunder ambient sound
+	local thunder = Instance.new("Sound", rain)
+	thunder.SoundId = "rbxassetid://9117963093"
+	thunder.Volume = 0; thunder.Looped = true; thunder:Play()
 
 	RunService:BindToRenderStep("AdminRain", 1, function()
 		local c = player.Character
 		if c and c:FindFirstChild("HumanoidRootPart") then
-			rain.CFrame = CFrame.new(c.HumanoidRootPart.Position + Vector3.new(0, 40, 0))
+			local pos = c.HumanoidRootPart.Position
+			rain.CFrame    = CFrame.new(pos + Vector3.new(0, 45, 0))
+			rainFar.CFrame = CFrame.new(pos + Vector3.new(0, 50, 0))
 		end
 	end)
 end)
 
--- Snow: only one instance, correct texture
+-- Snow: high quality multi-layer system
 createToggle(pages.World, "❄  Snow", 8, function(state)
 	RunService:UnbindFromRenderStep("AdminSnow")
-	local old = workspace:FindFirstChild("AdminSnow")
-	if old then old:Destroy() end
+	for _, v in ipairs(workspace:GetChildren()) do
+		if v.Name == "AdminSnow" or v.Name == "AdminSnowFar" or v.Name == "AdminSnowGround" then v:Destroy() end
+	end
 
 	if state then
+		-- Cold winter ambiance
+		TweenService:Create(Lighting, TweenInfo.new(2), {
+			Brightness = 1.4,
+			Ambient = Color3.fromRGB(170, 185, 215),
+			OutdoorAmbient = Color3.fromRGB(185, 200, 230),
+		}):Play()
+		local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
+		if not atmo then atmo = Instance.new("Atmosphere", Lighting) end
+		TweenService:Create(atmo, TweenInfo.new(2), { Density = 0.25, Color = Color3.fromRGB(200, 215, 240) }):Play()
+
+		-- Layer 1: heavy close snowflakes
 		local snow = Instance.new("Part", workspace)
 		snow.Name = "AdminSnow"; snow.Anchored = true
 		snow.CanCollide = false; snow.Transparency = 1
-		snow.Size = Vector3.new(200, 1, 200)
-
-		local ps = Instance.new("ParticleEmitter", snow)
-		ps.Texture      = "rbxassetid://1411517390"
-		ps.Rate         = 300
-		ps.Lifetime     = NumberRange.new(3, 5)
-		ps.Speed        = NumberRange.new(10, 20)
-		ps.SpreadAngle  = Vector2.new(25, 25)
-		ps.Size         = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.25),
-			NumberSequenceKeypoint.new(1, 0.05),
+		snow.Size = Vector3.new(160, 1, 160)
+		local ps1 = Instance.new("ParticleEmitter", snow)
+		ps1.Texture      = "rbxassetid://1411517390"
+		ps1.Rate         = 500
+		ps1.Lifetime     = NumberRange.new(3.5, 5.5)
+		ps1.Speed        = NumberRange.new(8, 18)
+		ps1.SpreadAngle  = Vector2.new(30, 30)
+		ps1.Size         = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.28),
+			NumberSequenceKeypoint.new(0.5, 0.22),
+			NumberSequenceKeypoint.new(1, 0.0),
 		})
-		ps.Color        = ColorSequence.new(Color3.fromRGB(220, 235, 255))
-		ps.Rotation     = NumberRange.new(0, 360)
-		ps.RotSpeed     = NumberRange.new(-30, 30)
-		ps.LightEmission = 0.2
+		ps1.Color        = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(240, 248, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(210, 228, 255)),
+		})
+		ps1.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.1),
+			NumberSequenceKeypoint.new(0.85, 0.2),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		ps1.Rotation     = NumberRange.new(0, 360)
+		ps1.RotSpeed     = NumberRange.new(-20, 20)
+		ps1.LightEmission = 0.3
+		ps1.LightInfluence = 0.6
 
-		TweenService:Create(Lighting, TweenInfo.new(2), {
-			Ambient = Color3.fromRGB(160, 180, 210),
-			OutdoorAmbient = Color3.fromRGB(180, 200, 230),
-		}):Play()
+		-- Layer 2: distant wide blizzard
+		local snowFar = Instance.new("Part", workspace)
+		snowFar.Name = "AdminSnowFar"; snowFar.Anchored = true
+		snowFar.CanCollide = false; snowFar.Transparency = 1
+		snowFar.Size = Vector3.new(400, 1, 400)
+		local ps2 = Instance.new("ParticleEmitter", snowFar)
+		ps2.Texture      = "rbxassetid://1411517390"
+		ps2.Rate         = 250
+		ps2.Lifetime     = NumberRange.new(4, 7)
+		ps2.Speed        = NumberRange.new(12, 22)
+		ps2.SpreadAngle  = Vector2.new(45, 45)
+		ps2.Size         = NumberSequence.new(0.12)
+		ps2.Color        = ColorSequence.new(Color3.fromRGB(220, 235, 255))
+		ps2.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.5),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		ps2.Rotation     = NumberRange.new(0, 360)
+		ps2.RotSpeed     = NumberRange.new(-10, 10)
+		ps2.LightEmission = 0.15
+		ps2.LightInfluence = 0.8
+
+		-- Layer 3: small fast wind particles
+		local snowGround = Instance.new("Part", workspace)
+		snowGround.Name = "AdminSnowGround"; snowGround.Anchored = true
+		snowGround.CanCollide = false; snowGround.Transparency = 1
+		snowGround.Size = Vector3.new(80, 1, 80)
+		local ps3 = Instance.new("ParticleEmitter", snowGround)
+		ps3.Texture      = "rbxassetid://1411517390"
+		ps3.Rate         = 180
+		ps3.Lifetime     = NumberRange.new(1.5, 2.5)
+		ps3.Speed        = NumberRange.new(20, 35)
+		ps3.SpreadAngle  = Vector2.new(60, 15)
+		ps3.Size         = NumberSequence.new(0.06)
+		ps3.Color        = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+		ps3.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.4),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		ps3.Rotation     = NumberRange.new(0, 360)
+		ps3.RotSpeed     = NumberRange.new(-50, 50)
+		ps3.LightEmission = 0.4
+
+		-- Wind sound
+		local snd = Instance.new("Sound", snow)
+		snd.SoundId = "rbxassetid://5800330726"
+		snd.Volume = 0.5; snd.Looped = true; snd:Play()
 
 		RunService:BindToRenderStep("AdminSnow", 1, function()
 			local c = player.Character
 			if c and c:FindFirstChild("HumanoidRootPart") then
-				snow.CFrame = CFrame.new(c.HumanoidRootPart.Position + Vector3.new(0, 30, 0))
+				local pos = c.HumanoidRootPart.Position
+				snow.CFrame       = CFrame.new(pos + Vector3.new(0, 35, 0))
+				snowFar.CFrame    = CFrame.new(pos + Vector3.new(0, 45, 0))
+				snowGround.CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))
 			end
 		end)
 	else
 		TweenService:Create(Lighting, TweenInfo.new(1.5), {
+			Brightness = 2,
 			Ambient = Color3.fromRGB(100,100,100),
 			OutdoorAmbient = Color3.fromRGB(128,128,128),
 		}):Play()
+		local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
+		if atmo then
+			TweenService:Create(atmo, TweenInfo.new(2), { Density = 0 }):Play()
+		end
 	end
 end)
 
@@ -1803,7 +1942,7 @@ end)
 
 createSection(pages.Settings, "ℹ  Info", 10)
 local infoLbl = Instance.new("TextLabel", pages.Settings)
-infoLbl.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move\n🌐 bkz HUB v3.5  •  " .. player.Name
+infoLbl.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move\n🌐 bkz HUB v3.6  •  " .. player.Name
 infoLbl.Size = UDim2.new(1, 0, 0, 60)
 infoLbl.BackgroundTransparency = 1
 infoLbl.TextColor3 = currentTheme.SubText
@@ -2570,7 +2709,7 @@ createSection(pages.Other, "ℹ  Version", 98)
 local verLabel = Instance.new("TextLabel", pages.Other)
 verLabel.Size = UDim2.new(1, 0, 0, 40)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v3.5\n👉𝐁 Press [B] to open/close"
+verLabel.Text = "🌐 bkz HUB  v3.6\n👉𝐁 Press [B] to open/close"
 verLabel.TextColor3 = currentTheme.SubText
 verLabel.Font = Enum.Font.Gotham
 verLabel.TextSize = 11
