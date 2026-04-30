@@ -1550,7 +1550,7 @@ createToggle(pages.World, "🌧  Rain", 7, function(state)
 	rain.Size = Vector3.new(300, 1, 300)
 
 	local ps = Instance.new("ParticleEmitter", rain)
-	ps.Texture      = "rbxassetid://11552439884"
+	ps.Texture      = "rbxassetid://17628471654"
 	ps.Rate         = 800
 	ps.Lifetime     = NumberRange.new(0.8, 1.4)
 	ps.Speed        = NumberRange.new(80, 100)
@@ -1562,7 +1562,7 @@ createToggle(pages.World, "🌧  Rain", 7, function(state)
 	ps.LightEmission = 0
 
 	local snd = Instance.new("Sound", rain)
-	snd.SoundId = "rbxassetid://1660819739"
+	snd.SoundId = "rbxassetid://140237752767800"
 	snd.Volume = 0.7; snd.Looped = true; snd:Play()
 
 	RunService:BindToRenderStep("AdminRain", 1, function()
@@ -1586,7 +1586,7 @@ createToggle(pages.World, "❄  Snow", 8, function(state)
 		snow.Size = Vector3.new(200, 1, 200)
 
 		local ps = Instance.new("ParticleEmitter", snow)
-		ps.Texture      = "rbxassetid://15528629762"
+		ps.Texture      = "rbxassetid://1411517390"
 		ps.Rate         = 300
 		ps.Lifetime     = NumberRange.new(3, 5)
 		ps.Speed        = NumberRange.new(10, 20)
