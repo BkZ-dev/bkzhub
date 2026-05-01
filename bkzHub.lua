@@ -1,5 +1,5 @@
 -- ================================================
---  bkz HUB v3.6 | By bkz | Keys B for open !
+--  bkz HUB v3.7 | By bkz | Keys B for open !
 -- ================================================
 task.wait(1)
 
@@ -147,7 +147,7 @@ title.TextSize = 15
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 local subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v3.6  •  " .. player.Name
+subtitle.Text = "v3.7  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -50, 0, 14)
 subtitle.Position = UDim2.new(0, 15, 0, 30)
 subtitle.BackgroundTransparency = 1
@@ -1139,6 +1139,128 @@ end)
 
 createSection(pages.Personal, "🎯  Combat", 14)
 
+-- ===== UNLIMITED AMMO =====
+local ammoConn = nil
+createToggle(pages.Personal, "🔫  Unlimited Ammo", 15, function(state)
+	if ammoConn then ammoConn:Disconnect(); ammoConn = nil end
+	if not state then return end
+	local function patchTool(tool)
+		-- Method 1: StringValue / IntValue named ammo/bullets
+		for _, v in ipairs(tool:GetDescendants()) do
+			local n = v.Name:lower()
+			if v:IsA("IntValue") or v:IsA("NumberValue") then
+				if n:find("ammo") or n:find("bullet") or n:find("mag") or n:find("clip") or n:find("round") then
+					v.Value = 999999
+					v.Changed:Connect(function() if v.Value < 100 then v.Value = 999999 end end)
+				end
+			end
+		end
+		-- Method 2: RemoteEvent / LocalScript variables via firing
+		for _, v in ipairs(tool:GetDescendants()) do
+			if v:IsA("RemoteEvent") and (v.Name:lower():find("reload") or v.Name:lower():find("ammo")) then
+				pcall(function() v:FireServer(9999) end)
+			end
+		end
+	end
+	local char = player.Character
+	if char then
+		for _, t in ipairs(char:GetChildren()) do
+			if t:IsA("Tool") then patchTool(t) end
+		end
+	end
+	ammoConn = player.CharacterAdded:Connect(function(c)
+		c.ChildAdded:Connect(function(t)
+			if t:IsA("Tool") then task.wait(0.1); patchTool(t) end
+		end)
+	end)
+end)
+
+-- ===== INSTANT RELOAD =====
+local reloadConn = nil
+createToggle(pages.Personal, "⚡  Instant Reload", 16, function(state)
+	if reloadConn then reloadConn:Disconnect(); reloadConn = nil end
+	if not state then return end
+	local function patchReload(tool)
+		-- Method 1: patch reload delay values
+		for _, v in ipairs(tool:GetDescendants()) do
+			local n = v.Name:lower()
+			if (v:IsA("NumberValue") or v:IsA("IntValue")) and
+				(n:find("reload") or n:find("delay") or n:find("cooldown") or n:find("wait")) then
+				v.Value = 0
+			end
+		end
+		-- Method 2: fire reload remotes instantly
+		for _, v in ipairs(tool:GetDescendants()) do
+			if v:IsA("RemoteEvent") and v.Name:lower():find("reload") then
+				pcall(function() v:FireServer() end)
+			end
+		end
+		-- Method 3: spoof animation speed on reload anim
+		for _, v in ipairs(tool:GetDescendants()) do
+			if v:IsA("Animation") or v:IsA("AnimationTrack") then
+				pcall(function() v.Speed = 99 end)
+			end
+		end
+	end
+	local function watchChar(char)
+		char.ChildAdded:Connect(function(t)
+			if t:IsA("Tool") then task.wait(0.1); patchReload(t) end
+		end)
+		for _, t in ipairs(char:GetChildren()) do
+			if t:IsA("Tool") then patchReload(t) end
+		end
+	end
+	if player.Character then watchChar(player.Character) end
+	reloadConn = player.CharacterAdded:Connect(watchChar)
+end)
+
+-- ===== NO RECOIL =====
+local recoilConn = nil
+local origCamCF  = nil
+createToggle(pages.Personal, "🎯  No Recoil", 17, function(state)
+	if recoilConn then recoilConn:Disconnect(); recoilConn = nil end
+	if not state then return end
+	local cam = workspace.CurrentCamera
+	local lastCF = cam.CFrame
+	-- Method 1: lock camera Y angle (prevents upward kick)
+	recoilConn = RunService.RenderStepped:Connect(function()
+		local cur = cam.CFrame
+		-- Only correct if pitch suddenly snapped upward (recoil)
+		local _, lastPitch, _ = lastCF:ToEulerAnglesYXZ()
+		local _, curPitch, _  = cur:ToEulerAnglesYXZ()
+		local diff = curPitch - lastPitch
+		if diff > 0.012 then  -- sudden upward pitch = recoil
+			cam.CFrame = lastCF * CFrame.Angles(diff * -0.92, 0, 0)
+		end
+		lastCF = cam.CFrame
+	end)
+	-- Method 2: zero recoil values in tools
+	local function patchRecoil(tool)
+		for _, v in ipairs(tool:GetDescendants()) do
+			local n = v.Name:lower()
+			if (v:IsA("NumberValue") or v:IsA("Vector3Value")) and
+				(n:find("recoil") or n:find("kickback") or n:find("kick") or n:find("spread")) then
+				if v:IsA("Vector3Value") then v.Value = Vector3.new(0,0,0)
+				else v.Value = 0 end
+				v.Changed:Connect(function()
+					if v:IsA("Vector3Value") then v.Value = Vector3.new(0,0,0)
+					else v.Value = 0 end
+				end)
+			end
+		end
+	end
+	if player.Character then
+		for _, t in ipairs(player.Character:GetChildren()) do
+			if t:IsA("Tool") then patchRecoil(t) end
+		end
+	end
+	player.CharacterAdded:Connect(function(c)
+		c.ChildAdded:Connect(function(t)
+			if t:IsA("Tool") then task.wait(0.1); patchRecoil(t) end
+		end)
+	end)
+end)
+
 -- ================================================
 
 -- ================================================
@@ -1206,6 +1328,11 @@ local function getTarget()
 
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
+			-- Skip allies (same team)
+			local myTeam     = player.Team
+			local theirTeam  = p.Team
+			if myTeam and theirTeam and myTeam == theirTeam then continue end
+
 			local hum  = p.Character:FindFirstChildOfClass("Humanoid")
 			local head = p.Character:FindFirstChild("Head")
 			if hum and hum.Health > 0 and head then
@@ -1447,8 +1574,9 @@ local function applyScale(val)
 	if not char then return end
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	if not hum then return end
-	-- Wait for the ValueObjects to be loaded.
+
 	local function setScale()
+		-- Method 1: Humanoid BodyScale ValueObjects (R15 standard)
 		local bd = hum:FindFirstChild("BodyDepthScale")
 		local bh = hum:FindFirstChild("BodyHeightScale")
 		local bw = hum:FindFirstChild("BodyWidthScale")
@@ -1457,8 +1585,35 @@ local function applyScale(val)
 		if bh then bh.Value = currentScale end
 		if bw then bw.Value = currentScale end
 		if hs then hs.Value = currentScale end
+
+		-- Method 2: Humanoid BodyTypeScale (R15 alternate)
+		local bt = hum:FindFirstChild("BodyTypeScale")
+		if bt then bt.Value = math.clamp(currentScale, 0, 1) end
+
+		-- Method 3: CFrame + Size scale all BaseParts directly
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if hrp and not bd then  -- fallback if no ValueObjects
+			for _, part in ipairs(char:GetDescendants()) do
+				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+					pcall(function()
+						part.Size = part.Size * currentScale
+					end)
+				end
+			end
+		end
+
+		-- Method 4: Model:ScaleTo (newer Roblox API)
+		pcall(function()
+			if char.ScaleTo then
+				char:ScaleTo(currentScale)
+			end
+		end)
 	end
+
 	setScale()
+	-- Retry after short delay (some games set scale server-side)
+	task.delay(0.3, setScale)
+	task.delay(1.0, setScale)
 end
 
 -- Also applies to respawning
@@ -1942,7 +2097,7 @@ end)
 
 createSection(pages.Settings, "ℹ  Info", 10)
 local infoLbl = Instance.new("TextLabel", pages.Settings)
-infoLbl.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move\n🌐 bkz HUB v3.6  •  " .. player.Name
+infoLbl.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move\n🌐 bkz HUB v3.7  •  " .. player.Name
 infoLbl.Size = UDim2.new(1, 0, 0, 60)
 infoLbl.BackgroundTransparency = 1
 infoLbl.TextColor3 = currentTheme.SubText
@@ -2709,7 +2864,7 @@ createSection(pages.Other, "ℹ  Version", 98)
 local verLabel = Instance.new("TextLabel", pages.Other)
 verLabel.Size = UDim2.new(1, 0, 0, 40)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v3.6\n👉𝐁 Press [B] to open/close"
+verLabel.Text = "🌐 bkz HUB  v3.7\n👉𝐁 Press [B] to open/close"
 verLabel.TextColor3 = currentTheme.SubText
 verLabel.Font = Enum.Font.Gotham
 verLabel.TextSize = 11
