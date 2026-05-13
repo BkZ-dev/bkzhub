@@ -1,5 +1,5 @@
 -- ================================================
---  bkz HUB v3.7 | By bkz | Keys B for open !
+--  bkz HUB v3.8 | By bkz | Keys B for open !
 -- ================================================
 task.wait(1)
 
@@ -147,7 +147,7 @@ title.TextSize = 15
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 local subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v3.7  •  " .. player.Name
+subtitle.Text = "v3.8  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -50, 0, 14)
 subtitle.Position = UDim2.new(0, 15, 0, 30)
 subtitle.BackgroundTransparency = 1
@@ -1070,59 +1070,83 @@ end)
 
 createSection(pages.Personal, "🛡  Survival", 10)
 
--- God Mode — 3 methods
-local godConn = nil
-local godMethod = 1
+-- God Mode — robuste, fonctionne partout
+local godConn        = nil
+local godHumConn     = nil
+local godRespawnConn = nil
+local godEnabled     = false
 
-local function applyGodMethod(hum)
-	if godMethod == 1 then
-		-- Méthode 1 : forcer Health = MaxHealth
-		hum.Health = hum.MaxHealth
-	elseif godMethod == 2 then
-		-- Méthode 2 : MaxHealth high + Health
+local function applyGodToHum(hum)
+	if not hum then return end
+	-- Méthode 1: MaxHealth infini + Health infini
+	pcall(function()
 		hum.MaxHealth = math.huge
-		hum.Health = math.huge
-	elseif godMethod == 3 then
-		-- Méthode 3 : HealthChanged immediate reset
-		-- (separate connection managed in the toggle)
+		hum.Health    = math.huge
+	end)
+	-- Méthode 2: si math.huge refusé par le jeu, on force 1e6
+	pcall(function()
+		if hum.MaxHealth < 1e5 then
+			hum.MaxHealth = 1e6
+			hum.Health    = 1e6
+		end
+	end)
+	-- Méthode 3: hook HealthChanged → reset instantané
+	if godHumConn then godHumConn:Disconnect(); godHumConn = nil end
+	godHumConn = hum.HealthChanged:Connect(function()
+		if not godEnabled then return end
+		pcall(function()
+			if hum.Health < hum.MaxHealth * 0.98 then
+				hum.Health = hum.MaxHealth
+			end
+		end)
+	end)
+end
+
+local function enableGod()
+	godEnabled = true
+	-- Applique au personnage courant
+	local char = player.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		applyGodToHum(hum)
 	end
+	-- Reconnecte à chaque respawn
+	if godRespawnConn then godRespawnConn:Disconnect() end
+	godRespawnConn = player.CharacterAdded:Connect(function(c)
+		task.wait(0.15)
+		if godEnabled then
+			applyGodToHum(c:FindFirstChildOfClass("Humanoid"))
+		end
+	end)
+	-- Heartbeat léger : maintien continu
+	if godConn then godConn:Disconnect() end
+	godConn = RunService.Heartbeat:Connect(function()
+		if not godEnabled then return end
+		local char2 = player.Character
+		if not char2 then return end
+		local hum = char2:FindFirstChildOfClass("Humanoid")
+		if hum then
+			pcall(function()
+				if hum.Health < hum.MaxHealth * 0.98 then
+					hum.Health = hum.MaxHealth
+				end
+			end)
+		end
+	end)
+end
+
+local function disableGod()
+	godEnabled = false
+	if godConn        then godConn:Disconnect();        godConn        = nil end
+	if godHumConn     then godHumConn:Disconnect();     godHumConn     = nil end
+	if godRespawnConn then godRespawnConn:Disconnect(); godRespawnConn = nil end
 end
 
 createToggle(pages.Personal, "🛡  God Mode (invincible)", 11, function(state)
-	if godConn then godConn:Disconnect(); godConn = nil end
-	if state then
-		godConn = RunService.Heartbeat:Connect(function()
-			local char = player.Character
-			if not char then return end
-			local hum = char:FindFirstChildOfClass("Humanoid")
-			if hum then
-				pcall(applyGodMethod, hum)
-				if godMethod == 3 then
-					hum:SetAttribute("_godHook", true)
-					if not hum:GetAttribute("_godConn") then
-						hum:GetAttributeChangedSignal("Health"):Connect(function()
-							if hum:GetAttribute("_godHook") then
-								hum.Health = hum.MaxHealth
-							end
-						end)
-						hum:SetAttribute("_godConn", true)
-					end
-				end
-			end
-		end)
-	end
+	if state then enableGod() else disableGod() end
 end)
 
-local godMethodBtn = createBtn(pages.Personal, "🔧  God method: 1/3", currentTheme.Button, 12, function()
-	godMethod = (godMethod % 3) + 1
-	showNotification("🛡  God method: " .. godMethod, 2)
-	-- Update button label
-	for _, c in ipairs(godMethodBtn:GetChildren()) do
-		if c:IsA("TextLabel") or c:IsA("TextButton") then
-			c.Text = "🔧  God method: " .. godMethod .. "/3"
-		end
-	end
-end)
+
 
 -- Infinite Jump
 local jumpConn = nil
@@ -1140,125 +1164,223 @@ end)
 createSection(pages.Personal, "🎯  Combat", 14)
 
 -- ===== UNLIMITED AMMO =====
-local ammoConn = nil
-createToggle(pages.Personal, "🔫  Unlimited Ammo", 15, function(state)
-	if ammoConn then ammoConn:Disconnect(); ammoConn = nil end
-	if not state then return end
-	local function patchTool(tool)
-		-- Method 1: StringValue / IntValue named ammo/bullets
-		for _, v in ipairs(tool:GetDescendants()) do
-			local n = v.Name:lower()
-			if v:IsA("IntValue") or v:IsA("NumberValue") then
-				if n:find("ammo") or n:find("bullet") or n:find("mag") or n:find("clip") or n:find("round") then
-					v.Value = 999999
-					v.Changed:Connect(function() if v.Value < 100 then v.Value = 999999 end end)
+local ammoEnabled   = false
+local ammoConns     = {}
+
+local function ammoCleanup()
+	for _, c in ipairs(ammoConns) do pcall(function() c:Disconnect() end) end
+	ammoConns = {}
+end
+
+local function patchAmmoTool(tool)
+	for _, v in ipairs(tool:GetDescendants()) do
+		local n = v.Name:lower()
+		if (v:IsA("IntValue") or v:IsA("NumberValue")) and
+			(n:find("ammo") or n:find("bullet") or n:find("mag") or n:find("clip") or n:find("round") or n:find("count")) then
+			pcall(function() v.Value = 999999 end)
+			local c = v.Changed:Connect(function()
+				if ammoEnabled and v.Value < 500 then
+					pcall(function() v.Value = 999999 end)
 				end
-			end
+			end)
+			table.insert(ammoConns, c)
 		end
-		-- Method 2: RemoteEvent / LocalScript variables via firing
-		for _, v in ipairs(tool:GetDescendants()) do
-			if v:IsA("RemoteEvent") and (v.Name:lower():find("reload") or v.Name:lower():find("ammo")) then
-				pcall(function() v:FireServer(9999) end)
+	end
+	-- Fire ammo remotes
+	for _, v in ipairs(tool:GetDescendants()) do
+		if v:IsA("RemoteEvent") then
+			local n = v.Name:lower()
+			if n:find("ammo") or n:find("setammo") or n:find("refill") then
+				pcall(function() v:FireServer(999999) end)
 			end
 		end
 	end
-	local char = player.Character
-	if char then
-		for _, t in ipairs(char:GetChildren()) do
-			if t:IsA("Tool") then patchTool(t) end
+	-- Watch new descendants (tools qui créent leurs values après équipement)
+	local c = tool.DescendantAdded:Connect(function(v)
+		if not ammoEnabled then return end
+		local n = v.Name:lower()
+		if (v:IsA("IntValue") or v:IsA("NumberValue")) and
+			(n:find("ammo") or n:find("bullet") or n:find("mag") or n:find("clip") or n:find("round") or n:find("count")) then
+			task.wait(0.05)
+			pcall(function() v.Value = 999999 end)
 		end
-	end
-	ammoConn = player.CharacterAdded:Connect(function(c)
-		c.ChildAdded:Connect(function(t)
-			if t:IsA("Tool") then task.wait(0.1); patchTool(t) end
-		end)
 	end)
+	table.insert(ammoConns, c)
+end
+
+local function watchAmmoChar(char)
+	for _, t in ipairs(char:GetChildren()) do
+		if t:IsA("Tool") then patchAmmoTool(t) end
+	end
+	local c = char.ChildAdded:Connect(function(t)
+		if t:IsA("Tool") then task.wait(0.08); patchAmmoTool(t) end
+	end)
+	table.insert(ammoConns, c)
+end
+
+createToggle(pages.Personal, "🔫  Unlimited Ammo", 15, function(state)
+	ammoEnabled = state
+	ammoCleanup()
+	if not state then return end
+	if player.Character then watchAmmoChar(player.Character) end
+	local c = player.CharacterAdded:Connect(function(ch)
+		task.wait(0.2)
+		if ammoEnabled then watchAmmoChar(ch) end
+	end)
+	table.insert(ammoConns, c)
 end)
 
 -- ===== INSTANT RELOAD =====
-local reloadConn = nil
+local reloadEnabled = false
+local reloadConns   = {}
+
+local function reloadCleanup()
+	for _, c in ipairs(reloadConns) do pcall(function() c:Disconnect() end) end
+	reloadConns = {}
+end
+
+local function patchReloadTool(tool)
+	-- Patch delay/cooldown values à 0
+	for _, v in ipairs(tool:GetDescendants()) do
+		local n = v.Name:lower()
+		if (v:IsA("NumberValue") or v:IsA("IntValue")) and
+			(n:find("reload") or n:find("reloadtime") or n:find("delay") or n:find("cooldown") or n:find("firerate")) then
+			pcall(function() v.Value = 0 end)
+			local c = v.Changed:Connect(function()
+				if reloadEnabled then pcall(function() v.Value = 0 end) end
+			end)
+			table.insert(reloadConns, c)
+		end
+	end
+	-- Fire reload remotes
+	for _, v in ipairs(tool:GetDescendants()) do
+		if v:IsA("RemoteEvent") and v.Name:lower():find("reload") then
+			pcall(function() v:FireServer() end)
+		end
+	end
+	-- Accélère les AnimationTrack actives
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	local animator = hum and hum:FindFirstChildOfClass("Animator")
+	if animator then
+		for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+			pcall(function()
+				if track.Speed < 10 then track:AdjustSpeed(99) end
+			end)
+		end
+	end
+end
+
+local function watchReloadChar(char)
+	for _, t in ipairs(char:GetChildren()) do
+		if t:IsA("Tool") then patchReloadTool(t) end
+	end
+	local c = char.ChildAdded:Connect(function(t)
+		if t:IsA("Tool") then task.wait(0.08); patchReloadTool(t) end
+	end)
+	table.insert(reloadConns, c)
+end
+
 createToggle(pages.Personal, "⚡  Instant Reload", 16, function(state)
-	if reloadConn then reloadConn:Disconnect(); reloadConn = nil end
+	reloadEnabled = state
+	reloadCleanup()
 	if not state then return end
-	local function patchReload(tool)
-		-- Method 1: patch reload delay values
-		for _, v in ipairs(tool:GetDescendants()) do
-			local n = v.Name:lower()
-			if (v:IsA("NumberValue") or v:IsA("IntValue")) and
-				(n:find("reload") or n:find("delay") or n:find("cooldown") or n:find("wait")) then
-				v.Value = 0
-			end
-		end
-		-- Method 2: fire reload remotes instantly
-		for _, v in ipairs(tool:GetDescendants()) do
-			if v:IsA("RemoteEvent") and v.Name:lower():find("reload") then
-				pcall(function() v:FireServer() end)
-			end
-		end
-		-- Method 3: spoof animation speed on reload anim
-		for _, v in ipairs(tool:GetDescendants()) do
-			if v:IsA("Animation") or v:IsA("AnimationTrack") then
-				pcall(function() v.Speed = 99 end)
-			end
-		end
-	end
-	local function watchChar(char)
-		char.ChildAdded:Connect(function(t)
-			if t:IsA("Tool") then task.wait(0.1); patchReload(t) end
-		end)
-		for _, t in ipairs(char:GetChildren()) do
-			if t:IsA("Tool") then patchReload(t) end
-		end
-	end
-	if player.Character then watchChar(player.Character) end
-	reloadConn = player.CharacterAdded:Connect(watchChar)
+	if player.Character then watchReloadChar(player.Character) end
+	local c = player.CharacterAdded:Connect(function(ch)
+		task.wait(0.2)
+		if reloadEnabled then watchReloadChar(ch) end
+	end)
+	table.insert(reloadConns, c)
 end)
 
 -- ===== NO RECOIL =====
-local recoilConn = nil
-local origCamCF  = nil
-createToggle(pages.Personal, "🎯  No Recoil", 17, function(state)
-	if recoilConn then recoilConn:Disconnect(); recoilConn = nil end
-	if not state then return end
-	local cam = workspace.CurrentCamera
-	local lastCF = cam.CFrame
-	-- Method 1: lock camera Y angle (prevents upward kick)
-	recoilConn = RunService.RenderStepped:Connect(function()
-		local cur = cam.CFrame
-		-- Only correct if pitch suddenly snapped upward (recoil)
-		local _, lastPitch, _ = lastCF:ToEulerAnglesYXZ()
-		local _, curPitch, _  = cur:ToEulerAnglesYXZ()
-		local diff = curPitch - lastPitch
-		if diff > 0.012 then  -- sudden upward pitch = recoil
-			cam.CFrame = lastCF * CFrame.Angles(diff * -0.92, 0, 0)
-		end
-		lastCF = cam.CFrame
-	end)
-	-- Method 2: zero recoil values in tools
-	local function patchRecoil(tool)
-		for _, v in ipairs(tool:GetDescendants()) do
-			local n = v.Name:lower()
-			if (v:IsA("NumberValue") or v:IsA("Vector3Value")) and
-				(n:find("recoil") or n:find("kickback") or n:find("kick") or n:find("spread")) then
+local recoilEnabled  = false
+local recoilConn     = nil
+local recoilConns    = {}
+
+local function recoilPatchTool(tool)
+	for _, v in ipairs(tool:GetDescendants()) do
+		local n = v.Name:lower()
+		if (v:IsA("NumberValue") or v:IsA("Vector3Value") or v:IsA("IntValue")) and
+			(n:find("recoil") or n:find("kickback") or n:find("kick") or n:find("spread") or n:find("sway")) then
+			pcall(function()
 				if v:IsA("Vector3Value") then v.Value = Vector3.new(0,0,0)
 				else v.Value = 0 end
-				v.Changed:Connect(function()
+			end)
+			local c = v.Changed:Connect(function()
+				if not recoilEnabled then return end
+				pcall(function()
 					if v:IsA("Vector3Value") then v.Value = Vector3.new(0,0,0)
 					else v.Value = 0 end
 				end)
-			end
+			end)
+			table.insert(recoilConns, c)
 		end
 	end
-	if player.Character then
-		for _, t in ipairs(player.Character:GetChildren()) do
-			if t:IsA("Tool") then patchRecoil(t) end
-		end
+end
+
+createToggle(pages.Personal, "🎯  No Recoil", 17, function(state)
+	recoilEnabled = state
+	-- Nettoie les anciennes connexions
+	if recoilConn then recoilConn:Disconnect(); recoilConn = nil end
+	for _, c in ipairs(recoilConns) do pcall(function() c:Disconnect() end) end
+	recoilConns = {}
+	if not state then return end
+
+	local cam    = workspace.CurrentCamera
+	-- Stocke le pitch/yaw initial proprement
+	local lastYaw, lastPitch = 0, 0
+	local function getCamAngles()
+		local _, y, _ = cam.CFrame:ToEulerAnglesYXZ()
+		local x, _, _ = cam.CFrame:ToEulerAnglesYXZ()
+		return x, y
 	end
-	player.CharacterAdded:Connect(function(c)
-		c.ChildAdded:Connect(function(t)
-			if t:IsA("Tool") then task.wait(0.1); patchRecoil(t) end
-		end)
+	local initP, initY = getCamAngles()
+	lastPitch, lastYaw = initP, initY
+
+	-- RenderStepped : annule uniquement le pitch vers le haut (recul)
+	-- sans toucher au yaw ni aux mouvements normaux
+	recoilConn = RunService.RenderStepped:Connect(function()
+		if not recoilEnabled then return end
+		local curP, curY = getCamAngles()
+		local dPitch = curP - lastPitch
+		-- Recul = pitch monte (valeur augmente en abs quand on vise haut)
+		-- On annule uniquement les sauts soudains > seuil
+		if dPitch > 0.008 then
+			-- Reconstruit CFrame en annulant le recul vertical
+			local pos   = cam.CFrame.Position
+			local look  = cam.CFrame.LookVector
+			-- Soustrait le delta de recul
+			local corrected = CFrame.new(pos) * CFrame.Angles(lastPitch, curY, 0)
+			pcall(function() cam.CFrame = corrected end)
+		else
+			lastPitch = curP
+			lastYaw   = curY
+		end
 	end)
+
+	-- Patch les valeurs de recul dans les outils équipés
+	local char = player.Character
+	if char then
+		for _, t in ipairs(char:GetChildren()) do
+			if t:IsA("Tool") then recoilPatchTool(t) end
+		end
+		local c = char.ChildAdded:Connect(function(t)
+			if t:IsA("Tool") then task.wait(0.08); recoilPatchTool(t) end
+		end)
+		table.insert(recoilConns, c)
+	end
+	local c2 = player.CharacterAdded:Connect(function(ch)
+		task.wait(0.2)
+		if not recoilEnabled then return end
+		for _, t in ipairs(ch:GetChildren()) do
+			if t:IsA("Tool") then recoilPatchTool(t) end
+		end
+		local cc = ch.ChildAdded:Connect(function(t)
+			if t:IsA("Tool") then task.wait(0.08); recoilPatchTool(t) end
+		end)
+		table.insert(recoilConns, cc)
+	end)
+	table.insert(recoilConns, c2)
 end)
 
 -- ================================================
@@ -2097,7 +2219,7 @@ end)
 
 createSection(pages.Settings, "ℹ  Info", 10)
 local infoLbl = Instance.new("TextLabel", pages.Settings)
-infoLbl.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move\n🌐 bkz HUB v3.7  •  " .. player.Name
+infoLbl.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move\n🌐 bkz HUB v3.8  •  " .. player.Name
 infoLbl.Size = UDim2.new(1, 0, 0, 60)
 infoLbl.BackgroundTransparency = 1
 infoLbl.TextColor3 = currentTheme.SubText
@@ -2404,147 +2526,148 @@ local espState = {
 	skeletons = false,
 	chams     = false,
 	healthBar = false,
-	items     = false,
 }
 local espObjects = {}
-local espConn    = nil
-local espItemObjs = {}
 
 local ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
 local ESP_COLOR_ENEMY = Color3.fromRGB(255, 60, 60)
 
--- Cleans ESP from a player
+-- Nettoie ESP d'un joueur
 local function clearESPFor(p)
 	if espObjects[p] then
 		for _, obj in ipairs(espObjects[p]) do
-			if obj and obj.Parent then obj:Destroy() end
+			pcall(function() if obj and obj.Parent then obj:Destroy() end end)
 		end
 		espObjects[p] = nil
 	end
 end
 
--- Helper billboard compact
-local function mkBB(parent, name, w, h, offsetY, maxDist)
+-- BillboardGui : distance infinie (MaxDistance = 0 = illimitée dans Roblox)
+local function mkBB(parent, name, w, h, offsetY)
 	local bb = Instance.new("BillboardGui", parent)
-	bb.Name = name; bb.AlwaysOnTop = true
-	bb.Size = UDim2.new(0, w, 0, h)
-	bb.StudsOffset = Vector3.new(0, offsetY, 0)
-	bb.MaxDistance = maxDist or 600
+	bb.Name          = name
+	bb.AlwaysOnTop   = true
+	bb.Size          = UDim2.new(0, w, 0, h)
+	bb.StudsOffset   = Vector3.new(0, offsetY, 0)
+	bb.MaxDistance   = 0        -- 0 = distance infinie
 	bb.LightInfluence = 0
+	bb.ResetOnSpawn  = false
 	return bb
 end
 
--- Compact label helper
+-- Label helper
 local function mkLbl(parent, txt, size, color)
 	local l = Instance.new("TextLabel", parent)
-	l.Size = UDim2.new(1,0,1,0)
+	l.Size                  = UDim2.new(1,0,1,0)
 	l.BackgroundTransparency = 1
-	l.Text = txt
-	l.TextColor3 = color or Color3.new(1,1,1)
-	l.Font = Enum.Font.GothamBold
-	l.TextSize = size or 10
-	l.TextStrokeTransparency = 0.15
-	l.TextStrokeColor3 = Color3.new(0,0,0)
-	l.TextScaled = false
+	l.Text                  = txt
+	l.TextColor3            = color or Color3.new(1,1,1)
+	l.Font                  = Enum.Font.GothamBold
+	l.TextSize              = size or 10
+	l.TextStrokeTransparency = 0.1
+	l.TextStrokeColor3      = Color3.new(0,0,0)
+	l.TextScaled            = false
 	return l
 end
 
 local function buildESPFor(p)
 	clearESPFor(p)
+	if p == player then return end
 	local char = p.Character
-	if not char or p == player then return end
+	if not char then return end
 
-	local hum = char:FindFirstChildOfClass("Humanoid")
-	local hrp = char:FindFirstChild("HumanoidRootPart")
+	local hum  = char:FindFirstChildOfClass("Humanoid")
+	local hrp  = char:FindFirstChild("HumanoidRootPart")
 	local head = char:FindFirstChild("Head")
 	if not hrp then return end
 
-	local isAlly = player.Team ~= nil and p.Team == player.Team
+	local isAlly = (player.Team ~= nil) and (p.Team == player.Team)
 	local color  = isAlly and ESP_COLOR_ALLY or ESP_COLOR_ENEMY
 	local objs   = {}
 
-	-- CHAMS (Native Roblox Highlighter — works everywhere)
+	-- CHAMS (Highlight natif Roblox)
 	if espState.chams then
-		-- Remove old highlight if present
 		local old = char:FindFirstChild("ESP_Highlight")
 		if old then old:Destroy() end
 		local hl = Instance.new("Highlight", char)
-		hl.Name = "ESP_Highlight"
-		hl.FillColor = color
-		hl.OutlineColor = color
-		hl.FillTransparency = 0.7
+		hl.Name              = "ESP_Highlight"
+		hl.FillColor         = color
+		hl.OutlineColor      = color
+		hl.FillTransparency  = 0.65
 		hl.OutlineTransparency = 0
-		hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		hl.DepthMode         = Enum.HighlightDepthMode.AlwaysOnTop
 		table.insert(objs, hl)
 	end
 
 	-- BOX (SelectionBox)
 	if espState.boxes then
 		local box = Instance.new("SelectionBox", workspace)
-		box.Adornee = char
-		box.Color3 = color
-		box.LineThickness = 0.04
-		box.SurfaceColor3 = color
-		box.SurfaceTransparency = 0.9
+		box.Adornee            = char
+		box.Color3             = color
+		box.LineThickness      = 0.04
+		box.SurfaceColor3      = color
+		box.SurfaceTransparency = 0.88
 		table.insert(objs, box)
 	end
 
 	-- HEAD DOT
 	if espState.headDots and head then
-		local bb = mkBB(head, "ESP_HeadDot", 10, 10, 0.5, 500)
+		local bb = mkBB(head, "ESP_HeadDot", 12, 12, 0.5)
 		local dot = Instance.new("Frame", bb)
-		dot.Size = UDim2.new(1,0,1,0)
+		dot.Size            = UDim2.new(1,0,1,0)
 		dot.BackgroundColor3 = color
 		dot.BorderSizePixel = 0
 		Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
 		local st = Instance.new("UIStroke", dot)
-		st.Color = Color3.new(1,1,1); st.Thickness = 1
+		st.Color = Color3.new(1,1,1); st.Thickness = 1.2
 		table.insert(objs, bb)
 	end
 
-	-- NAME (compact, small)
+	-- NOMS
 	if espState.names then
-		local bb = mkBB(hrp, "ESP_Name", 100, 16, 3.2, 500)
-		local lbl = mkLbl(bb, p.Name, 9, color)
+		local bb  = mkBB(hrp, "ESP_Name", 120, 18, 3.4)
+		local lbl = mkLbl(bb, (isAlly and "[A] " or "[E] ") .. p.Name, 10, color)
 		lbl.Text = (isAlly and "[A] " or "[E] ") .. p.Name
 		table.insert(objs, bb)
 	end
 
-	-- HEALTH text
+	-- HEALTH texte
 	if espState.health and hum then
-		local bb = mkBB(hrp, "ESP_HP", 80, 12, 2.6, 400)
-		local lbl = mkLbl(bb, math.floor(hum.Health) .. "hp", 8,
+		local bb  = mkBB(hrp, "ESP_HP", 90, 13, 2.7)
+		local lbl = mkLbl(bb, math.floor(hum.Health) .. " hp", 9,
 			Color3.fromRGB(80 + math.floor(175*(1 - hum.Health/math.max(hum.MaxHealth,1))),
 			200 - math.floor(150*(1 - hum.Health/math.max(hum.MaxHealth,1))), 50))
 		hum.HealthChanged:Connect(function(h)
-			local pct = math.clamp(h/math.max(hum.MaxHealth,1),0,1)
-			lbl.Text = math.floor(h) .. "hp"
+			if not espState.health then return end
+			local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
+			lbl.Text       = math.floor(h) .. " hp"
 			lbl.TextColor3 = Color3.fromRGB(80+math.floor(175*(1-pct)), 200-math.floor(150*(1-pct)), 50)
 		end)
 		table.insert(objs, bb)
 	end
 
-	-- HEALTH BAR (vertical, thin)
+	-- BARRE DE VIE verticale
 	if espState.healthBar and hum then
-		local bb = mkBB(hrp, "ESP_Bar", 4, 50, 0, 400)
-		bb.StudsOffset = Vector3.new(-1.2, 0, 0)
+		local bb = mkBB(hrp, "ESP_Bar", 5, 54, 0)
+		bb.StudsOffset = Vector3.new(-1.3, 0, 0)
 		local bg = Instance.new("Frame", bb)
-		bg.Size = UDim2.new(1,0,1,0)
-		bg.BackgroundColor3 = Color3.fromRGB(25,25,25)
-		bg.BackgroundTransparency = 0.2
-		bg.BorderSizePixel = 0
+		bg.Size                  = UDim2.new(1,0,1,0)
+		bg.BackgroundColor3      = Color3.fromRGB(20,20,20)
+		bg.BackgroundTransparency = 0.15
+		bg.BorderSizePixel       = 0
 		Instance.new("UICorner", bg).CornerRadius = UDim.new(1,0)
 		local fill = Instance.new("Frame", bg)
 		fill.AnchorPoint = Vector2.new(0,1)
-		fill.Position = UDim2.new(0,0,1,0)
-		local p0 = math.clamp(hum.Health/math.max(hum.MaxHealth,1),0,1)
-		fill.Size = UDim2.new(1,0,p0,0)
+		fill.Position    = UDim2.new(0,0,1,0)
+		local p0 = math.clamp(hum.Health / math.max(hum.MaxHealth,1), 0, 1)
+		fill.Size             = UDim2.new(1,0,p0,0)
 		fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-p0)), math.floor(220*p0+35), 40)
-		fill.BorderSizePixel = 0
+		fill.BorderSizePixel  = 0
 		Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
 		hum.HealthChanged:Connect(function(h)
-			local pct = math.clamp(h/math.max(hum.MaxHealth,1),0,1)
-			fill.Size = UDim2.new(1,0,pct,0)
+			if not espState.healthBar then return end
+			local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
+			fill.Size             = UDim2.new(1,0,pct,0)
 			fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-pct)), math.floor(220*pct+35), 40)
 		end)
 		table.insert(objs, bb)
@@ -2552,89 +2675,85 @@ local function buildESPFor(p)
 
 	-- DISTANCE
 	if espState.distance then
-		local bb = mkBB(hrp, "ESP_Dist", 60, 10, 2.1, 1000)
-		mkLbl(bb, "?m", 8, Color3.fromRGB(180,180,255))
+		local bb = mkBB(hrp, "ESP_Dist", 70, 12, 2.1)
+		mkLbl(bb, "?m", 9, Color3.fromRGB(180,180,255))
 		table.insert(objs, bb)
 	end
 
-	-- TRACER (point at the foot)
+	-- TRACER (point au pied)
 	if espState.tracers then
-		local bb = mkBB(hrp, "ESP_Tracer", 6, 6, -3, 600)
+		local bb = mkBB(hrp, "ESP_Tracer", 8, 8, -3)
 		local dot = Instance.new("Frame", bb)
-		dot.Size = UDim2.new(1,0,1,0)
-		dot.BackgroundColor3 = color; dot.BorderSizePixel = 0
+		dot.Size             = UDim2.new(1,0,1,0)
+		dot.BackgroundColor3 = color
+		dot.BorderSizePixel  = 0
 		Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
 		table.insert(objs, bb)
 	end
 
-	-- SKELETON (Beams) — works on R6 and R15
+	-- SQUELETTE corrigé (Beams avec Attachments propres)
 	if espState.skeletons then
 		local JOINTS_R15 = {
-			{"Head","UpperTorso"},{"UpperTorso","LowerTorso"},
-			{"UpperTorso","RightUpperArm"},{"RightUpperArm","RightLowerArm"},{"RightLowerArm","RightHand"},
-			{"UpperTorso","LeftUpperArm"},{"LeftUpperArm","LeftLowerArm"},{"LeftLowerArm","LeftHand"},
-			{"LowerTorso","RightUpperLeg"},{"RightUpperLeg","RightLowerLeg"},{"RightLowerLeg","RightFoot"},
-			{"LowerTorso","LeftUpperLeg"},{"LeftUpperLeg","LeftLowerLeg"},{"LeftLowerLeg","LeftFoot"},
+			{"Head",         "UpperTorso"},
+			{"UpperTorso",   "LowerTorso"},
+			{"UpperTorso",   "RightUpperArm"},
+			{"RightUpperArm","RightLowerArm"},
+			{"RightLowerArm","RightHand"},
+			{"UpperTorso",   "LeftUpperArm"},
+			{"LeftUpperArm", "LeftLowerArm"},
+			{"LeftLowerArm", "LeftHand"},
+			{"LowerTorso",   "RightUpperLeg"},
+			{"RightUpperLeg","RightLowerLeg"},
+			{"RightLowerLeg","RightFoot"},
+			{"LowerTorso",   "LeftUpperLeg"},
+			{"LeftUpperLeg", "LeftLowerLeg"},
+			{"LeftLowerLeg", "LeftFoot"},
 		}
 		local JOINTS_R6 = {
-			{"Head","Torso"},{"Torso","Left Arm"},{"Torso","Right Arm"},
-			{"Torso","Left Leg"},{"Torso","Right Leg"},
+			{"Head",   "Torso"},
+			{"Torso",  "Left Arm"},
+			{"Torso",  "Right Arm"},
+			{"Torso",  "Left Leg"},
+			{"Torso",  "Right Leg"},
 		}
-		local joints = char:FindFirstChild("UpperTorso") and JOINTS_R15 or JOINTS_R6
+		local isR15 = char:FindFirstChild("UpperTorso") ~= nil
+		local joints = isR15 and JOINTS_R15 or JOINTS_R6
+
 		for _, pair in ipairs(joints) do
-			local a = char:FindFirstChild(pair[1])
-			local b = char:FindFirstChild(pair[2])
-			if a and b then
-				local att0 = Instance.new("Attachment", a)
-				local att1 = Instance.new("Attachment", b)
+			local partA = char:FindFirstChild(pair[1])
+			local partB = char:FindFirstChild(pair[2])
+			if partA and partB then
+				-- Les Attachments doivent être dans les parts ET le Beam dans workspace
+				local att0 = Instance.new("Attachment", partA)
+				att0.Name     = "ESP_SkelAtt"
+				att0.Position = Vector3.new(0,0,0)
+
+				local att1 = Instance.new("Attachment", partB)
+				att1.Name     = "ESP_SkelAtt"
+				att1.Position = Vector3.new(0,0,0)
+
 				local beam = Instance.new("Beam", workspace)
-				beam.Attachment0 = att0; beam.Attachment1 = att1
-				beam.Color = ColorSequence.new(color)
-				beam.Width0 = 0.05; beam.Width1 = 0.05
-				beam.FaceCamera = true
-				beam.Transparency = NumberSequence.new(0.1)
-				beam.LightEmission = 0.3
-				table.insert(objs, att0); table.insert(objs, att1); table.insert(objs, beam)
+				beam.Attachment0   = att0
+				beam.Attachment1   = att1
+				beam.Color         = ColorSequence.new(color)
+				beam.Width0        = 0.06
+				beam.Width1        = 0.06
+				beam.FaceCamera    = true
+				beam.Transparency  = NumberSequence.new(0.05)
+				beam.LightEmission = 0.4
+				beam.Segments      = 1
+				beam.TextureLength = 1
+				beam.Enabled       = true
+
+				table.insert(objs, att0)
+				table.insert(objs, att1)
+				table.insert(objs, beam)
 			end
 		end
 	end
 
 	espObjects[p] = objs
 end
-
--- ================================================
--- ================================================
-local function refreshItemESP()
-	-- Clean old
-	for inst, bb in pairs(espItemObjs) do
-		if bb and bb.Parent then bb:Destroy() end
-	end
-	espItemObjs = {}
-
-	if not espState.items then return end
-
-	-- Scanner workspace for Tools and Parts named "Handle"
-	for _, obj in ipairs(workspace:GetDescendants()) do
-		if obj:IsA("Tool") and not obj.Parent:IsA("Model") then
-			-- Tool placed on the ground
-			local handle = obj:FindFirstChild("Handle")
-			if handle and handle:IsA("BasePart") then
-				local bb = mkBB(handle, "ESP_Item", 120, 14, 0.5, 300)
-				bb.AlwaysOnTop = true
-				mkLbl(bb, "🔫 " .. obj.Name, 8, Color3.fromRGB(255, 200, 50))
-				espItemObjs[obj] = bb
-			end
-		end
-	end
-end
-
--- Refresh ESP items periodically
-task.spawn(function()
-	while true do
-		task.wait(3)
-		if espState.items then refreshItemESP() end
-	end
-end)
 
 -- Updates distance every second
 local function updateDistances()
@@ -2787,8 +2906,6 @@ createBtn(pages.ESP, "❌  Disable All", currentTheme.Danger, 1, function()
 	for k in pairs(espState) do espState[k] = false end
 	for _, p in ipairs(Players:GetPlayers()) do clearESPFor(p) end
 end)
-
-createSection(pages.ESP, "👤  Player Display", 1)
 createToggle(pages.ESP, "📦  Boxes", 2, function(s) toggleESP("boxes", s) end)
 createToggle(pages.ESP, "🏷  Names + Team Tag", 3, function(s) toggleESP("names", s) end)
 createToggle(pages.ESP, "❤  Health (text)", 4, function(s) toggleESP("health", s) end)
@@ -2801,12 +2918,6 @@ createToggle(pages.ESP, "💀  Skeleton", 8, function(s) toggleESP("skeletons", 
 createToggle(pages.ESP, "🔆  Chams (Highlight)", 9, function(s) toggleESP("chams", s) end)
 createToggle(pages.ESP, "🎯  Tracers", 10, function(s) toggleESP("tracers", s) end)
 createToggle(pages.ESP, "🔫  Snaplines", 11, function(s) toggleESP("snaplines", s) end)
-
-createSection(pages.ESP, "🗺  Ground Items", 13)
-createToggle(pages.ESP, "🔫  ESP Weapons / Tools", 14, function(s)
-	espState.items = s
-	refreshItemESP()
-end)
 
 createSection(pages.ESP, "🎨  Colors", 19)
 createColorDropdown(pages.ESP, "🔴  Enemy Color", 20,
@@ -2864,7 +2975,7 @@ createSection(pages.Other, "ℹ  Version", 98)
 local verLabel = Instance.new("TextLabel", pages.Other)
 verLabel.Size = UDim2.new(1, 0, 0, 40)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v3.7\n👉𝐁 Press [B] to open/close"
+verLabel.Text = "🌐 bkz HUB  v3.8\n👉𝐁 Press [B] to open/close"
 verLabel.TextColor3 = currentTheme.SubText
 verLabel.Font = Enum.Font.Gotham
 verLabel.TextSize = 11
