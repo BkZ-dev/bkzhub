@@ -2118,11 +2118,11 @@ local function applyTheme(t)
 end
 
 createSection(pages.Settings, "🎨  Theme", 0)
-createBtn(pages.Settings, "🌑  Dark",  currentTheme.Button, 1, function() applyTheme(Themes.Dark)  end)
-createBtn(pages.Settings, "🌕  Light",   currentTheme.Button, 2, function() applyTheme(Themes.Light) end)
-createBtn(pages.Settings, "💠  Cyber",   currentTheme.Button, 3, function() applyTheme(Themes.Cyber) end)
-createBtn(pages.Settings, "🔴  Red",   currentTheme.Button, 4, function() applyTheme(Themes.Rouge) end)
-createBtn(pages.Settings, "🟢  Green",    currentTheme.Button, 5, function() applyTheme(Themes.Vert)  end)
+createBtn(pages.Settings, "💠  Cyber",   currentTheme.Button, 1, function() applyTheme(Themes.Cyber) end)
+createBtn(pages.Settings, "🔴  Red",     currentTheme.Button, 2, function() applyTheme(Themes.Rouge) end)
+createBtn(pages.Settings, "🟢  Green",   currentTheme.Button, 3, function() applyTheme(Themes.Vert)  end)
+createBtn(pages.Settings, "🌑  Dark",    currentTheme.Button, 4, function() applyTheme(Themes.Dark)  end)
+createBtn(pages.Settings, "🌕  Light",   currentTheme.Button, 5, function() applyTheme(Themes.Light) end)
 
 createSection(pages.Settings, "📐  Size", 2)
 createBtn(pages.Settings, "➕  Enlarge (+40)", currentTheme.Button, 3, function()
@@ -2526,11 +2526,14 @@ local espState = {
 	skeletons = false,
 	chams     = false,
 	healthBar = false,
+	bots      = false,
 }
-local espObjects = {}
+local espObjects    = {}
+local espBotObjects = {}
 
 local ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
 local ESP_COLOR_ENEMY = Color3.fromRGB(255, 60, 60)
+local ESP_COLOR_BOT   = Color3.fromRGB(255, 200, 0)
 
 -- Nettoie ESP d'un joueur
 local function clearESPFor(p)
@@ -2539,6 +2542,109 @@ local function clearESPFor(p)
 			pcall(function() if obj and obj.Parent then obj:Destroy() end end)
 		end
 		espObjects[p] = nil
+	end
+end
+
+-- Nettoie tous les ESP bots
+local function clearAllBotESP()
+	for model, objs in pairs(espBotObjects) do
+		for _, obj in ipairs(objs) do
+			pcall(function() if obj and obj.Parent then obj:Destroy() end end)
+		end
+	end
+	espBotObjects = {}
+end
+
+-- Détecte si un Model est un NPC/Bot (Humanoid mais pas un joueur)
+local function isBot(model)
+	if not model:IsA("Model") then return false end
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	if not hum then return false end
+	local hrp = model:FindFirstChild("HumanoidRootPart")
+	if not hrp then return false end
+	-- Vérifie que ce n'est pas un vrai joueur
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p.Character == model then return false end
+	end
+	return true
+end
+
+-- Construit l'ESP sur un bot/NPC
+local function buildESPBot(model)
+	if espBotObjects[model] then return end
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	local hrp = model:FindFirstChild("HumanoidRootPart")
+	local head = model:FindFirstChild("Head")
+	if not hrp then return end
+
+	local color = ESP_COLOR_BOT
+	local objs  = {}
+
+	-- Chams
+	local old = model:FindFirstChild("ESP_BotHL")
+	if old then old:Destroy() end
+	local hl = Instance.new("Highlight", model)
+	hl.Name = "ESP_BotHL"
+	hl.FillColor = color
+	hl.OutlineColor = color
+	hl.FillTransparency = 0.7
+	hl.OutlineTransparency = 0
+	hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	table.insert(objs, hl)
+
+	-- Nom du bot
+	local bb = mkBB(hrp, "ESP_BotName", 120, 18, 3.4)
+	local lbl = mkLbl(bb, "[BOT] " .. model.Name, 10, color)
+	table.insert(objs, bb)
+
+	-- Barre de vie
+	if hum then
+		local bb2 = mkBB(hrp, "ESP_BotBar", 5, 54, 0)
+		bb2.StudsOffset = Vector3.new(-1.3, 0, 0)
+		local bg = Instance.new("Frame", bb2)
+		bg.Size = UDim2.new(1,0,1,0)
+		bg.BackgroundColor3 = Color3.fromRGB(20,20,20)
+		bg.BackgroundTransparency = 0.15
+		bg.BorderSizePixel = 0
+		Instance.new("UICorner", bg).CornerRadius = UDim.new(1,0)
+		local fill = Instance.new("Frame", bg)
+		fill.AnchorPoint = Vector2.new(0,1)
+		fill.Position = UDim2.new(0,0,1,0)
+		local p0 = math.clamp(hum.Health / math.max(hum.MaxHealth,1), 0, 1)
+		fill.Size = UDim2.new(1,0,p0,0)
+		fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-p0)), math.floor(220*p0+35), 40)
+		fill.BorderSizePixel = 0
+		Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
+		hum.HealthChanged:Connect(function(h)
+			if not espState.bots then return end
+			local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
+			fill.Size = UDim2.new(1,0,pct,0)
+			fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-pct)), math.floor(220*pct+35), 40)
+		end)
+		table.insert(objs, bb2)
+	end
+
+	espBotObjects[model] = objs
+
+	-- Nettoie si le bot est détruit
+	model.AncestryChanged:Connect(function()
+		if not model.Parent then
+			for _, obj in ipairs(espBotObjects[model] or {}) do
+				pcall(function() if obj and obj.Parent then obj:Destroy() end end)
+			end
+			espBotObjects[model] = nil
+		end
+	end)
+end
+
+-- Scan tous les NPC dans workspace
+local function refreshBotESP()
+	clearAllBotESP()
+	if not espState.bots then return end
+	for _, model in ipairs(workspace:GetDescendants()) do
+		if isBot(model) then
+			pcall(function() buildESPBot(model) end)
+		end
 	end
 end
 
@@ -2599,15 +2705,18 @@ local function buildESPFor(p)
 		table.insert(objs, hl)
 	end
 
-	-- BOX (SelectionBox)
+	-- BOX 2D (BillboardGui cadre toujours visible)
 	if espState.boxes then
-		local box = Instance.new("SelectionBox", workspace)
-		box.Adornee            = char
-		box.Color3             = color
-		box.LineThickness      = 0.04
-		box.SurfaceColor3      = color
-		box.SurfaceTransparency = 0.88
-		table.insert(objs, box)
+		local bb = mkBB(hrp, "ESP_Box", 60, 90, 0)
+		local frame = Instance.new("Frame", bb)
+		frame.Size = UDim2.new(1,0,1,0)
+		frame.BackgroundTransparency = 1
+		frame.BorderSizePixel = 0
+		local stroke2 = Instance.new("UIStroke", frame)
+		stroke2.Color = color
+		stroke2.Thickness = 1.8
+		stroke2.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		table.insert(objs, bb)
 	end
 
 	-- HEAD DOT
@@ -2680,76 +2789,82 @@ local function buildESPFor(p)
 		table.insert(objs, bb)
 	end
 
-	-- TRACER (point au pied)
+	-- TRACER (triangle pointant vers le joueur, toujours visible)
 	if espState.tracers then
-		local bb = mkBB(hrp, "ESP_Tracer", 8, 8, -3)
-		local dot = Instance.new("Frame", bb)
-		dot.Size             = UDim2.new(1,0,1,0)
-		dot.BackgroundColor3 = color
-		dot.BorderSizePixel  = 0
-		Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
+		local bb = mkBB(hrp, "ESP_Tracer", 16, 16, -3)
+		local lbl = Instance.new("TextLabel", bb)
+		lbl.Size = UDim2.new(1,0,1,0)
+		lbl.BackgroundTransparency = 1
+		lbl.Text = "▼"
+		lbl.TextColor3 = color
+		lbl.Font = Enum.Font.GothamBold
+		lbl.TextSize = 14
+		lbl.TextStrokeTransparency = 0.1
+		lbl.TextStrokeColor3 = Color3.new(0,0,0)
 		table.insert(objs, bb)
 	end
 
-	-- SQUELETTE corrigé (Beams avec Attachments propres)
+	-- SNAPLINE (ligne verticale du haut vers le bas sur le joueur)
+	if espState.snaplines then
+		-- Ligne haute (flèche vers le haut)
+		local bbTop = mkBB(hrp, "ESP_Snap", 16, 16, 4)
+		local lblT = Instance.new("TextLabel", bbTop)
+		lblT.Size = UDim2.new(1,0,1,0)
+		lblT.BackgroundTransparency = 1
+		lblT.Text = "▲"
+		lblT.TextColor3 = color
+		lblT.Font = Enum.Font.GothamBold
+		lblT.TextSize = 14
+		lblT.TextStrokeTransparency = 0.1
+		lblT.TextStrokeColor3 = Color3.new(0,0,0)
+		-- Ligne : barre verticale
+		local bbLine = mkBB(hrp, "ESP_SnapLine", 3, 80, 0)
+		local lineF = Instance.new("Frame", bbLine)
+		lineF.Size = UDim2.new(1,0,1,0)
+		lineF.BackgroundColor3 = color
+		lineF.BorderSizePixel = 0
+		lineF.BackgroundTransparency = 0.2
+		table.insert(objs, bbTop)
+		table.insert(objs, bbLine)
+	end
+
+	-- SQUELETTE via BillboardGui sur chaque part (100% fiable partout)
 	if espState.skeletons then
-		local JOINTS_R15 = {
-			{"Head",         "UpperTorso"},
-			{"UpperTorso",   "LowerTorso"},
-			{"UpperTorso",   "RightUpperArm"},
-			{"RightUpperArm","RightLowerArm"},
-			{"RightLowerArm","RightHand"},
-			{"UpperTorso",   "LeftUpperArm"},
-			{"LeftUpperArm", "LeftLowerArm"},
-			{"LeftLowerArm", "LeftHand"},
-			{"LowerTorso",   "RightUpperLeg"},
-			{"RightUpperLeg","RightLowerLeg"},
-			{"RightLowerLeg","RightFoot"},
-			{"LowerTorso",   "LeftUpperLeg"},
-			{"LeftUpperLeg", "LeftLowerLeg"},
-			{"LeftLowerLeg", "LeftFoot"},
+		local PARTS_R15 = {
+			"Head","UpperTorso","LowerTorso",
+			"RightUpperArm","RightLowerArm","RightHand",
+			"LeftUpperArm","LeftLowerArm","LeftHand",
+			"RightUpperLeg","RightLowerLeg","RightFoot",
+			"LeftUpperLeg","LeftLowerLeg","LeftFoot",
 		}
-		local JOINTS_R6 = {
-			{"Head",   "Torso"},
-			{"Torso",  "Left Arm"},
-			{"Torso",  "Right Arm"},
-			{"Torso",  "Left Leg"},
-			{"Torso",  "Right Leg"},
-		}
+		local PARTS_R6 = {"Head","Torso","Left Arm","Right Arm","Left Leg","Right Leg"}
 		local isR15 = char:FindFirstChild("UpperTorso") ~= nil
-		local joints = isR15 and JOINTS_R15 or JOINTS_R6
+		local partNames = isR15 and PARTS_R15 or PARTS_R6
 
-		for _, pair in ipairs(joints) do
-			local partA = char:FindFirstChild(pair[1])
-			local partB = char:FindFirstChild(pair[2])
-			if partA and partB then
-				-- Les Attachments doivent être dans les parts ET le Beam dans workspace
-				local att0 = Instance.new("Attachment", partA)
-				att0.Name     = "ESP_SkelAtt"
-				att0.Position = Vector3.new(0,0,0)
-
-				local att1 = Instance.new("Attachment", partB)
-				att1.Name     = "ESP_SkelAtt"
-				att1.Position = Vector3.new(0,0,0)
-
-				local beam = Instance.new("Beam", workspace)
-				beam.Attachment0   = att0
-				beam.Attachment1   = att1
-				beam.Color         = ColorSequence.new(color)
-				beam.Width0        = 0.06
-				beam.Width1        = 0.06
-				beam.FaceCamera    = true
-				beam.Transparency  = NumberSequence.new(0.05)
-				beam.LightEmission = 0.4
-				beam.Segments      = 1
-				beam.TextureLength = 1
-				beam.Enabled       = true
-
-				table.insert(objs, att0)
-				table.insert(objs, att1)
-				table.insert(objs, beam)
+		for _, pname in ipairs(partNames) do
+			local part = char:FindFirstChild(pname)
+			if part then
+				local bb = mkBB(part, "ESP_Skel", 10, 10, 0)
+				local dot = Instance.new("Frame", bb)
+				dot.Size = UDim2.new(1,0,1,0)
+				dot.BackgroundColor3 = color
+				dot.BorderSizePixel = 0
+				local st = Instance.new("UIStroke", dot)
+				st.Color = Color3.new(0,0,0)
+				st.Thickness = 1
+				Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
+				table.insert(objs, bb)
 			end
 		end
+
+		-- Lignes entre les parts via Highlight coloré léger
+		local hl2 = Instance.new("Highlight", char)
+		hl2.Name = "ESP_SkelHL"
+		hl2.FillTransparency = 1
+		hl2.OutlineColor = color
+		hl2.OutlineTransparency = 0.4
+		hl2.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		table.insert(objs, hl2)
 	end
 
 	espObjects[p] = objs
@@ -2780,6 +2895,7 @@ local function refreshAllESP()
 	for _, p in ipairs(Players:GetPlayers()) do
 		buildESPFor(p)
 	end
+	if espState.bots then refreshBotESP() end
 end
 
 -- ================================================
@@ -2929,7 +3045,19 @@ createColorDropdown(pages.ESP, "🔵  Ally Color", 21,
 	function(c) ESP_COLOR_ALLY = c; refreshAllESP() end
 )
 
--- OTHER PAGE — Credits
+createSection(pages.ESP, "🤖  Bots / NPC", 22)
+createToggle(pages.ESP, "🤖  ESP Bots & NPC", 23, function(s)
+	espState.bots = s
+	if s then refreshBotESP() else clearAllBotESP() end
+end)
+createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 24, function()
+	if espState.bots then refreshBotESP()
+	else showNotification("⚠  Active ESP Bots d'abord", 2) end
+end)
+createColorDropdown(pages.ESP, "🟡  Bot Color", 25,
+	Color3.fromRGB(255,200,0),
+	function(c) ESP_COLOR_BOT = c; if espState.bots then refreshBotESP() end end
+)
 -- ================================================
 createSection(pages.Other, "👑  Credits", 0)
 
@@ -2995,6 +3123,24 @@ local function startESP()
 		while true do
 			task.wait(0.5)
 			if espState.distance then updateDistances() end
+		end
+	end)
+
+	-- Scan bots périodiquement
+	task.spawn(function()
+		while true do
+			task.wait(5)
+			if espState.bots then refreshBotESP() end
+		end
+	end)
+
+	-- Scan nouveaux NPC ajoutés en live
+	workspace.DescendantAdded:Connect(function(obj)
+		if espState.bots and obj:IsA("Model") then
+			task.wait(0.5)
+			if isBot(obj) then
+				pcall(function() buildESPBot(obj) end)
+			end
 		end
 	end)
 
