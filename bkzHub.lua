@@ -2117,12 +2117,12 @@ local function applyTheme(t)
 	end
 end
 
-createSection(pages.Settings, "🎨  Theme", 0)
-createBtn(pages.Settings, "💠  Cyber",   currentTheme.Button, 1, function() applyTheme(Themes.Cyber) end)
-createBtn(pages.Settings, "🔴  Red",     currentTheme.Button, 2, function() applyTheme(Themes.Rouge) end)
-createBtn(pages.Settings, "🟢  Green",   currentTheme.Button, 3, function() applyTheme(Themes.Vert)  end)
-createBtn(pages.Settings, "🌑  Dark",    currentTheme.Button, 4, function() applyTheme(Themes.Dark)  end)
-createBtn(pages.Settings, "🌕  Light",   currentTheme.Button, 5, function() applyTheme(Themes.Light) end)
+createSection(pages.Settings, "🎨  Thèmes & Couleurs", 0)
+createBtn(pages.Settings, "🌑  Dark",    currentTheme.Button, 1, function() applyTheme(Themes.Dark)  end)
+createBtn(pages.Settings, "🌕  Light",   currentTheme.Button, 2, function() applyTheme(Themes.Light) end)
+createBtn(pages.Settings, "💠  Cyber",   currentTheme.Button, 3, function() applyTheme(Themes.Cyber) end)
+createBtn(pages.Settings, "🔴  Rouge",   currentTheme.Button, 4, function() applyTheme(Themes.Rouge) end)
+createBtn(pages.Settings, "🟢  Vert",    currentTheme.Button, 5, function() applyTheme(Themes.Vert)  end)
 
 createSection(pages.Settings, "📐  Size", 2)
 createBtn(pages.Settings, "➕  Enlarge (+40)", currentTheme.Button, 3, function()
@@ -2535,6 +2535,10 @@ local ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
 local ESP_COLOR_ENEMY = Color3.fromRGB(255, 60, 60)
 local ESP_COLOR_BOT   = Color3.fromRGB(255, 200, 0)
 
+-- Distance max ESP (0 = infini)
+local ESP_MAX_DIST_PLAYER = 0
+local ESP_MAX_DIST_BOT    = 0
+
 -- Nettoie ESP d'un joueur
 local function clearESPFor(p)
 	if espObjects[p] then
@@ -2870,19 +2874,45 @@ local function buildESPFor(p)
 	espObjects[p] = objs
 end
 
--- Updates distance every second
+-- Updates distance + visibility based on max distance (runs every frame via RenderStepped)
 local function updateDistances()
 	local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if not myHRP then return end
+
+	-- Joueurs
 	for p, objs in pairs(espObjects) do
 		if p.Character then
 			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
 			if hrp then
 				local dist = math.floor((hrp.Position - myHRP.Position).Magnitude)
+				local visible = (ESP_MAX_DIST_PLAYER == 0) or (dist <= ESP_MAX_DIST_PLAYER)
 				for _, obj in ipairs(objs) do
-					if obj:IsA("BillboardGui") and obj.Name == "ESP_Dist" then
-						local lbl = obj:FindFirstChildOfClass("TextLabel")
-						if lbl then lbl.Text = dist .. "m" end
+					if obj:IsA("BillboardGui") then
+						obj.Enabled = visible
+						if obj.Name == "ESP_Dist" then
+							local lbl = obj:FindFirstChildOfClass("TextLabel")
+							if lbl then lbl.Text = dist .. "m" end
+						end
+					elseif obj:IsA("Highlight") then
+						obj.Enabled = visible
+					end
+				end
+			end
+		end
+	end
+
+	-- Bots
+	for model, objs in pairs(espBotObjects) do
+		if model and model.Parent then
+			local hrp = model:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				local dist = math.floor((hrp.Position - myHRP.Position).Magnitude)
+				local visible = (ESP_MAX_DIST_BOT == 0) or (dist <= ESP_MAX_DIST_BOT)
+				for _, obj in ipairs(objs) do
+					if obj:IsA("BillboardGui") then
+						obj.Enabled = visible
+					elseif obj:IsA("Highlight") then
+						obj.Enabled = visible
 					end
 				end
 			end
@@ -3058,6 +3088,16 @@ createColorDropdown(pages.ESP, "🟡  Bot Color", 25,
 	Color3.fromRGB(255,200,0),
 	function(c) ESP_COLOR_BOT = c; if espState.bots then refreshBotESP() end end
 )
+
+createSection(pages.ESP, "📏  Distance Max", 26)
+createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 27, function(val)
+	ESP_MAX_DIST_PLAYER = val
+	refreshAllESP()
+end)
+createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 28, function(val)
+	ESP_MAX_DIST_BOT = val
+	if espState.bots then refreshBotESP() end
+end)
 -- ================================================
 createSection(pages.Other, "👑  Credits", 0)
 
@@ -3119,10 +3159,10 @@ local function startESP()
 	end)
 	Players.PlayerRemoving:Connect(function(p) clearESPFor(p) end)
 
-	task.spawn(function()
-		while true do
-			task.wait(0.5)
-			if espState.distance then updateDistances() end
+	-- Loop ESP fluide via RenderStepped (remplace task.wait(0.5))
+	RunService:BindToRenderStep("ESP_Update", Enum.RenderPriority.Last.Value, function()
+		if espState.distance or ESP_MAX_DIST_PLAYER > 0 or ESP_MAX_DIST_BOT > 0 then
+			updateDistances()
 		end
 	end)
 
