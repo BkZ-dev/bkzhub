@@ -2117,14 +2117,14 @@ local function applyTheme(t)
 	end
 end
 
-createSection(pages.Settings, "🎨  Thèmes & Couleurs", 0)
-createBtn(pages.Settings, "🌑  Dark",    currentTheme.Button, 1, function() applyTheme(Themes.Dark)  end)
-createBtn(pages.Settings, "🌕  Light",   currentTheme.Button, 2, function() applyTheme(Themes.Light) end)
-createBtn(pages.Settings, "💠  Cyber",   currentTheme.Button, 3, function() applyTheme(Themes.Cyber) end)
-createBtn(pages.Settings, "🔴  Rouge",   currentTheme.Button, 4, function() applyTheme(Themes.Rouge) end)
-createBtn(pages.Settings, "🟢  Vert",    currentTheme.Button, 5, function() applyTheme(Themes.Vert)  end)
+createSection(pages.Settings, "🎨  Thèmes & Couleurs", -2)
+createBtn(pages.Settings, "🌑  Dark",    currentTheme.Button, -1, function() applyTheme(Themes.Dark)  end)
+createBtn(pages.Settings, "🌕  Light",   currentTheme.Button, 0,  function() applyTheme(Themes.Light) end)
+createBtn(pages.Settings, "💠  Cyber",   currentTheme.Button, 1,  function() applyTheme(Themes.Cyber) end)
+createBtn(pages.Settings, "🔴  Rouge",   currentTheme.Button, 2,  function() applyTheme(Themes.Rouge) end)
+createBtn(pages.Settings, "🟢  Vert",    currentTheme.Button, 3,  function() applyTheme(Themes.Vert)  end)
 
-createSection(pages.Settings, "📐  Size", 2)
+createSection(pages.Settings, "📐  Size", 4)
 createBtn(pages.Settings, "➕  Enlarge (+40)", currentTheme.Button, 3, function()
 	applyMenuSize(menuW + 40, menuH + 40)
 end)
@@ -2712,14 +2712,31 @@ local function buildESPFor(p)
 	-- BOX 2D (BillboardGui cadre toujours visible)
 	if espState.boxes then
 		local bb = mkBB(hrp, "ESP_Box", 60, 90, 0)
-		local frame = Instance.new("Frame", bb)
-		frame.Size = UDim2.new(1,0,1,0)
-		frame.BackgroundTransparency = 1
-		frame.BorderSizePixel = 0
-		local stroke2 = Instance.new("UIStroke", frame)
+		-- Fond légèrement coloré
+		local bg = Instance.new("Frame", bb)
+		bg.Size = UDim2.new(1,0,1,0)
+		bg.BackgroundColor3 = color
+		bg.BackgroundTransparency = 0.88
+		bg.BorderSizePixel = 0
+		Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 4)
+		-- Bordure principale
+		local stroke2 = Instance.new("UIStroke", bg)
 		stroke2.Color = color
-		stroke2.Thickness = 1.8
+		stroke2.Thickness = 2
+		stroke2.Transparency = 0
 		stroke2.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		-- Bordure intérieure glow (blanc semi-transparent)
+		local inner = Instance.new("Frame", bb)
+		inner.Size = UDim2.new(1,-4,1,-4)
+		inner.Position = UDim2.new(0,2,0,2)
+		inner.BackgroundTransparency = 1
+		inner.BorderSizePixel = 0
+		Instance.new("UICorner", inner).CornerRadius = UDim.new(0, 3)
+		local innerStroke = Instance.new("UIStroke", inner)
+		innerStroke.Color = Color3.new(1,1,1)
+		innerStroke.Thickness = 0.8
+		innerStroke.Transparency = 0.75
+		innerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 		table.insert(objs, bb)
 	end
 
