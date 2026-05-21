@@ -905,35 +905,79 @@ createBtn(pages.Player, "🚀  TP Me to Player", currentTheme.Button, 6, functio
 		pcall(function() myHRP.CFrame = theirHRP.CFrame * CFrame.new(2, 2, 0) end)
 	end
 end)
--- Chat Spy: Listens to the target player's messages via TextChatService or legacy chat
-local chatSpyConn = nil
-local chatSpyTarget = nil
+-- Chat Spy : 3 méthodes compatibles (TextChatService + legacy Player.Chatted)
+local chatSpyConns  = {}
+local chatSpyActive = false
 
-local function startChatSpy(p)
-	if chatSpyConn then chatSpyConn:Disconnect(); chatSpyConn = nil end
-	chatSpyTarget = p
-	-- Try using TextChatService (new Roblox games)
-	local TCS = game:GetService("TextChatService")
-	if TCS and TCS.MessageReceived then
-		chatSpyConn = TCS.MessageReceived:Connect(function(msg)
-			if msg.TextSource and msg.TextSource.UserId == p.UserId then
-				showNotification("💬  " .. p.Name .. " : " .. msg.Text, 5)
-			end
-		end)
-	end
+local function stopChatSpy()
+	chatSpyActive = false
+	for _, c in ipairs(chatSpyConns) do pcall(function() c:Disconnect() end) end
+	chatSpyConns = {}
 end
 
-createBtn(pages.Player, "💬  Chat Spy ON/OFF", currentTheme.Button, 7, function()
-	if chatSpyConn then
-		chatSpyConn:Disconnect(); chatSpyConn = nil
-		showNotification("👁  Chat spy disabled", 2)
+local function startChatSpy(filterPlayer)
+	stopChatSpy()
+	chatSpyActive = true
+	local connected = false
+
+	-- Méthode 1 : TextChatService (jeux modernes Roblox)
+	pcall(function()
+		local TCS = game:GetService("TextChatService")
+		if TCS and TCS.MessageReceived then
+			local c = TCS.MessageReceived:Connect(function(msg)
+				if not chatSpyActive then return end
+				local src = msg.TextSource
+				if not src then return end
+				if filterPlayer and src.UserId ~= filterPlayer.UserId then return end
+				local pName = tostring(src.UserId)
+				for _, pl in ipairs(Players:GetPlayers()) do
+					if pl.UserId == src.UserId then pName = pl.Name; break end
+				end
+				showNotification("💬  " .. pName .. ": " .. (msg.Text or ""), 5)
+			end)
+			table.insert(chatSpyConns, c)
+			connected = true
+		end
+	end)
+
+	-- Méthode 2 : Player.Chatted (legacy, le plus compatible)
+	local function hookPlayer(pl)
+		if filterPlayer and pl ~= filterPlayer then return end
+		local c = pl.Chatted:Connect(function(msg)
+			if not chatSpyActive then return end
+			showNotification("💬  " .. pl.Name .. ": " .. msg, 5)
+		end)
+		table.insert(chatSpyConns, c)
+	end
+	for _, pl in ipairs(Players:GetPlayers()) do
+		pcall(function() hookPlayer(pl) end)
+	end
+	local cAdd = Players.PlayerAdded:Connect(function(pl)
+		pcall(function() hookPlayer(pl) end)
+	end)
+	table.insert(chatSpyConns, cAdd)
+end
+
+createBtn(pages.Player, "💬  Chat Spy (joueur ciblé)", currentTheme.Button, 7, function()
+	if chatSpyActive then
+		stopChatSpy()
+		showNotification("👁  Chat Spy OFF", 2)
 	else
 		if targetPlayer then
 			startChatSpy(targetPlayer)
-			showNotification("👁  Chat spy active on " .. targetPlayer.Name, 3)
+			showNotification("👁  Chat Spy ON → " .. targetPlayer.Name, 3)
 		else
-			showNotification("❌  Select a player first", 2)
+			showNotification("❌  Sélectionne un joueur d'abord", 2)
 		end
+	end
+end)
+createBtn(pages.Player, "💬  Chat Spy (tous les joueurs)", currentTheme.Button, 8, function()
+	if chatSpyActive then
+		stopChatSpy()
+		showNotification("👁  Chat Spy OFF", 2)
+	else
+		startChatSpy(nil)
+		showNotification("👁  Chat Spy ON → tous les joueurs", 3)
 	end
 end)
 
@@ -2117,30 +2161,23 @@ local function applyTheme(t)
 	end
 end
 
-createSection(pages.Settings, "🎨  Thèmes & Couleurs", -2)
-createBtn(pages.Settings, "🌑  Dark",    currentTheme.Button, -1, function() applyTheme(Themes.Dark)  end)
-createBtn(pages.Settings, "🌕  Light",   currentTheme.Button, 0,  function() applyTheme(Themes.Light) end)
-createBtn(pages.Settings, "💠  Cyber",   currentTheme.Button, 1,  function() applyTheme(Themes.Cyber) end)
-createBtn(pages.Settings, "🔴  Rouge",   currentTheme.Button, 2,  function() applyTheme(Themes.Rouge) end)
-createBtn(pages.Settings, "🟢  Vert",    currentTheme.Button, 3,  function() applyTheme(Themes.Vert)  end)
+createSection(pages.Settings, "🎨  Thèmes & Couleurs", 0)
+createBtn(pages.Settings, "🌑  Dark",    currentTheme.Button, 1, function() applyTheme(Themes.Dark)  end)
+createBtn(pages.Settings, "🌕  Light",   currentTheme.Button, 2, function() applyTheme(Themes.Light) end)
+createBtn(pages.Settings, "💠  Cyber",   currentTheme.Button, 3, function() applyTheme(Themes.Cyber) end)
+createBtn(pages.Settings, "🔴  Rouge",   currentTheme.Button, 4, function() applyTheme(Themes.Rouge) end)
+createBtn(pages.Settings, "🟢  Vert",    currentTheme.Button, 5, function() applyTheme(Themes.Vert)  end)
 
-createSection(pages.Settings, "📐  Size", 4)
-createBtn(pages.Settings, "➕  Enlarge (+40)", currentTheme.Button, 3, function()
-	applyMenuSize(menuW + 40, menuH + 40)
-end)
-createBtn(pages.Settings, "➖  Reduce (-40)", currentTheme.Button, 4, function()
-	applyMenuSize(math.max(280, menuW - 40), math.max(380, menuH - 40))
-end)
-createBtn(pages.Settings, "↔  +Width Only", currentTheme.Button, 5, function()
-	applyMenuSize(menuW + 40, menuH)
-end)
-createBtn(pages.Settings, "↕  +Height Only", currentTheme.Button, 6, function()
-	applyMenuSize(menuW, menuH + 40)
-end)
-createBtn(pages.Settings, "↩  Reset Size", currentTheme.Button, 7, function()
-	applyMenuSize(360, 480)
-end)
-createSection(pages.Settings, "💾  Configuration", 7)
+createSection(pages.Settings, "📐  Taille du menu", 10)
+createBtn(pages.Settings, "➕  Agrandir tout (+40)",        currentTheme.Button, 11, function() applyMenuSize(menuW + 40, menuH + 40) end)
+createBtn(pages.Settings, "➖  Rétrécir tout (-40)",        currentTheme.Button, 12, function() applyMenuSize(math.max(280, menuW - 40), math.max(380, menuH - 40)) end)
+createBtn(pages.Settings, "➡  +Largeur droite",            currentTheme.Button, 13, function() applyMenuSize(menuW + 40, menuH) end)
+createBtn(pages.Settings, "⬅  -Largeur gauche",            currentTheme.Button, 14, function() applyMenuSize(math.max(280, menuW - 40), menuH) end)
+createBtn(pages.Settings, "⬆  +Hauteur seulement",         currentTheme.Button, 15, function() applyMenuSize(menuW, menuH + 40) end)
+createBtn(pages.Settings, "⬇  -Hauteur seulement",         currentTheme.Button, 16, function() applyMenuSize(menuW, math.max(380, menuH - 40)) end)
+createBtn(pages.Settings, "↩  Reset taille",               currentTheme.Button, 17, function() applyMenuSize(360, 480) end)
+
+createSection(pages.Settings, "💾  Configuration", 18)
 
 -- Save/load via writefile/readfile (Roblox executors)
 local CONFIG_FILE = "AdminMenu_config.json"
@@ -2709,34 +2746,61 @@ local function buildESPFor(p)
 		table.insert(objs, hl)
 	end
 
-	-- BOX 2D (BillboardGui cadre toujours visible)
+	-- BOX ESP propre : coins + contour net (AlwaysOnTop via Highlight invisible)
 	if espState.boxes then
-		local bb = mkBB(hrp, "ESP_Box", 60, 90, 0)
-		-- Fond légèrement coloré
+		local bb = mkBB(hrp, "ESP_Box", 58, 88, 0)
+		bb.StudsOffset = Vector3.new(0, 0.4, 0)
+		bb.AlwaysOnTop = true
+
+		-- Fond très léger pour voir la boite traverser les murs
 		local bg = Instance.new("Frame", bb)
 		bg.Size = UDim2.new(1,0,1,0)
 		bg.BackgroundColor3 = color
 		bg.BackgroundTransparency = 0.88
 		bg.BorderSizePixel = 0
-		Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 4)
-		-- Bordure principale
-		local stroke2 = Instance.new("UIStroke", bg)
-		stroke2.Color = color
-		stroke2.Thickness = 2
-		stroke2.Transparency = 0
-		stroke2.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-		-- Bordure intérieure glow (blanc semi-transparent)
-		local inner = Instance.new("Frame", bb)
-		inner.Size = UDim2.new(1,-4,1,-4)
-		inner.Position = UDim2.new(0,2,0,2)
-		inner.BackgroundTransparency = 1
-		inner.BorderSizePixel = 0
-		Instance.new("UICorner", inner).CornerRadius = UDim.new(0, 3)
-		local innerStroke = Instance.new("UIStroke", inner)
-		innerStroke.Color = Color3.new(1,1,1)
-		innerStroke.Thickness = 0.8
-		innerStroke.Transparency = 0.75
-		innerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+		-- Bordure nette
+		local outline = Instance.new("UIStroke", bg)
+		outline.Color = Color3.new(0,0,0)
+		outline.Thickness = 3
+		outline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+		local border = Instance.new("UIStroke", bg)
+
+		-- Coins décoratifs (L-shapes)
+		local CORNER = 12  -- longueur du coin en pixels
+		local THICK  = 2   -- épaisseur
+		local corners = {
+			-- haut-gauche horizontal
+			{x=0, y=0, w=CORNER, h=THICK},
+			-- haut-gauche vertical
+			{x=0, y=0, w=THICK,  h=CORNER},
+			-- haut-droite horizontal
+			{x=1, y=0, ox=-CORNER, w=CORNER, h=THICK},
+			-- haut-droite vertical
+			{x=1, y=0, ox=-THICK,  w=THICK,  h=CORNER},
+			-- bas-gauche horizontal
+			{x=0, y=1, oy=-THICK,  w=CORNER, h=THICK},
+			-- bas-gauche vertical
+			{x=0, y=1, oy=-CORNER, w=THICK,  h=CORNER},
+			-- bas-droite horizontal
+			{x=1, y=1, ox=-CORNER, oy=-THICK,  w=CORNER, h=THICK},
+			-- bas-droite vertical
+			{x=1, y=1, ox=-THICK,  oy=-CORNER, w=THICK,  h=CORNER},
+		}
+		for _, c in ipairs(corners) do
+			local f = Instance.new("Frame", bb)
+			f.BorderSizePixel = 0
+			f.BackgroundColor3 = color
+			f.AnchorPoint = Vector2.new(c.x or 0, c.y or 0)
+			f.Position = UDim2.new(c.x or 0, c.ox or 0, c.y or 0, c.oy or 0)
+			f.Size = UDim2.new(0, c.w, 0, c.h)
+			-- ombre noire derrière chaque coin
+			local shadow = Instance.new("UIStroke", f)
+			shadow.Color = Color3.new(0,0,0)
+			shadow.Thickness = 1
+		end
+
 		table.insert(objs, bb)
 	end
 
