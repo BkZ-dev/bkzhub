@@ -2161,23 +2161,30 @@ local function applyTheme(t)
 	end
 end
 
-createSection(pages.Settings, "🎨  Thèmes & Couleurs", 0)
-createBtn(pages.Settings, "🌑  Dark",    currentTheme.Button, 1, function() applyTheme(Themes.Dark)  end)
-createBtn(pages.Settings, "🌕  Light",   currentTheme.Button, 2, function() applyTheme(Themes.Light) end)
-createBtn(pages.Settings, "💠  Cyber",   currentTheme.Button, 3, function() applyTheme(Themes.Cyber) end)
-createBtn(pages.Settings, "🔴  Rouge",   currentTheme.Button, 4, function() applyTheme(Themes.Rouge) end)
-createBtn(pages.Settings, "🟢  Vert",    currentTheme.Button, 5, function() applyTheme(Themes.Vert)  end)
+createSection(pages.Settings, "🎨  Theme", 0)
+createBtn(pages.Settings, "🌑  Dark",  currentTheme.Button, 1, function() applyTheme(Themes.Dark)  end)
+createBtn(pages.Settings, "🌕  Light", currentTheme.Button, 2, function() applyTheme(Themes.Light) end)
+createBtn(pages.Settings, "💠  Cyber", currentTheme.Button, 3, function() applyTheme(Themes.Cyber) end)
+createBtn(pages.Settings, "🔴  Red",   currentTheme.Button, 4, function() applyTheme(Themes.Rouge) end)
+createBtn(pages.Settings, "🟢  Green", currentTheme.Button, 5, function() applyTheme(Themes.Vert)  end)
 
-createSection(pages.Settings, "📐  Taille du menu", 10)
-createBtn(pages.Settings, "➕  Agrandir tout (+40)",        currentTheme.Button, 11, function() applyMenuSize(menuW + 40, menuH + 40) end)
-createBtn(pages.Settings, "➖  Rétrécir tout (-40)",        currentTheme.Button, 12, function() applyMenuSize(math.max(280, menuW - 40), math.max(380, menuH - 40)) end)
-createBtn(pages.Settings, "➡  +Largeur droite",            currentTheme.Button, 13, function() applyMenuSize(menuW + 40, menuH) end)
-createBtn(pages.Settings, "⬅  -Largeur gauche",            currentTheme.Button, 14, function() applyMenuSize(math.max(280, menuW - 40), menuH) end)
-createBtn(pages.Settings, "⬆  +Hauteur seulement",         currentTheme.Button, 15, function() applyMenuSize(menuW, menuH + 40) end)
-createBtn(pages.Settings, "⬇  -Hauteur seulement",         currentTheme.Button, 16, function() applyMenuSize(menuW, math.max(380, menuH - 40)) end)
-createBtn(pages.Settings, "↩  Reset taille",               currentTheme.Button, 17, function() applyMenuSize(360, 480) end)
+createSection(pages.Settings, "📐  Menu Size", 6)
+createBtn(pages.Settings, "➕  Enlarge (+40)",      currentTheme.Button, 7,  function() applyMenuSize(menuW + 40, menuH + 40) end)
+createBtn(pages.Settings, "➖  Reduce (-40)",       currentTheme.Button, 8,  function() applyMenuSize(math.max(280, menuW - 40), math.max(380, menuH - 40)) end)
+createBtn(pages.Settings, "➡  +Width Only",        currentTheme.Button, 9,  function() applyMenuSize(menuW + 40, menuH) end)
+createBtn(pages.Settings, "⬅  -Width Only",        currentTheme.Button, 10, function() applyMenuSize(math.max(280, menuW - 40), menuH) end)
+createBtn(pages.Settings, "⬆  +Height Only",       currentTheme.Button, 11, function() applyMenuSize(menuW, menuH + 40) end)
+createBtn(pages.Settings, "⬇  -Height Only",       currentTheme.Button, 12, function() applyMenuSize(menuW, math.max(380, menuH - 40)) end)
+createBtn(pages.Settings, "↩  Reset Size",          currentTheme.Button, 13, function() applyMenuSize(360, 480) end)
 
-createSection(pages.Settings, "💾  Configuration", 18)
+createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 14, function(val)
+	main.BackgroundTransparency = 1 - (val / 100)
+end)
+createBtn(pages.Settings, "🏠  Recenter Menu", currentTheme.Button, 15, function()
+	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
+end)
+
+createSection(pages.Settings, "💾  Configuration", 16)
 
 -- Save/load via writefile/readfile (Roblox executors)
 local CONFIG_FILE = "AdminMenu_config.json"
@@ -2232,13 +2239,13 @@ local function loadConfig()
 		applyConfig(result)
 		showNotification("✅  Config loaded!", 3)
 	else
-		showNotification("❌  None config trouvée", 3)
+		showNotification("❌  No config found", 3)
 	end
 end
 
-createBtn(pages.Settings, "💾  Save Config", currentTheme.Success, 20, saveConfig)
-createBtn(pages.Settings, "📂  Load Config", currentTheme.Button,  21, loadConfig)
-createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger, 22, function()
+createBtn(pages.Settings, "💾  Save Config",  currentTheme.Success, 17, saveConfig)
+createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  18, loadConfig)
+createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  19, function()
 	applyTheme(Themes.Dark)
 	applyMenuSize(360, 480)
 	aimKey = "Mouse2"; aimMode = "hold"; flySpeed = 40
@@ -2246,15 +2253,7 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger, 22, functio
 	showNotification("↩  Config reset", 2)
 end)
 
-createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 8, function(val)
-	main.BackgroundTransparency = 1 - (val / 100)
-end)
-
-createBtn(pages.Settings, "🏠  Recenter Menu", currentTheme.Button, 9, function()
-	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
-end)
-
-createSection(pages.Settings, "ℹ  Info", 10)
+createSection(pages.Settings, "ℹ  Info", 20)
 local infoLbl = Instance.new("TextLabel", pages.Settings)
 infoLbl.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move\n🌐 bkz HUB v3.8  •  " .. player.Name
 infoLbl.Size = UDim2.new(1, 0, 0, 60)
@@ -2264,7 +2263,7 @@ infoLbl.Font = Enum.Font.Gotham
 infoLbl.TextSize = 11
 infoLbl.TextWrapped = true
 infoLbl.TextYAlignment = Enum.TextYAlignment.Top
-infoLbl.LayoutOrder = 11
+infoLbl.LayoutOrder = 21
 
 -- ================================================
 
