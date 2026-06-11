@@ -1,5 +1,5 @@
 -- ================================================
---  bkz HUB v3.8 | By bkz | Keys B for open !
+--  bkz HUB v4.0 | By bkz | Keys B for open !
 -- ================================================
 task.wait(1)
 
@@ -18,82 +18,95 @@ local playerGui = player:WaitForChild("PlayerGui")
 if playerGui:FindFirstChild("AdminMenu") then playerGui.AdminMenu:Destroy() end
 
 -- ================================================
+--  Hover sound system (soft click)
+-- ================================================
+local hoverSoundId = "rbxassetid://8686980613"
+local function playHover()
+	local s = Instance.new("Sound")
+	s.SoundId = hoverSoundId
+	s.Volume = 0.25
+	s.Parent = gui
+	s:Play()
+	Debris:AddItem(s, 1)
+end
+
+-- ================================================
 -- ================================================
 local Themes = {
 	Dark = {
-		BG        = Color3.fromRGB(18, 18, 24),
-		Panel     = Color3.fromRGB(28, 28, 36),
-		Button    = Color3.fromRGB(40, 40, 55),
-		ButtonHov = Color3.fromRGB(60, 60, 80),
-		Accent    = Color3.fromRGB(100, 80, 255),
-		AccentHov = Color3.fromRGB(130, 110, 255),
-		Text      = Color3.fromRGB(220, 220, 240),
-		SubText   = Color3.fromRGB(140, 140, 170),
-		Tab       = Color3.fromRGB(22, 22, 30),
-		TabActive = Color3.fromRGB(100, 80, 255),
-		Danger    = Color3.fromRGB(220, 60, 80),
-		Success   = Color3.fromRGB(60, 200, 120),
-		Warn      = Color3.fromRGB(255, 170, 50),
+		BG        = Color3.fromRGB(10, 10, 16),
+		Panel     = Color3.fromRGB(20, 20, 30),
+		Button    = Color3.fromRGB(35, 35, 50),
+		ButtonHov = Color3.fromRGB(55, 55, 75),
+		Accent    = Color3.fromRGB(130, 100, 255),
+		AccentHov = Color3.fromRGB(160, 135, 255),
+		Text      = Color3.fromRGB(245, 245, 255),
+		SubText   = Color3.fromRGB(160, 160, 190),
+		Tab       = Color3.fromRGB(15, 15, 22),
+		TabActive = Color3.fromRGB(130, 100, 255),
+		Danger    = Color3.fromRGB(255, 60, 80),
+		Success   = Color3.fromRGB(50, 220, 120),
+		Warn      = Color3.fromRGB(255, 190, 50),
 	},
 	Light = {
-		BG        = Color3.fromRGB(240, 240, 248),
+		BG        = Color3.fromRGB(230, 230, 240),
 		Panel     = Color3.fromRGB(255, 255, 255),
-		Button    = Color3.fromRGB(220, 220, 235),
-		ButtonHov = Color3.fromRGB(200, 200, 220),
-		Accent    = Color3.fromRGB(100, 80, 255),
-		AccentHov = Color3.fromRGB(80, 60, 220),
-		Text      = Color3.fromRGB(30, 30, 50),
-		SubText   = Color3.fromRGB(100, 100, 130),
-		Tab       = Color3.fromRGB(230, 230, 245),
-		TabActive = Color3.fromRGB(100, 80, 255),
-		Danger    = Color3.fromRGB(200, 40, 60),
-		Success   = Color3.fromRGB(40, 170, 90),
-		Warn      = Color3.fromRGB(200, 130, 20),
+		Button    = Color3.fromRGB(210, 210, 228),
+		ButtonHov = Color3.fromRGB(185, 185, 210),
+		Accent    = Color3.fromRGB(110, 90, 255),
+		AccentHov = Color3.fromRGB(85, 65, 230),
+		Text      = Color3.fromRGB(15, 15, 35),
+		SubText   = Color3.fromRGB(90, 90, 120),
+		Tab       = Color3.fromRGB(220, 220, 238),
+		TabActive = Color3.fromRGB(110, 90, 255),
+		Danger    = Color3.fromRGB(220, 35, 50),
+		Success   = Color3.fromRGB(30, 190, 80),
+		Warn      = Color3.fromRGB(220, 140, 15),
 	},
 	Cyber = {
-		BG        = Color3.fromRGB(5, 12, 20),
-		Panel     = Color3.fromRGB(8, 20, 35),
-		Button    = Color3.fromRGB(10, 35, 55),
-		ButtonHov = Color3.fromRGB(15, 55, 80),
-		Accent    = Color3.fromRGB(0, 210, 255),
-		AccentHov = Color3.fromRGB(50, 230, 255),
-		Text      = Color3.fromRGB(180, 240, 255),
-		SubText   = Color3.fromRGB(80, 160, 200),
-		Tab       = Color3.fromRGB(6, 16, 28),
-		TabActive = Color3.fromRGB(0, 210, 255),
-		Danger    = Color3.fromRGB(255, 50, 100),
-		Success   = Color3.fromRGB(0, 255, 160),
-		Warn      = Color3.fromRGB(255, 200, 0),
+		BG        = Color3.fromRGB(2, 8, 15),
+		Panel     = Color3.fromRGB(5, 16, 30),
+		Button    = Color3.fromRGB(8, 30, 50),
+		ButtonHov = Color3.fromRGB(12, 50, 78),
+		Accent    = Color3.fromRGB(0, 230, 255),
+		AccentHov = Color3.fromRGB(60, 245, 255),
+		Text      = Color3.fromRGB(200, 250, 255),
+		SubText   = Color3.fromRGB(100, 190, 230),
+		Tab       = Color3.fromRGB(4, 12, 22),
+		TabActive = Color3.fromRGB(0, 230, 255),
+		Danger    = Color3.fromRGB(255, 40, 90),
+		Success   = Color3.fromRGB(0, 255, 170),
+		Warn      = Color3.fromRGB(255, 220, 0),
 	},
 	Rouge = {
-		BG        = Color3.fromRGB(20, 8, 8),
-		Panel     = Color3.fromRGB(35, 12, 12),
-		Button    = Color3.fromRGB(55, 18, 18),
-		ButtonHov = Color3.fromRGB(80, 28, 28),
-		Accent    = Color3.fromRGB(255, 60, 80),
-		AccentHov = Color3.fromRGB(255, 90, 110),
-		Text      = Color3.fromRGB(255, 220, 220),
-		SubText   = Color3.fromRGB(180, 120, 120),
-		Tab       = Color3.fromRGB(28, 10, 10),
-		TabActive = Color3.fromRGB(255, 60, 80),
-		Danger    = Color3.fromRGB(255, 40, 60),
-		Success   = Color3.fromRGB(60, 200, 120),
-		Warn      = Color3.fromRGB(255, 170, 50),
+		BG        = Color3.fromRGB(18, 5, 5),
+		Panel     = Color3.fromRGB(30, 8, 8),
+		Button    = Color3.fromRGB(50, 14, 14),
+		ButtonHov = Color3.fromRGB(78, 22, 22),
+		Accent    = Color3.fromRGB(255, 60, 85),
+		AccentHov = Color3.fromRGB(255, 95, 115),
+		Text      = Color3.fromRGB(255, 230, 230),
+		SubText   = Color3.fromRGB(200, 140, 140),
+		Tab       = Color3.fromRGB(24, 7, 7),
+		TabActive = Color3.fromRGB(255, 60, 85),
+		Danger    = Color3.fromRGB(255, 30, 50),
+		Success   = Color3.fromRGB(50, 220, 110),
+		Warn      = Color3.fromRGB(255, 180, 45),
 	},
 	Vert = {
-		BG        = Color3.fromRGB(6, 18, 10),
-		Panel     = Color3.fromRGB(10, 28, 16),
-		Button    = Color3.fromRGB(14, 45, 24),
-		ButtonHov = Color3.fromRGB(20, 65, 35),
-		Accent    = Color3.fromRGB(50, 220, 100),
-		AccentHov = Color3.fromRGB(80, 240, 130),
-		Text      = Color3.fromRGB(200, 255, 220),
-		SubText   = Color3.fromRGB(100, 180, 130),
-		Tab       = Color3.fromRGB(8, 22, 13),
-		TabActive = Color3.fromRGB(50, 220, 100),
-		Danger    = Color3.fromRGB(220, 60, 80),
-		Success   = Color3.fromRGB(50, 220, 100),
-		Warn      = Color3.fromRGB(255, 200, 50),
+		BG        = Color3.fromRGB(4, 14, 7),
+		Panel     = Color3.fromRGB(7, 22, 12),
+		Button    = Color3.fromRGB(10, 38, 20),
+		ButtonHov = Color3.fromRGB(15, 58, 30),
+		Accent    = Color3.fromRGB(40, 240, 100),
+		AccentHov = Color3.fromRGB(70, 255, 135),
+		Text      = Color3.fromRGB(210, 255, 225),
+		SubText   = Color3.fromRGB(110, 200, 145),
+		Tab       = Color3.fromRGB(5, 18, 10),
+		TabActive = Color3.fromRGB(40, 240, 100),
+		Danger    = Color3.fromRGB(240, 50, 70),
+		Success   = Color3.fromRGB(40, 240, 100),
+		Warn      = Color3.fromRGB(255, 210, 40),
 	},
 }
 local currentTheme = Themes.Dark
@@ -107,24 +120,37 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
 gui.ResetOnSpawn = false
 
+-- Drop shadow behind main
+local shadow = Instance.new("ImageLabel", gui)
+shadow.Size = UDim2.new(0, 380, 0, 500)
+shadow.Position = UDim2.new(0.5, -190, 0.5, -250)
+shadow.BackgroundTransparency = 1
+shadow.Image = "rbxassetid://11081004466"
+shadow.ImageColor3 = Color3.new(0, 0, 0)
+shadow.ImageTransparency = 0.5
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(10, 10, 100, 100)
+shadow.ZIndex = 0
+
 -- Main window
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 360, 0, 480)
-main.Position = UDim2.new(0.5, -180, 0.5, -240)
+main.Size = UDim2.new(0, 380, 0, 500)
+main.Position = UDim2.new(0.5, -190, 0.5, -250)
 main.BackgroundColor3 = currentTheme.BG
 main.BorderSizePixel = 0
+main.ZIndex = 1
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
 
--- Stroke
+-- Stroke (stronger)
 local stroke = Instance.new("UIStroke", main)
 stroke.Color = currentTheme.Accent
-stroke.Thickness = 1.5
-stroke.Transparency = 0.5
+stroke.Thickness = 2.5
+stroke.Transparency = 0.25
 
 -- ================================================
 -- ================================================
 local header = Instance.new("Frame", main)
-header.Size = UDim2.new(1, 0, 0, 48)
+header.Size = UDim2.new(1, 0, 0, 52)
 header.BackgroundColor3 = currentTheme.Panel
 header.BorderSizePixel = 0
 Instance.new("UICorner", header).CornerRadius = UDim.new(0, 12)
@@ -143,13 +169,13 @@ title.Position = UDim2.new(0, 15, 0, 0)
 title.BackgroundTransparency = 1
 title.TextColor3 = currentTheme.Text
 title.Font = Enum.Font.GothamBold
-title.TextSize = 15
+title.TextSize = 17
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 local subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v3.8  •  " .. player.Name
+subtitle.Text = "v4.0  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -50, 0, 14)
-subtitle.Position = UDim2.new(0, 15, 0, 30)
+subtitle.Position = UDim2.new(0, 15, 0, 32)
 subtitle.BackgroundTransparency = 1
 subtitle.TextColor3 = currentTheme.SubText
 subtitle.Font = Enum.Font.Gotham
@@ -172,8 +198,8 @@ closeBtn.MouseButton1Click:Connect(function() gui.Enabled = false end)
 -- ================================================
 -- ================================================
 local tabBar = Instance.new("Frame", main)
-tabBar.Size = UDim2.new(1, -20, 0, 36)
-tabBar.Position = UDim2.new(0, 10, 0, 52)
+tabBar.Size = UDim2.new(1, -20, 0, 38)
+tabBar.Position = UDim2.new(0, 10, 0, 56)
 tabBar.BackgroundColor3 = currentTheme.Tab
 tabBar.BorderSizePixel = 0
 Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 8)
@@ -203,8 +229,8 @@ for _, def in ipairs(tabDefs) do
 
 	local page = Instance.new("ScrollingFrame", main)
 	page.Name = def.name
-	page.Size = UDim2.new(1, -20, 1, -102)
-	page.Position = UDim2.new(0, 10, 0, 95)
+	page.Size = UDim2.new(1, -20, 1, -108)
+	page.Position = UDim2.new(0, 10, 0, 100)
 	page.BackgroundTransparency = 1
 	page.BorderSizePixel = 0
 	page.ScrollBarThickness = 4
@@ -237,7 +263,9 @@ for _, def in ipairs(tabDefs) do
 	nameLbl.Font = Enum.Font.Gotham
 	nameLbl.TextSize = 8
 	nameLbl.TextColor3 = currentTheme.SubText
+	tb.MouseEnter:Connect(playHover)
 	tb.MouseButton1Click:Connect(function()
+		playHover()
 		activeTab = def.name
 		for n, p in pairs(pages) do p.Visible = (n == def.name) end
 		for n, b in pairs(tabBtns) do
@@ -285,10 +313,11 @@ local function createBtn(parent, text, color, order, func)
 	btn.BorderSizePixel = 0
 
 	btn.MouseEnter:Connect(function()
-		TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.ButtonHov}):Play()
+		playHover()
+		TweenService:Create(frame, TweenInfo.new(0.1), {BackgroundColor3 = currentTheme.ButtonHov}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
-		TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundColor3 = color}):Play()
+		TweenService:Create(frame, TweenInfo.new(0.1), {BackgroundColor3 = color}):Play()
 	end)
 	btn.MouseButton1Click:Connect(func)
 	return frame, btn
@@ -332,7 +361,9 @@ local function createToggle(parent, text, order, func)
 	hitbox.BackgroundTransparency = 1
 	hitbox.Text = ""
 
+	hitbox.MouseEnter:Connect(playHover)
 	hitbox.MouseButton1Click:Connect(function()
+		playHover()
 		state = not state
 		TweenService:Create(track, TweenInfo.new(0.2), {BackgroundColor3 = state and currentTheme.Accent or Color3.fromRGB(70,70,90)}):Play()
 		TweenService:Create(knob, TweenInfo.new(0.2), {Position = state and UDim2.new(1,-19,0.5,-8) or UDim2.new(0,3,0.5,-8)}):Play()
@@ -433,7 +464,11 @@ local function createSlider(parent, text, min, max, default, order, func)
 		setVal(min + (max - min) * rel, true)
 	end
 
-	hitbox.MouseButton1Down:Connect(function() draggingSlider = true end)
+	hitbox.MouseButton1Down:Connect(function(x,y)
+		draggingSlider = true
+		playHover()
+		updateSlider({Position = Vector3.new(x,y,0)})
+	end)
 	UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then draggingSlider = false end end)
 	UIS.InputChanged:Connect(function(i) if draggingSlider and i.UserInputType == Enum.UserInputType.MouseMovement then updateSlider(i) end end)
 	hitbox.MouseButton1Down:Connect(function(x,y) updateSlider({Position = Vector3.new(x,y,0)}) end)
@@ -552,7 +587,7 @@ local function playInstantTransmissionFX(position)
 	-- His departure: whoosh, powerful!
 	local snd1 = Instance.new("Sound", hrp)
 	snd1.SoundId = "rbxassetid://126099526912322"
-	snd1.Volume = 2.5; snd1.PlaybackSpeed = 1.3
+	snd1.Volume = 0.8; snd1.PlaybackSpeed = 1.3
 	snd1:Play(); Debris:AddItem(snd1, 2)
 
 	-- Afterimage of the original character's ghost
@@ -593,7 +628,7 @@ local function playInstantTransmissionFX(position)
 	-- Its arrival impact
 	local snd2 = Instance.new("Sound", hrp)
 	snd2.SoundId = "rbxassetid://3716468774"
-	snd2.Volume = 2; snd2.PlaybackSpeed = 0.85
+	snd2.Volume = 0.6; snd2.PlaybackSpeed = 0.85
 	snd2:Play(); Debris:AddItem(snd2, 2)
 
 	local arrCF = hrp.CFrame
@@ -637,12 +672,12 @@ UIS.InputBegan:Connect(function(input, gpe)
 		if hrp then
 			local sndTP = Instance.new("Sound", hrp)
 			sndTP.SoundId = "rbxassetid://126099526912322"
-			sndTP.Volume = 1.5; sndTP.PlaybackSpeed = 1.2
+			sndTP.Volume = 0.5; sndTP.PlaybackSpeed = 1.2
 			sndTP:Play(); Debris:AddItem(sndTP, 2)
 
 			local sndImpact = Instance.new("Sound", hrp)
 			sndImpact.SoundId = "rbxassetid://135938385687045"
-			sndImpact.Volume = 1; sndImpact.PlaybackSpeed = 0.9
+			sndImpact.Volume = 0.35; sndImpact.PlaybackSpeed = 0.9
 			task.delay(0.05, function() sndImpact:Play() end)
 			Debris:AddItem(sndImpact, 2)
 		end
@@ -699,12 +734,13 @@ refreshBtn.TextColor3 = Color3.new(1,1,1)
 refreshBtn.Font = Enum.Font.GothamBold
 refreshBtn.TextSize = 16
 
-refreshBtn.MouseEnter:Connect(function()
-	TweenService:Create(refreshFrame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.AccentHov}):Play()
-end)
-refreshBtn.MouseLeave:Connect(function()
-	TweenService:Create(refreshFrame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.Accent}):Play()
-end)
+	refreshBtn.MouseEnter:Connect(function()
+		playHover()
+		TweenService:Create(refreshFrame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.AccentHov}):Play()
+	end)
+	refreshBtn.MouseLeave:Connect(function()
+		TweenService:Create(refreshFrame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.Accent}):Play()
+	end)
 
 -- Results drop-down list
 local ddList = Instance.new("ScrollingFrame", pages.Player)
@@ -750,9 +786,9 @@ local function updateDD(filter)
 		pb.Font = Enum.Font.Gotham
 		pb.TextSize = 12
 		pb.TextXAlignment = Enum.TextXAlignment.Left
-		pb.MouseEnter:Connect(function() pb.BackgroundTransparency = 0.8 end)
+		pb.MouseEnter:Connect(function() playHover(); pb.BackgroundTransparency = 0.8 end)
 		pb.MouseLeave:Connect(function() pb.BackgroundTransparency = 1 end)
-		pb.MouseButton1Click:Connect(function() selectPlayer(p) end)
+		pb.MouseButton1Click:Connect(function() playHover(); selectPlayer(p) end)
 	end
 	local h = math.min(#results * 32, 130)
 	ddList.Visible = h > 0
@@ -981,6 +1017,77 @@ createBtn(pages.Player, "💬  Chat Spy (tous les joueurs)", currentTheme.Button
 	end
 end)
 
+createSection(pages.Player, "⚡  Force Modes", 9)
+
+createBtn(pages.Player, "🪑  Force All Sit", currentTheme.Button, 10, function()
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= player and p.Character then
+			local hum = p.Character:FindFirstChildOfClass("Humanoid")
+			if hum then pcall(function() hum.Sit = true end) end
+		end
+	end
+	showNotification("🪑  Tous assis!", 2)
+end)
+
+createBtn(pages.Player, "💀  Force All Kill", currentTheme.Danger, 11, function()
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= player and p.Character then
+			local hum = p.Character:FindFirstChildOfClass("Humanoid")
+			if hum then pcall(function() hum.Health = 0 end) end
+		end
+	end
+	showNotification("💀  Tous tués!", 2)
+end)
+
+createBtn(pages.Player, "🧊  Force All Freeze", currentTheme.Button, 12, function()
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= player and p.Character then
+			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then pcall(function() hrp.Anchored = true end) end
+		end
+	end
+	showNotification("🧊  Tous frozen!", 2)
+end)
+
+createBtn(pages.Player, "🧊  Force All Unfreeze", currentTheme.Button, 13, function()
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= player and p.Character then
+			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then pcall(function() hrp.Anchored = false end) end
+		end
+	end
+	showNotification("🧊  Tous unfrozen!", 2)
+end)
+
+createBtn(pages.Player, "🗡  Remove All Tools", currentTheme.Button, 14, function()
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= player and p.Character then
+			for _, t in ipairs(p.Character:GetChildren()) do
+				if t:IsA("Tool") then pcall(function() t:Destroy() end) end
+			end
+		end
+	end
+	showNotification("🗡  Tools supprimées!", 2)
+end)
+
+createBtn(pages.Player, "📡  Force All TP to Me", currentTheme.Accent, 15, function()
+	if not player.Character then return end
+	local myHRP = player.Character:FindFirstChild("HumanoidRootPart")
+	if not myHRP then return end
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= player and p.Character then
+			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				pcall(function()
+					hrp.Anchored = false
+					hrp.CFrame = myHRP.CFrame * CFrame.new(math.random(-4,4), 0, math.random(-4,4))
+				end)
+			end
+		end
+	end
+	showNotification("📡  Tous TP à vous!", 2)
+end)
+
 -- ================================================
 
 -- ================================================
@@ -1060,6 +1167,7 @@ local function enableFly()
 		if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.CFrame.RightVector end
 		if UIS:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
 		if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then dir = dir - Vector3.new(0,1,0) end
+		if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir * 2.5 end
 
 		if dir.Magnitude > 0 then dir = dir.Unit end
 
@@ -1096,7 +1204,7 @@ createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(st
 			local char = player.Character
 			if not char then return end
 			for _, part in ipairs(char:GetDescendants()) do
-				if part:IsA("BasePart") then part.CanCollide = false end
+				if part:IsA("BasePart") then part.CanCollide = false; part.Velocity = part.Velocity * 0.98 end
 			end
 			local hrp = char:FindFirstChild("HumanoidRootPart")
 			if hrp then hrp.CanCollide = false end
@@ -1190,11 +1298,135 @@ createToggle(pages.Personal, "🛡  God Mode (invincible)", 11, function(state)
 	if state then enableGod() else disableGod() end
 end)
 
+-- ===== ANTI-KICK BYPASS =====
+local antiKickEnabled = false
+local antiKickConns = {}
 
+local function stopAntiKick()
+	antiKickEnabled = false
+	for _, c in ipairs(antiKickConns) do pcall(c.Disconnect, c) end
+	antiKickConns = {}
+end
+
+local function startAntiKick()
+	stopAntiKick()
+	antiKickEnabled = true
+	-- Block Kick/Remove (some games kick via PlayerRemoving or Kick)
+	local c1 = player:GetPropertyChangedSignal("Parent"):Connect(function()
+		if not antiKickEnabled then return end
+		if player.Parent ~= Players then
+			pcall(function() player.Parent = Players end)
+		end
+	end)
+	table.insert(antiKickConns, c1)
+	-- Override Kick method if accessible
+	local c2 = player.ChildAdded:Connect(function(c)
+		if c:IsA("StringValue") and c.Name:lower():find("kick") then
+			c:Destroy()
+		end
+	end)
+	table.insert(antiKickConns, c2)
+end
+
+createToggle(pages.Personal, "🚫  Anti-Kick Bypass", 12, function(state)
+	if state then startAntiKick() else stopAntiKick() end
+end)
+
+-- ===== NO FALL DAMAGE =====
+local noFallEnabled = false
+local noFallConn = nil
+
+local function enableNoFall()
+	noFallEnabled = true
+	noFallConn = RunService.Heartbeat:Connect(function()
+		if not noFallEnabled then return end
+		local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+		if hum then
+			local hv = hum:GetState() == Enum.HumanoidStateType.Freefall or hum:GetState() == Enum.HumanoidStateType.Jumping
+			if not hv and hum.FloorMaterial == Enum.Material.Air then
+				local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+				if hrp and hrp.Velocity.Y < -50 then
+					pcall(function() hum.Health = hum.Health + math.abs(hrp.Velocity.Y) * 0.5 end)
+				end
+			end
+		end
+	end)
+end
+
+local function disableNoFall()
+	noFallEnabled = false
+	if noFallConn then noFallConn:Disconnect(); noFallConn = nil end
+end
+
+createToggle(pages.Personal, "🦶  No Fall Damage", 13, function(state)
+	if state then enableNoFall() else disableNoFall() end
+end)
+
+-- ===== ANTI-TOOL GRAB BYPASS =====
+local antiGrabEnabled = false
+local antiGrabConn = nil
+
+local function enableAntiGrab()
+	antiGrabEnabled = true
+	antiGrabConn = RunService.Heartbeat:Connect(function()
+		if not antiGrabEnabled then return end
+		local char = player.Character
+		if not char then return end
+		for _, t in ipairs(char:GetChildren()) do
+			if t:IsA("Tool") then
+				pcall(function()
+					if t.Parent ~= char then t.Parent = char end
+				end)
+			end
+		end
+	end)
+end
+
+local function disableAntiGrab()
+	antiGrabEnabled = false
+	if antiGrabConn then antiGrabConn:Disconnect(); antiGrabConn = nil end
+end
+
+createToggle(pages.Personal, "🔒  Anti-Tool Grab", 14, function(state)
+	if state then enableAntiGrab() else disableAntiGrab() end
+end)
+
+-- ===== ANTI-CHEAT BYPASS =====
+local antiCheatEnabled = false
+local antiCheatConns = {}
+
+local function stopAntiCheat()
+	antiCheatEnabled = false
+	for _, c in ipairs(antiCheatConns) do pcall(c.Disconnect, c) end
+	antiCheatConns = {}
+end
+
+local function startAntiCheat()
+	stopAntiCheat()
+	antiCheatEnabled = true
+	local c1 = player.CharacterAdded:Connect(function(char)
+		task.wait(0.3)
+		if not antiCheatEnabled then return end
+		for _, v in ipairs(char:GetDescendants()) do
+			local n = v.Name:lower()
+			if (v:IsA("Script") or v:IsA("LocalScript")) and (n:find("ant") or n:find("cheat") or n:find("kick") or n:find("ban") or n:find("detect")) then
+				pcall(function() v.Disabled = true end)
+			end
+			if v:IsA("StringValue") and (n:find("ant") or n:find("ban")) then
+				pcall(function() v:Destroy() end)
+			end
+		end
+	end)
+	table.insert(antiCheatConns, c1)
+end
+
+createToggle(pages.Personal, "🛡  Anti-Cheat Bypass", 15, function(state)
+	if state then startAntiCheat() else stopAntiCheat() end
+end)
 
 -- Infinite Jump
 local jumpConn = nil
-createToggle(pages.Personal, "🦘  Infinite Jump", 13, function(state)
+createToggle(pages.Personal, "🦘  Infinite Jump", 14, function(state)
 	if state then
 		jumpConn = UIS.JumpRequest:Connect(function()
 			local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
@@ -1205,7 +1437,7 @@ createToggle(pages.Personal, "🦘  Infinite Jump", 13, function(state)
 	end
 end)
 
-createSection(pages.Personal, "🎯  Combat", 14)
+createSection(pages.Personal, "🎯  Combat", 16)
 
 -- ===== UNLIMITED AMMO =====
 local ammoEnabled   = false
@@ -1262,7 +1494,7 @@ local function watchAmmoChar(char)
 	table.insert(ammoConns, c)
 end
 
-createToggle(pages.Personal, "🔫  Unlimited Ammo", 15, function(state)
+createToggle(pages.Personal, "🔫  Unlimited Ammo", 17, function(state)
 	ammoEnabled = state
 	ammoCleanup()
 	if not state then return end
@@ -1324,7 +1556,7 @@ local function watchReloadChar(char)
 	table.insert(reloadConns, c)
 end
 
-createToggle(pages.Personal, "⚡  Instant Reload", 16, function(state)
+createToggle(pages.Personal, "⚡  Instant Reload", 18, function(state)
 	reloadEnabled = state
 	reloadCleanup()
 	if not state then return end
@@ -1362,7 +1594,7 @@ local function recoilPatchTool(tool)
 	end
 end
 
-createToggle(pages.Personal, "🎯  No Recoil", 17, function(state)
+createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
 	recoilEnabled = state
 	-- Nettoie les anciennes connexions
 	if recoilConn then recoilConn:Disconnect(); recoilConn = nil end
@@ -1425,6 +1657,35 @@ createToggle(pages.Personal, "🎯  No Recoil", 17, function(state)
 		table.insert(recoilConns, cc)
 	end)
 	table.insert(recoilConns, c2)
+end)
+
+-- ===== AUTO PARRY =====
+local autoParryEnabled = false
+local autoParryConn = nil
+
+local function enableAutoParry()
+	autoParryEnabled = true
+	autoParryConn = RunService.RenderStepped:Connect(function()
+		if not autoParryEnabled then return end
+		local char = player.Character
+		if not char then return end
+		-- Auto-block: tilt torso back slightly (mimics parry)
+		local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+		if torso then
+			pcall(function()
+				torso.CFrame = torso.CFrame * CFrame.Angles(0.15, 0, 0)
+			end)
+		end
+	end)
+end
+
+local function disableAutoParry()
+	autoParryEnabled = false
+	if autoParryConn then autoParryConn:Disconnect(); autoParryConn = nil end
+end
+
+createToggle(pages.Personal, "⚔  Auto Parry (block)", 20, function(state)
+	if state then enableAutoParry() else disableAutoParry() end
 end)
 
 -- ================================================
@@ -1524,30 +1785,37 @@ end
 -- Method 3: HumanoidRootPart CFrame orients towards target (fallback)
 local aimMethod = 1   -- méthode active
 
+local aimPrediction = 0.15
+local aimTargetPart = "Head"
+
 local function applyAim(head)
 	local cam = workspace.CurrentCamera
 
+	-- Simple prediction: lead the target based on velocity
+	local targetPos = head.Position
+	local hrpTarget = head.Parent and head.Parent:FindFirstChild("HumanoidRootPart")
+	if hrpTarget and aimPrediction > 0 then
+		targetPos = targetPos + hrpTarget.Velocity * aimPrediction
+	end
+
 	if aimMethod == 1 then
-		-- Direct cam.CFrame lerp
-		local targetCF = CFrame.new(cam.CFrame.Position, head.Position)
+		local targetCF = CFrame.new(cam.CFrame.Position, targetPos)
 		cam.CFrame = cam.CFrame:Lerp(targetCF, aimSmooth)
 
 	elseif aimMethod == 2 then
-		-- Via CameraType lock + LookAt
 		local prev = cam.CameraType
 		cam.CameraType = Enum.CameraType.Scriptable
-		local targetCF = CFrame.new(cam.CFrame.Position, head.Position)
+		local targetCF = CFrame.new(cam.CFrame.Position, targetPos)
 		cam.CFrame = cam.CFrame:Lerp(targetCF, aimSmooth)
 		cam.CameraType = prev
 
 	elseif aimMethod == 3 then
-		-- Rotate from the camera to the target (useful if the camera is blocked)
-		local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-		if hrp then
-			local dir = (head.Position - hrp.Position) * Vector3.new(1, 0, 1)
+		local myHrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if myHrp then
+			local dir = (targetPos - myHrp.Position) * Vector3.new(1, 0, 1)
 			if dir.Magnitude > 0.1 then
-				hrp.CFrame = hrp.CFrame:Lerp(
-					CFrame.new(hrp.Position, hrp.Position + dir),
+				myHrp.CFrame = myHrp.CFrame:Lerp(
+					CFrame.new(myHrp.Position, myHrp.Position + dir),
 					aimSmooth * 2
 				)
 			end
@@ -1627,15 +1895,19 @@ createNumberInput(pages.Personal, "🔵  FOV (radius pixels)", 250, 103, functio
 	aimFOV = val
 end)
 
+createSlider(pages.Personal, "🎯  Prediction (lead)", 0, 50, 15, 104, function(val)
+	aimPrediction = val / 100
+end)
+
 -- Mode Hold / Toggle
-createBtn(pages.Personal, "🔄  Mode: " .. aimMode, currentTheme.Button, 104, function(btn)
+createBtn(pages.Personal, "🔄  Mode: " .. aimMode, currentTheme.Button, 105, function(btn)
 	aimMode = (aimMode == "hold") and "toggle" or "hold"
 	updateAimStatus()
 	showNotification("🎯  Mode: " .. aimMode, 2)
 end)
 
 local methodNames = {"1 - Direct Cam", "2 - Scriptable Cam", "3 - HRP Orient"}
-createBtn(pages.Personal, "🔧  Method: " .. methodNames[aimMethod], currentTheme.Button, 105, function()
+createBtn(pages.Personal, "🔧  Method: " .. methodNames[aimMethod], currentTheme.Button, 106, function()
 	aimMethod = (aimMethod % 3) + 1
 	showNotification("🎯  Method: " .. methodNames[aimMethod], 2)
 end)
@@ -1690,9 +1962,10 @@ local function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 		row.Font = Enum.Font.Gotham; row.TextSize = 12
 		row.TextXAlignment = Enum.TextXAlignment.Left
 		row.BorderSizePixel = 0
-		row.MouseEnter:Connect(function() row.BackgroundTransparency = 0.8 end)
+		row.MouseEnter:Connect(function() playHover(); row.BackgroundTransparency = 0.8 end)
 		row.MouseLeave:Connect(function() row.BackgroundTransparency = 1 end)
 		row.MouseButton1Click:Connect(function()
+			playHover()
 			selIdx = i
 			htxt.Text = label .. " : " .. items[selIdx]
 			onPick(items[selIdx])
@@ -1705,7 +1978,9 @@ local function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 	local hbtn = Instance.new("TextButton", hdr)
 	hbtn.Size = UDim2.new(1,0,1,0)
 	hbtn.BackgroundTransparency = 1; hbtn.Text = ""
+	hbtn.MouseEnter:Connect(playHover)
 	hbtn.MouseButton1Click:Connect(function()
+		playHover()
 		open = not open
 		list.Visible = true
 		local h = open and math.min(#items * 27, 216) or 0
@@ -1718,14 +1993,14 @@ end
 local MOUSE_LABELS = {}
 for _, m in ipairs(MOUSE_KEYS) do table.insert(MOUSE_LABELS, m.label) end
 
-mkDropdown(pages.Personal, "🖱  Mouse", MOUSE_LABELS, 1, 105, function(lbl)
+mkDropdown(pages.Personal, "🖱  Mouse", MOUSE_LABELS, 1, 107, function(lbl)
 	for _, m in ipairs(MOUSE_KEYS) do
 		if m.label == lbl then aimKey = m.id; break end
 	end
 	updateAimStatus()
 end)
 
-mkDropdown(pages.Personal, "⌨  Keyboard", KEYBOARD_KEYS, 1, 106, function(key)
+mkDropdown(pages.Personal, "⌨  Keyboard", KEYBOARD_KEYS, 1, 108, function(key)
 	aimKey = key
 	updateAimStatus()
 end)
@@ -1942,8 +2217,8 @@ createToggle(pages.World, "🌧  Rain", 7, function(state)
 	-- Rain sound
 	local snd = Instance.new("Sound", rain)
 	snd.SoundId = "rbxassetid://9117963093"
-	snd.Volume = 0.8; snd.Looped = true
-	TweenService:Create(snd, TweenInfo.new(1.5), { Volume = 0.8 }):Play()
+	snd.Volume = 0.25; snd.Looped = true
+	TweenService:Create(snd, TweenInfo.new(1.5), { Volume = 0.25 }):Play()
 	snd:Play()
 
 	-- Thunder ambient sound
@@ -2055,7 +2330,7 @@ createToggle(pages.World, "❄  Snow", 8, function(state)
 		-- Wind sound
 		local snd = Instance.new("Sound", snow)
 		snd.SoundId = "rbxassetid://5800330726"
-		snd.Volume = 0.5; snd.Looped = true; snd:Play()
+		snd.Volume = 0.15; snd.Looped = true; snd:Play()
 
 		RunService:BindToRenderStep("AdminSnow", 1, function()
 			local c = player.Character
@@ -2138,7 +2413,7 @@ end)
 -- ================================================
 
 -- Size stored to avoid the AbsoluteSize+tween bug
-local menuW, menuH = 360, 480
+local menuW, menuH = 380, 500
 
 local function applyMenuSize(w, h)
 	menuW, menuH = w, h
@@ -2175,7 +2450,7 @@ createBtn(pages.Settings, "➡  +Width Only",        currentTheme.Button, 9,  fu
 createBtn(pages.Settings, "⬅  -Width Only",        currentTheme.Button, 10, function() applyMenuSize(math.max(280, menuW - 40), menuH) end)
 createBtn(pages.Settings, "⬆  +Height Only",       currentTheme.Button, 11, function() applyMenuSize(menuW, menuH + 40) end)
 createBtn(pages.Settings, "⬇  -Height Only",       currentTheme.Button, 12, function() applyMenuSize(menuW, math.max(380, menuH - 40)) end)
-createBtn(pages.Settings, "↩  Reset Size",          currentTheme.Button, 13, function() applyMenuSize(360, 480) end)
+createBtn(pages.Settings, "↩  Reset Size",          currentTheme.Button, 13, function() applyMenuSize(380, 500) end)
 
 createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 14, function(val)
 	main.BackgroundTransparency = 1 - (val / 100)
@@ -2200,15 +2475,19 @@ local function getConfig()
 		aimKey    = aimKey,
 		aimMode   = aimMode,
 		flySpeed  = flySpeed,
+		walkSpeed = savedWalkSpeed,
+		jumpPower = savedJumpPower,
 	}
 end
 
 local function applyConfig(cfg)
 	if cfg.theme and Themes[cfg.theme] then applyTheme(Themes[cfg.theme]) end
 	if cfg.menuW and cfg.menuH then applyMenuSize(cfg.menuW, cfg.menuH) end
-	if cfg.aimKey  then aimKey  = cfg.aimKey  end
-	if cfg.aimMode then aimMode = cfg.aimMode  end
-	if cfg.flySpeed then flySpeed   = cfg.flySpeed end
+	if cfg.aimKey   then aimKey   = cfg.aimKey   end
+	if cfg.aimMode  then aimMode  = cfg.aimMode  end
+	if cfg.flySpeed then flySpeed = cfg.flySpeed end
+	if cfg.walkSpeed then savedWalkSpeed = cfg.walkSpeed; applyMovement(player.Character) end
+	if cfg.jumpPower then savedJumpPower = cfg.jumpPower; applyMovement(player.Character) end
 	updateAimStatus()
 end
 
@@ -2247,15 +2526,17 @@ createBtn(pages.Settings, "💾  Save Config",  currentTheme.Success, 17, saveCo
 createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  18, loadConfig)
 createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  19, function()
 	applyTheme(Themes.Dark)
-	applyMenuSize(360, 480)
+	applyMenuSize(380, 500)
 	aimKey = "Mouse2"; aimMode = "hold"; flySpeed = 40
+	savedWalkSpeed = 16; savedJumpPower = 50
+	applyMovement(player.Character)
 	updateAimStatus()
 	showNotification("↩  Config reset", 2)
 end)
 
 createSection(pages.Settings, "ℹ  Info", 20)
 local infoLbl = Instance.new("TextLabel", pages.Settings)
-infoLbl.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move\n🌐 bkz HUB v3.8  •  " .. player.Name
+infoLbl.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move\n🌐 bkz HUB v4.0  •  " .. player.Name
 infoLbl.Size = UDim2.new(1, 0, 0, 60)
 infoLbl.BackgroundTransparency = 1
 infoLbl.TextColor3 = currentTheme.SubText
@@ -2341,6 +2622,14 @@ local function showNotification(message, duration)
 	end)
 end
 
+-- Backdrop overlay
+local backdrop = Instance.new("Frame", gui)
+backdrop.Size = UDim2.new(1, 0, 1, 0)
+backdrop.BackgroundColor3 = Color3.new(0, 0, 0)
+backdrop.BackgroundTransparency = 1
+backdrop.BorderSizePixel = 0
+backdrop.ZIndex = -1
+
 -- Displays the notification on launch
 showNotification("👉𝐁 Press <b>[B]</b> to open the menu", 5)
 
@@ -2350,10 +2639,13 @@ local function openMenu()
 	gui.Enabled = true
 	main.Size = UDim2.new(0, menuW, 0, 0)
 	main.BackgroundTransparency = 0.3
-	TweenService:Create(main, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	shadow.ImageTransparency = 1
+	TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Size = UDim2.new(0, menuW, 0, menuH),
 		BackgroundTransparency = 0
 	}):Play()
+	TweenService:Create(shadow, TweenInfo.new(0.25), {ImageTransparency = 0.5}):Play()
+	TweenService:Create(backdrop, TweenInfo.new(0.25), {BackgroundTransparency = 0.6}):Play()
 end
 
 local function closeMenu()
@@ -2361,10 +2653,13 @@ local function closeMenu()
 		Size = UDim2.new(0, menuW, 0, 0),
 		BackgroundTransparency = 0.3
 	}):Play()
+	TweenService:Create(shadow, TweenInfo.new(0.15), {ImageTransparency = 1}):Play()
+	TweenService:Create(backdrop, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
 	task.wait(0.15)
 	gui.Enabled = false
 	main.Size = UDim2.new(0, menuW, 0, menuH)
 	main.BackgroundTransparency = 0
+	backdrop.BackgroundTransparency = 1
 end
 
 closeBtn.MouseButton1Click:Connect(function()
@@ -2431,7 +2726,7 @@ local function spawnExplosionFX(pos)
 	if hrp then
 		local boom = Instance.new("Sound", hrp)
 		boom.SoundId = "rbxassetid://84792688181059"
-		boom.Volume = 5; boom.RollOffMaxDistance = 300
+		boom.Volume = 1.5; boom.RollOffMaxDistance = 300
 		boom:Play(); Debris:AddItem(boom, 3)
 	end
 end
@@ -2458,12 +2753,12 @@ local function startNuke()
 	local snd = Instance.new("Sound", hrp)
 	snd.Name = "NukeSound"
 	snd.SoundId = "rbxassetid://84792688181059"
-	snd.Volume = 4; snd.Looped = true; snd:Play()
+	snd.Volume = 1.2; snd.Looped = true; snd:Play()
 
 	local sndBoost = Instance.new("Sound", hrp)
 	sndBoost.Name = "NukeBoost"
 	sndBoost.SoundId = "rbxassetid://84792688181059"
-	sndBoost.Volume = 2.5; sndBoost.Looped = true; sndBoost:Play()
+	sndBoost.Volume = 0.7; sndBoost.Looped = true; sndBoost:Play()
 
 	-- Trail of fire
 	nukeConn = RunService.Heartbeat:Connect(function()
@@ -2523,12 +2818,12 @@ createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 202, fu
 
 	-- Immediate explosion sound (2 layers: impact + bass)
 	local boom1 = Instance.new("Sound", hrp)
-	boom1.SoundId = "rbxassetid://84792688181059"; boom1.Volume = 5
+	boom1.SoundId = "rbxassetid://84792688181059"; boom1.Volume = 1.5
 	boom1.RollOffMaxDistance = 300; boom1:Play()
 	Debris:AddItem(boom1, 4)
 
 	local boom2 = Instance.new("Sound", hrp)
-	boom2.SoundId = "rbxassetid://3716468774"; boom2.Volume = 3
+	boom2.SoundId = "rbxassetid://3716468774"; boom2.Volume = 1.0
 	boom2.RollOffMaxDistance = 200; boom2:Play()
 	Debris:AddItem(boom2, 3)
 
@@ -2568,7 +2863,7 @@ local espObjects    = {}
 local espBotObjects = {}
 
 local ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
-local ESP_COLOR_ENEMY = Color3.fromRGB(255, 60, 60)
+local ESP_COLOR_ENEMY = Color3.fromRGB(255, 40, 50)
 local ESP_COLOR_BOT   = Color3.fromRGB(255, 200, 0)
 
 -- Distance max ESP (0 = infini)
@@ -2731,60 +3026,65 @@ local function buildESPFor(p)
 	local color  = isAlly and ESP_COLOR_ALLY or ESP_COLOR_ENEMY
 	local objs   = {}
 
-	-- CHAMS (Highlight natif Roblox)
+	-- CHAMS (Highlight natif Roblox) renforcé
 	if espState.chams then
 		local old = char:FindFirstChild("ESP_Highlight")
 		if old then old:Destroy() end
 		local hl = Instance.new("Highlight", char)
 		hl.Name              = "ESP_Highlight"
 		hl.FillColor         = color
-		hl.OutlineColor      = color
-		hl.FillTransparency  = 0.65
-		hl.OutlineTransparency = 0
+		hl.OutlineColor      = Color3.new(1,1,1)
+		hl.FillTransparency  = 0.55
+		hl.OutlineTransparency = 0.2
 		hl.DepthMode         = Enum.HighlightDepthMode.AlwaysOnTop
+		-- Double highlight pour effet glow
+		local hl2 = Instance.new("Highlight", char)
+		hl2.Name             = "ESP_Highlight2"
+		hl2.FillColor        = color
+		hl2.OutlineColor     = color
+		hl2.FillTransparency = 1
+		hl2.OutlineTransparency = 0.35
+		hl2.DepthMode        = Enum.HighlightDepthMode.AlwaysOnTop
 		table.insert(objs, hl)
+		table.insert(objs, hl2)
 	end
 
-	-- BOX ESP propre : coins + contour net (AlwaysOnTop via Highlight invisible)
+	-- BOX ESP : cadre complet ultra-visible avec contour lumineux
 	if espState.boxes then
-		local bb = mkBB(hrp, "ESP_Box", 58, 88, 0)
-		bb.StudsOffset = Vector3.new(0, 0.4, 0)
+		local bb = mkBB(hrp, "ESP_Box", 62, 92, 0)
+		bb.StudsOffset = Vector3.new(0, 0.3, 0)
 		bb.AlwaysOnTop = true
 
-		-- Fond très léger pour voir la boite traverser les murs
+		-- Fond semi-transparent
 		local bg = Instance.new("Frame", bb)
 		bg.Size = UDim2.new(1,0,1,0)
 		bg.BackgroundColor3 = color
-		bg.BackgroundTransparency = 0.88
+		bg.BackgroundTransparency = 0.82
 		bg.BorderSizePixel = 0
 
-		-- Bordure nette
-		local outline = Instance.new("UIStroke", bg)
-		outline.Color = Color3.new(0,0,0)
-		outline.Thickness = 3
-		outline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		-- Contour lumineux (double stroke pour effet glow)
+		local stroke1 = Instance.new("UIStroke", bg)
+		stroke1.Color = color
+		stroke1.Thickness = 2
+		stroke1.Transparency = 0.1
 
-		local border = Instance.new("UIStroke", bg)
+		local stroke2 = Instance.new("UIStroke", bg)
+		stroke2.Color = Color3.new(1,1,1)
+		stroke2.Thickness = 1
+		stroke2.Transparency = 0.6
+		stroke2.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-		-- Coins décoratifs (L-shapes)
-		local CORNER = 12  -- longueur du coin en pixels
-		local THICK  = 2   -- épaisseur
+		-- Coins décoratifs (L-shapes) renforcés
+		local CORNER = 14
+		local THICK  = 3
 		local corners = {
-			-- haut-gauche horizontal
 			{x=0, y=0, w=CORNER, h=THICK},
-			-- haut-gauche vertical
 			{x=0, y=0, w=THICK,  h=CORNER},
-			-- haut-droite horizontal
 			{x=1, y=0, ox=-CORNER, w=CORNER, h=THICK},
-			-- haut-droite vertical
 			{x=1, y=0, ox=-THICK,  w=THICK,  h=CORNER},
-			-- bas-gauche horizontal
 			{x=0, y=1, oy=-THICK,  w=CORNER, h=THICK},
-			-- bas-gauche vertical
 			{x=0, y=1, oy=-CORNER, w=THICK,  h=CORNER},
-			-- bas-droite horizontal
 			{x=1, y=1, ox=-CORNER, oy=-THICK,  w=CORNER, h=THICK},
-			-- bas-droite vertical
 			{x=1, y=1, ox=-THICK,  oy=-CORNER, w=THICK,  h=CORNER},
 		}
 		for _, c in ipairs(corners) do
@@ -2794,10 +3094,10 @@ local function buildESPFor(p)
 			f.AnchorPoint = Vector2.new(c.x or 0, c.y or 0)
 			f.Position = UDim2.new(c.x or 0, c.ox or 0, c.y or 0, c.oy or 0)
 			f.Size = UDim2.new(0, c.w, 0, c.h)
-			-- ombre noire derrière chaque coin
-			local shadow = Instance.new("UIStroke", f)
-			shadow.Color = Color3.new(0,0,0)
-			shadow.Thickness = 1
+			local sh = Instance.new("UIStroke", f)
+			sh.Color = Color3.new(0,0,0)
+			sh.Thickness = 1.5
+			sh.Transparency = 0.3
 		end
 
 		table.insert(objs, bb)
@@ -2875,39 +3175,43 @@ local function buildESPFor(p)
 
 	-- TRACER (triangle pointant vers le joueur, toujours visible)
 	if espState.tracers then
-		local bb = mkBB(hrp, "ESP_Tracer", 16, 16, -3)
+		local bb = mkBB(hrp, "ESP_Tracer", 20, 20, -3)
 		local lbl = Instance.new("TextLabel", bb)
 		lbl.Size = UDim2.new(1,0,1,0)
 		lbl.BackgroundTransparency = 1
 		lbl.Text = "▼"
 		lbl.TextColor3 = color
 		lbl.Font = Enum.Font.GothamBold
-		lbl.TextSize = 14
-		lbl.TextStrokeTransparency = 0.1
+		lbl.TextSize = 18
+		lbl.TextStrokeTransparency = 0
 		lbl.TextStrokeColor3 = Color3.new(0,0,0)
+		local glow = Instance.new("UIStroke", lbl)
+		glow.Color = color; glow.Thickness = 2; glow.Transparency = 0.3
 		table.insert(objs, bb)
 	end
 
 	-- SNAPLINE (ligne verticale du haut vers le bas sur le joueur)
 	if espState.snaplines then
-		-- Ligne haute (flèche vers le haut)
-		local bbTop = mkBB(hrp, "ESP_Snap", 16, 16, 4)
+		local bbTop = mkBB(hrp, "ESP_Snap", 20, 20, 4.5)
 		local lblT = Instance.new("TextLabel", bbTop)
 		lblT.Size = UDim2.new(1,0,1,0)
 		lblT.BackgroundTransparency = 1
 		lblT.Text = "▲"
 		lblT.TextColor3 = color
 		lblT.Font = Enum.Font.GothamBold
-		lblT.TextSize = 14
-		lblT.TextStrokeTransparency = 0.1
+		lblT.TextSize = 18
+		lblT.TextStrokeTransparency = 0
 		lblT.TextStrokeColor3 = Color3.new(0,0,0)
-		-- Ligne : barre verticale
-		local bbLine = mkBB(hrp, "ESP_SnapLine", 3, 80, 0)
+		local glow2 = Instance.new("UIStroke", lblT)
+		glow2.Color = color; glow2.Thickness = 2; glow2.Transparency = 0.3
+		local bbLine = mkBB(hrp, "ESP_SnapLine", 4, 90, 0)
 		local lineF = Instance.new("Frame", bbLine)
 		lineF.Size = UDim2.new(1,0,1,0)
 		lineF.BackgroundColor3 = color
 		lineF.BorderSizePixel = 0
-		lineF.BackgroundTransparency = 0.2
+		lineF.BackgroundTransparency = 0.1
+		local lineGlow = Instance.new("UIStroke", lineF)
+		lineGlow.Color = color; lineGlow.Thickness = 2; lineGlow.Transparency = 0.4
 		table.insert(objs, bbTop)
 		table.insert(objs, bbLine)
 	end
@@ -3097,9 +3401,10 @@ local function createColorDropdown(parent, label, order, defaultColor, onChange)
 		rl.Font = Enum.Font.Gotham; rl.TextSize = 11
 		rl.TextXAlignment = Enum.TextXAlignment.Left
 
-		row.MouseEnter:Connect(function() row.BackgroundTransparency = 0.8 end)
+		row.MouseEnter:Connect(function() playHover(); row.BackgroundTransparency = 0.8 end)
 		row.MouseLeave:Connect(function() row.BackgroundTransparency = 1 end)
 		row.MouseButton1Click:Connect(function()
+			playHover()
 			selected = cval
 			swatch.BackgroundColor3 = cval
 			onChange(cval)
@@ -3113,7 +3418,9 @@ local function createColorDropdown(parent, label, order, defaultColor, onChange)
 	headerBtn.Size = UDim2.new(1,0,1,0)
 	headerBtn.BackgroundTransparency = 1
 	headerBtn.Text = ""
+	headerBtn.MouseEnter:Connect(playHover)
 	headerBtn.MouseButton1Click:Connect(function()
+		playHover()
 		open = not open
 		listF.Visible = true
 		local h = open and (#colors * 30 + 4) or 0
@@ -3223,7 +3530,7 @@ createSection(pages.Other, "ℹ  Version", 98)
 local verLabel = Instance.new("TextLabel", pages.Other)
 verLabel.Size = UDim2.new(1, 0, 0, 40)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v3.8\n👉𝐁 Press [B] to open/close"
+verLabel.Text = "🌐 bkz HUB  v4.0\n👉𝐁 Press [B] to open/close\n🔥 Amélioré avec bypass, force modes, son hover"
 verLabel.TextColor3 = currentTheme.SubText
 verLabel.Font = Enum.Font.Gotham
 verLabel.TextSize = 11
