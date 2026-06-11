@@ -18,19 +18,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 if playerGui:FindFirstChild("AdminMenu") then playerGui.AdminMenu:Destroy() end
 
 -- ================================================
---  Hover sound system (soft click)
--- ================================================
-local hoverSoundId = "rbxassetid://8686980613"
-local function playHover()
-	local s = Instance.new("Sound")
-	s.SoundId = hoverSoundId
-	s.Volume = 0.25
-	s.Parent = gui
-	s:Play()
-	Debris:AddItem(s, 1)
-end
-
--- ================================================
 -- ================================================
 local Themes = {
 	Dark = {
@@ -120,17 +107,37 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
 gui.ResetOnSpawn = false
 
--- Drop shadow behind main
+-- Hover sound system (défini après gui pour éviter parent nil)
+local hoverSoundId = "rbxassetid://8686980613"
+local function playHover()
+	local s = Instance.new("Sound")
+	s.SoundId = hoverSoundId
+	s.Volume = 0.35
+	s.Parent = gui
+	s:Play()
+	Debris:AddItem(s, 1)
+end
+
+-- Drop shadow behind main (effet glow amélioré)
 local shadow = Instance.new("ImageLabel", gui)
-shadow.Size = UDim2.new(0, 380, 0, 500)
-shadow.Position = UDim2.new(0.5, -190, 0.5, -250)
+shadow.Size = UDim2.new(0, 400, 0, 520)
+shadow.Position = UDim2.new(0.5, -200, 0.5, -260)
 shadow.BackgroundTransparency = 1
 shadow.Image = "rbxassetid://11081004466"
-shadow.ImageColor3 = Color3.new(0, 0, 0)
-shadow.ImageTransparency = 0.5
+shadow.ImageColor3 = currentTheme.Accent
+shadow.ImageTransparency = 0.75
 shadow.ScaleType = Enum.ScaleType.Slice
 shadow.SliceCenter = Rect.new(10, 10, 100, 100)
 shadow.ZIndex = 0
+
+-- Glass-morphism background overlay
+local glassBg = Instance.new("Frame", gui)
+glassBg.Size = UDim2.new(1, 0, 1, 0)
+glassBg.BackgroundColor3 = Color3.new(0, 0, 0)
+glassBg.BackgroundTransparency = 0.55
+glassBg.BorderSizePixel = 0
+glassBg.ZIndex = 0
+glassBg.Visible = false
 
 -- Main window
 local main = Instance.new("Frame", gui)
@@ -139,13 +146,19 @@ main.Position = UDim2.new(0.5, -190, 0.5, -250)
 main.BackgroundColor3 = currentTheme.BG
 main.BorderSizePixel = 0
 main.ZIndex = 1
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+main.ClipsDescendants = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
 
--- Stroke (stronger)
+-- Accent glow border (double stroke pour effet néon)
 local stroke = Instance.new("UIStroke", main)
 stroke.Color = currentTheme.Accent
 stroke.Thickness = 2.5
-stroke.Transparency = 0.25
+stroke.Transparency = 0.2
+
+local strokeGlow = Instance.new("UIStroke", main)
+strokeGlow.Color = currentTheme.Accent
+strokeGlow.Thickness = 6
+strokeGlow.Transparency = 0.75
 
 -- ================================================
 -- ================================================
@@ -153,12 +166,20 @@ local header = Instance.new("Frame", main)
 header.Size = UDim2.new(1, 0, 0, 52)
 header.BackgroundColor3 = currentTheme.Panel
 header.BorderSizePixel = 0
-Instance.new("UICorner", header).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", header).CornerRadius = UDim.new(0, 14)
+
+-- Accent bar under header
+local accentBar = Instance.new("Frame", header)
+accentBar.Size = UDim2.new(1, -30, 0, 2)
+accentBar.Position = UDim2.new(0, 15, 1, -1)
+accentBar.BackgroundColor3 = currentTheme.Accent
+accentBar.BorderSizePixel = 0
+accentBar.BackgroundTransparency = 0.4
 
 -- Hide bottom corners of the header
 local headerFix = Instance.new("Frame", header)
-headerFix.Size = UDim2.new(1, 0, 0, 12)
-headerFix.Position = UDim2.new(0, 0, 1, -12)
+headerFix.Size = UDim2.new(1, 0, 0, 14)
+headerFix.Position = UDim2.new(0, 0, 1, -14)
 headerFix.BackgroundColor3 = currentTheme.Panel
 headerFix.BorderSizePixel = 0
 
@@ -169,46 +190,47 @@ title.Position = UDim2.new(0, 15, 0, 0)
 title.BackgroundTransparency = 1
 title.TextColor3 = currentTheme.Text
 title.Font = Enum.Font.GothamBold
-title.TextSize = 17
+title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 local subtitle = Instance.new("TextLabel", header)
 subtitle.Text = "v4.0  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -50, 0, 14)
-subtitle.Position = UDim2.new(0, 15, 0, 32)
+subtitle.Position = UDim2.new(0, 15, 0, 33)
 subtitle.BackgroundTransparency = 1
 subtitle.TextColor3 = currentTheme.SubText
 subtitle.Font = Enum.Font.Gotham
-subtitle.TextSize = 11
+subtitle.TextSize = 10
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
 
--- Close button
+-- Close button amélioré avec hover
 local closeBtn = Instance.new("TextButton", header)
-closeBtn.Text = "🚪"
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -40, 0.5, -15)
+closeBtn.Text = "✕"
+closeBtn.Size = UDim2.new(0, 28, 0, 28)
+closeBtn.Position = UDim2.new(1, -38, 0.5, -14)
 closeBtn.BackgroundColor3 = currentTheme.Danger
 closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 13
+closeBtn.TextSize = 14
 closeBtn.BorderSizePixel = 0
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
-closeBtn.MouseButton1Click:Connect(function() gui.Enabled = false end)
+closeBtn.MouseEnter:Connect(playHover)
+closeBtn.MouseButton1Click:Connect(function() closeMenu() end)
 
 -- ================================================
 -- ================================================
 local tabBar = Instance.new("Frame", main)
-tabBar.Size = UDim2.new(1, -20, 0, 38)
-tabBar.Position = UDim2.new(0, 10, 0, 56)
+tabBar.Size = UDim2.new(1, -20, 0, 40)
+tabBar.Position = UDim2.new(0, 10, 0, 57)
 tabBar.BackgroundColor3 = currentTheme.Tab
 tabBar.BorderSizePixel = 0
-Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 10)
 local tabLayout = Instance.new("UIListLayout", tabBar)
 tabLayout.FillDirection = Enum.FillDirection.Horizontal
-tabLayout.Padding = UDim.new(0, 3)
+tabLayout.Padding = UDim.new(0, 4)
 local tabPad = Instance.new("UIPadding", tabBar)
-tabPad.PaddingLeft = UDim.new(0, 3); tabPad.PaddingRight = UDim.new(0, 3)
-tabPad.PaddingTop = UDim.new(0, 3); tabPad.PaddingBottom = UDim.new(0, 3)
+tabPad.PaddingLeft = UDim.new(0, 4); tabPad.PaddingRight = UDim.new(0, 4)
+tabPad.PaddingTop = UDim.new(0, 4); tabPad.PaddingBottom = UDim.new(0, 4)
 
 -- ================================================
 -- ================================================
@@ -279,28 +301,40 @@ end
 -- ================================================
 -- ================================================
 local function createSection(parent, title, order)
-	local lbl = Instance.new("TextLabel", parent)
+	local frame = Instance.new("Frame", parent)
+	frame.Size = UDim2.new(1, 0, 0, 28)
+	frame.BackgroundTransparency = 1
+	frame.LayoutOrder = order or 0
+
+	local bar = Instance.new("Frame", frame)
+	bar.Size = UDim2.new(0, 3, 0, 14)
+	bar.Position = UDim2.new(0, 0, 0.5, -7)
+	bar.BackgroundColor3 = currentTheme.Accent
+	bar.BorderSizePixel = 0
+	Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+
+	local lbl = Instance.new("TextLabel", frame)
 	lbl.Text = "  " .. string.upper(title)
-	lbl.Size = UDim2.new(1, 0, 0, 22)
+	lbl.Size = UDim2.new(1, -6, 1, 0)
+	lbl.Position = UDim2.new(0, 6, 0, 0)
 	lbl.BackgroundTransparency = 1
 	lbl.TextColor3 = currentTheme.Accent
 	lbl.Font = Enum.Font.GothamBold
-	lbl.TextSize = 10
+	lbl.TextSize = 11
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
-	lbl.LayoutOrder = order or 0
 end
 
 local function createBtn(parent, text, color, order, func)
 	color = color or currentTheme.Button
 	local frame = Instance.new("Frame", parent)
-	frame.Size = UDim2.new(1, 0, 0, 38)
+	frame.Size = UDim2.new(1, 0, 0, 40)
 	frame.BackgroundColor3 = color
 	frame.BorderSizePixel = 0
 	frame.LayoutOrder = order or 1
-	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
 	local stroke2 = Instance.new("UIStroke", frame)
 	stroke2.Color = Color3.new(1,1,1)
-	stroke2.Transparency = 0.92
+	stroke2.Transparency = 0.93
 	stroke2.Thickness = 1
 
 	local btn = Instance.new("TextButton", frame)
@@ -314,22 +348,37 @@ local function createBtn(parent, text, color, order, func)
 
 	btn.MouseEnter:Connect(function()
 		playHover()
-		TweenService:Create(frame, TweenInfo.new(0.1), {BackgroundColor3 = currentTheme.ButtonHov}):Play()
+		TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.ButtonHov}):Play()
+		TweenService:Create(stroke2, TweenInfo.new(0.12), {Transparency = 0.8, Color = currentTheme.Accent}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
-		TweenService:Create(frame, TweenInfo.new(0.1), {BackgroundColor3 = color}):Play()
+		TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundColor3 = color}):Play()
+		TweenService:Create(stroke2, TweenInfo.new(0.12), {Transparency = 0.93, Color = Color3.new(1,1,1)}):Play()
 	end)
-	btn.MouseButton1Click:Connect(func)
+	btn.MouseButton1Click:Connect(function()
+		local label = text:gsub("[^%w%s]","")
+		showNotification("👉 " .. label, 1.5)
+		TweenService:Create(frame, TweenInfo.new(0.05), {BackgroundColor3 = currentTheme.Accent}):Play()
+		task.delay(0.08, function()
+			TweenService:Create(frame, TweenInfo.new(0.1), {BackgroundColor3 = currentTheme.ButtonHov}):Play()
+		end)
+		func()
+	end)
 	return frame, btn
 end
 
-local function createToggle(parent, text, order, func)
+local function createToggle(parent, text, order, func, configKey)
 	local frame = Instance.new("Frame", parent)
-	frame.Size = UDim2.new(1, 0, 0, 38)
+	frame.Size = UDim2.new(1, 0, 0, 40)
 	frame.BackgroundColor3 = currentTheme.Button
 	frame.BorderSizePixel = 0
 	frame.LayoutOrder = order or 1
-	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+
+	local strokeT = Instance.new("UIStroke", frame)
+	strokeT.Color = Color3.new(1,1,1)
+	strokeT.Transparency = 0.93
+	strokeT.Thickness = 1
 
 	local lbl = Instance.new("TextLabel", frame)
 	lbl.Text = text
@@ -342,20 +391,28 @@ local function createToggle(parent, text, order, func)
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
 
 	local track = Instance.new("Frame", frame)
-	track.Size = UDim2.new(0, 40, 0, 22)
-	track.Position = UDim2.new(1, -50, 0.5, -11)
-	track.BackgroundColor3 = Color3.fromRGB(70,70,90)
+	track.Size = UDim2.new(0, 42, 0, 24)
+	track.Position = UDim2.new(1, -52, 0.5, -12)
+	track.BackgroundColor3 = Color3.fromRGB(60,60,80)
 	track.BorderSizePixel = 0
 	Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
 	local knob = Instance.new("Frame", track)
-	knob.Size = UDim2.new(0, 16, 0, 16)
-	knob.Position = UDim2.new(0, 3, 0.5, -8)
+	knob.Size = UDim2.new(0, 18, 0, 18)
+	knob.Position = UDim2.new(0, 3, 0.5, -9)
 	knob.BackgroundColor3 = Color3.new(1,1,1)
 	knob.BorderSizePixel = 0
 	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 
 	local state = false
+	if configKey and toggleStates[configKey] ~= nil then state = toggleStates[configKey] end
+
+	-- Apply initial state from toggleStates
+	if state then
+		track.BackgroundColor3 = currentTheme.Accent
+		knob.Position = UDim2.new(1,-21,0.5,-9)
+	end
+
 	local hitbox = Instance.new("TextButton", frame)
 	hitbox.Size = UDim2.new(1, 0, 1, 0)
 	hitbox.BackgroundTransparency = 1
@@ -365,11 +422,30 @@ local function createToggle(parent, text, order, func)
 	hitbox.MouseButton1Click:Connect(function()
 		playHover()
 		state = not state
-		TweenService:Create(track, TweenInfo.new(0.2), {BackgroundColor3 = state and currentTheme.Accent or Color3.fromRGB(70,70,90)}):Play()
-		TweenService:Create(knob, TweenInfo.new(0.2), {Position = state and UDim2.new(1,-19,0.5,-8) or UDim2.new(0,3,0.5,-8)}):Play()
+		if configKey then toggleStates[configKey] = state end
+		TweenService:Create(track, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			BackgroundColor3 = state and currentTheme.Accent or Color3.fromRGB(60,60,80)
+		}):Play()
+		TweenService:Create(knob, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Position = state and UDim2.new(1,-21,0.5,-9) or UDim2.new(0,3,0.5,-9)
+		}):Play()
+		local label = text:gsub("[^%w%s]","")
+		showNotification((state and "✅ " or "❌ ") .. label, 1.2)
 		func(state)
 	end)
-	return frame
+
+	-- Register apply function for config reload
+	if configKey then
+		toggleApply[configKey] = function(newState)
+			state = newState
+			track.BackgroundColor3 = state and currentTheme.Accent or Color3.fromRGB(60,60,80)
+			knob.Position = state and UDim2.new(1,-21,0.5,-9) or UDim2.new(0,3,0.5,-9)
+			func(state)
+		end
+		if state then task.spawn(function() toggleApply[configKey](true) end) end
+	end
+
+	return frame, lbl
 end
 
 local function createSlider(parent, text, min, max, default, order, func)
@@ -1109,7 +1185,7 @@ player.CharacterAdded:Connect(function(char)
 	applyMovement(char)
 end)
 
-createToggle(pages.Personal, "⚡  Goku TP (F + Mouse)", 1, function(state)
+createToggle(pages.Personal, "⚡  Goku TP (F + Mouse)", 1, function(state), "gokuTP")
 	gokuMode = state
 end)
 
@@ -1128,7 +1204,7 @@ createNumberInput(pages.Personal, "🦘  Jump Height", 50, 3, function(val)
 	end
 end)
 
-createToggle(pages.Personal, "🧊  Freeze (no move)", 4, function(state)
+createToggle(pages.Personal, "🧊  Freeze (no move)", 4, function(state), "freeze")
 	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if hrp then hrp.Anchored = state end
 end)
@@ -1187,7 +1263,7 @@ local function disableFly()
 	end
 end
 
-createToggle(pages.Personal, "🦅  Fly  (WASD + Space/Ctrl)", 6, function(state)
+createToggle(pages.Personal, "🦅  Fly  (WASD + Space/Ctrl)", 6, function(state), "fly")
 	flyEnabled = state
 	if state then enableFly() else disableFly() end
 end)
@@ -1198,7 +1274,7 @@ end)
 
 createSection(pages.Personal, "👁  Collision & Visual", 8)
 
-createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(state)
+createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(state), "noclip")
 	if state then
 		RunService:BindToRenderStep("Noclip", Enum.RenderPriority.Character.Value + 1, function()
 			local char = player.Character
@@ -1294,7 +1370,7 @@ local function disableGod()
 	if godRespawnConn then godRespawnConn:Disconnect(); godRespawnConn = nil end
 end
 
-createToggle(pages.Personal, "🛡  God Mode (invincible)", 11, function(state)
+createToggle(pages.Personal, "🛡  God Mode (invincible)", 11, function(state), "godMode")
 	if state then enableGod() else disableGod() end
 end)
 
@@ -1328,7 +1404,7 @@ local function startAntiKick()
 	table.insert(antiKickConns, c2)
 end
 
-createToggle(pages.Personal, "🚫  Anti-Kick Bypass", 12, function(state)
+createToggle(pages.Personal, "🚫  Anti-Kick Bypass", 12, function(state), "antiKick")
 	if state then startAntiKick() else stopAntiKick() end
 end)
 
@@ -1358,7 +1434,7 @@ local function disableNoFall()
 	if noFallConn then noFallConn:Disconnect(); noFallConn = nil end
 end
 
-createToggle(pages.Personal, "🦶  No Fall Damage", 13, function(state)
+createToggle(pages.Personal, "🦶  No Fall Damage", 13, function(state), "noFall")
 	if state then enableNoFall() else disableNoFall() end
 end)
 
@@ -1387,7 +1463,7 @@ local function disableAntiGrab()
 	if antiGrabConn then antiGrabConn:Disconnect(); antiGrabConn = nil end
 end
 
-createToggle(pages.Personal, "🔒  Anti-Tool Grab", 14, function(state)
+createToggle(pages.Personal, "🔒  Anti-Tool Grab", 14, function(state), "antiGrab")
 	if state then enableAntiGrab() else disableAntiGrab() end
 end)
 
@@ -1420,13 +1496,13 @@ local function startAntiCheat()
 	table.insert(antiCheatConns, c1)
 end
 
-createToggle(pages.Personal, "🛡  Anti-Cheat Bypass", 15, function(state)
+createToggle(pages.Personal, "🛡  Anti-Cheat Bypass", 15, function(state), "antiCheat")
 	if state then startAntiCheat() else stopAntiCheat() end
 end)
 
 -- Infinite Jump
 local jumpConn = nil
-createToggle(pages.Personal, "🦘  Infinite Jump", 14, function(state)
+createToggle(pages.Personal, "🦘  Infinite Jump", 14, function(state), "infJump")
 	if state then
 		jumpConn = UIS.JumpRequest:Connect(function()
 			local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
@@ -1494,7 +1570,7 @@ local function watchAmmoChar(char)
 	table.insert(ammoConns, c)
 end
 
-createToggle(pages.Personal, "🔫  Unlimited Ammo", 17, function(state)
+createToggle(pages.Personal, "🔫  Unlimited Ammo", 17, function(state), "unlimAmmo")
 	ammoEnabled = state
 	ammoCleanup()
 	if not state then return end
@@ -1556,7 +1632,7 @@ local function watchReloadChar(char)
 	table.insert(reloadConns, c)
 end
 
-createToggle(pages.Personal, "⚡  Instant Reload", 18, function(state)
+createToggle(pages.Personal, "⚡  Instant Reload", 18, function(state), "instReload")
 	reloadEnabled = state
 	reloadCleanup()
 	if not state then return end
@@ -1594,7 +1670,7 @@ local function recoilPatchTool(tool)
 	end
 end
 
-createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
+createToggle(pages.Personal, "🎯  No Recoil", 19, function(state), "noRecoil")
 	recoilEnabled = state
 	-- Nettoie les anciennes connexions
 	if recoilConn then recoilConn:Disconnect(); recoilConn = nil end
@@ -1684,7 +1760,7 @@ local function disableAutoParry()
 	if autoParryConn then autoParryConn:Disconnect(); autoParryConn = nil end
 end
 
-createToggle(pages.Personal, "⚔  Auto Parry (block)", 20, function(state)
+createToggle(pages.Personal, "⚔  Auto Parry (block)", 20, function(state), "autoParry")
 	if state then enableAutoParry() else disableAutoParry() end
 end)
 
@@ -1879,7 +1955,7 @@ end
 updateAimStatus()
 
 -- Main Toggle
-createToggle(pages.Personal, "🎯  Aim Lock ON / OFF", 101, function(state)
+createToggle(pages.Personal, "🎯  Aim Lock ON / OFF", 101, function(state), "aimLock")
 	aimEnabled = state
 	if state then startAim() else stopAim() end
 end)
@@ -2076,7 +2152,7 @@ local shader = nil
 for _, v in pairs(Lighting:GetChildren()) do if v.Name == "AdminShader" then shader = v; break end end
 if not shader then shader = Instance.new("ColorCorrectionEffect", Lighting); shader.Name = "AdminShader"; shader.Enabled = false end
 
-createToggle(pages.World, "🎨  Cinematic Shaders", 1, function(state)
+createToggle(pages.World, "🎨  Cinematic Shaders", 1, function(state), "cinematic")
 	shader.Enabled = state
 	if state then
 		shader.Brightness = -0.05; shader.Contrast = 0.08
@@ -2084,7 +2160,7 @@ createToggle(pages.World, "🎨  Cinematic Shaders", 1, function(state)
 	end
 end)
 
-createToggle(pages.World, "🌙  Night Mode", 2, function(state)
+createToggle(pages.World, "🌙  Night Mode", 2, function(state), "nightMode")
 	if state then
 		TweenService:Create(Lighting, TweenInfo.new(1.5), {ClockTime=0, Brightness=0.5, Ambient=Color3.fromRGB(20,20,50)}):Play()
 	else
@@ -2092,7 +2168,7 @@ createToggle(pages.World, "🌙  Night Mode", 2, function(state)
 	end
 end)
 
-createToggle(pages.World, "🌈  Rainbow Sky", 4, function(state)
+createToggle(pages.World, "🌈  Rainbow Sky", 4, function(state), "rainbowSky")
 	if state then
 		local hue = 0
 		RunService:BindToRenderStep("RainbowSky", 1, function()
@@ -2118,7 +2194,7 @@ local function getAtmo()
 	return a
 end
 
-createToggle(pages.World, "🌫  Dense Fog", 5, function(state)
+createToggle(pages.World, "🌫  Dense Fog", 5, function(state), "denseFog")
 	local atmo = getAtmo()
 	TweenService:Create(atmo, TweenInfo.new(1.5), {
 		Density = state and 0.85 or 0.3,
@@ -2126,7 +2202,7 @@ createToggle(pages.World, "🌫  Dense Fog", 5, function(state)
 	}):Play()
 end)
 
-createToggle(pages.World, "☁  Light Fog", 6, function(state)
+createToggle(pages.World, "☁  Light Fog", 6, function(state), "lightFog")
 	local atmo = getAtmo()
 	TweenService:Create(atmo, TweenInfo.new(1.5), {
 		Density = state and 0.5 or 0.3,
@@ -2134,7 +2210,7 @@ createToggle(pages.World, "☁  Light Fog", 6, function(state)
 end)
 
 -- Rain: multi-layer high quality system
-createToggle(pages.World, "🌧  Rain", 7, function(state)
+createToggle(pages.World, "🌧  Rain", 7, function(state), "rain")
 	RunService:UnbindFromRenderStep("AdminRain")
 	for _, v in ipairs(workspace:GetChildren()) do
 		if v.Name == "AdminRain" or v.Name == "AdminRainFar" or v.Name == "AdminRainSplash" then v:Destroy() end
@@ -2237,7 +2313,7 @@ createToggle(pages.World, "🌧  Rain", 7, function(state)
 end)
 
 -- Snow: high quality multi-layer system
-createToggle(pages.World, "❄  Snow", 8, function(state)
+createToggle(pages.World, "❄  Snow", 8, function(state), "snow")
 	RunService:UnbindFromRenderStep("AdminSnow")
 	for _, v in ipairs(workspace:GetChildren()) do
 		if v.Name == "AdminSnow" or v.Name == "AdminSnowFar" or v.Name == "AdminSnowGround" then v:Destroy() end
@@ -2354,7 +2430,7 @@ createToggle(pages.World, "❄  Snow", 8, function(state)
 	end
 end)
 
-createToggle(pages.World, "🌅  Sunset", 9, function(state)
+createToggle(pages.World, "🌅  Sunset", 9, function(state), "sunset")
 	if state then
 		TweenService:Create(Lighting, TweenInfo.new(2), {
 			ClockTime = 18, Brightness = 1.2,
@@ -2461,10 +2537,16 @@ end)
 
 createSection(pages.Settings, "💾  Configuration", 16)
 
+-- Global toggle states tracking (for config save/load)
+local toggleStates = {}
+local toggleApply = {}
+
 -- Save/load via writefile/readfile (Roblox executors)
 local CONFIG_FILE = "AdminMenu_config.json"
 
 local function getConfig()
+	local toggles = {}
+	for k, v in pairs(toggleStates) do toggles[k] = v end
 	return {
 		theme     = (function()
 			for name, t in pairs(Themes) do if t == currentTheme then return name end end
@@ -2477,6 +2559,7 @@ local function getConfig()
 		flySpeed  = flySpeed,
 		walkSpeed = savedWalkSpeed,
 		jumpPower = savedJumpPower,
+		toggles   = toggles,
 	}
 end
 
@@ -2488,6 +2571,17 @@ local function applyConfig(cfg)
 	if cfg.flySpeed then flySpeed = cfg.flySpeed end
 	if cfg.walkSpeed then savedWalkSpeed = cfg.walkSpeed; applyMovement(player.Character) end
 	if cfg.jumpPower then savedJumpPower = cfg.jumpPower; applyMovement(player.Character) end
+	if cfg.toggles then
+		for k, v in pairs(cfg.toggles) do
+			toggleStates[k] = v
+		end
+		-- Re-trigger toggles for visual update after config load
+		for k, v in pairs(cfg.toggles) do
+			if toggleApply[k] then
+				task.spawn(function() toggleApply[k](v) end)
+			end
+		end
+	end
 	updateAimStatus()
 end
 
@@ -2533,18 +2627,6 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  19, functi
 	updateAimStatus()
 	showNotification("↩  Config reset", 2)
 end)
-
-createSection(pages.Settings, "ℹ  Info", 20)
-local infoLbl = Instance.new("TextLabel", pages.Settings)
-infoLbl.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move\n🌐 bkz HUB v4.0  •  " .. player.Name
-infoLbl.Size = UDim2.new(1, 0, 0, 60)
-infoLbl.BackgroundTransparency = 1
-infoLbl.TextColor3 = currentTheme.SubText
-infoLbl.Font = Enum.Font.Gotham
-infoLbl.TextSize = 11
-infoLbl.TextWrapped = true
-infoLbl.TextYAlignment = Enum.TextYAlignment.Top
-infoLbl.LayoutOrder = 21
 
 -- ================================================
 
@@ -2622,14 +2704,6 @@ local function showNotification(message, duration)
 	end)
 end
 
--- Backdrop overlay
-local backdrop = Instance.new("Frame", gui)
-backdrop.Size = UDim2.new(1, 0, 1, 0)
-backdrop.BackgroundColor3 = Color3.new(0, 0, 0)
-backdrop.BackgroundTransparency = 1
-backdrop.BorderSizePixel = 0
-backdrop.ZIndex = -1
-
 -- Displays the notification on launch
 showNotification("👉𝐁 Press <b>[B]</b> to open the menu", 5)
 
@@ -2637,15 +2711,14 @@ showNotification("👉𝐁 Press <b>[B]</b> to open the menu", 5)
 -- ================================================
 local function openMenu()
 	gui.Enabled = true
+	glassBg.Visible = true
 	main.Size = UDim2.new(0, menuW, 0, 0)
 	main.BackgroundTransparency = 0.3
-	shadow.ImageTransparency = 1
 	TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Size = UDim2.new(0, menuW, 0, menuH),
 		BackgroundTransparency = 0
 	}):Play()
-	TweenService:Create(shadow, TweenInfo.new(0.25), {ImageTransparency = 0.5}):Play()
-	TweenService:Create(backdrop, TweenInfo.new(0.25), {BackgroundTransparency = 0.6}):Play()
+	TweenService:Create(glassBg, TweenInfo.new(0.25), {BackgroundTransparency = 0.55}):Play()
 end
 
 local function closeMenu()
@@ -2653,13 +2726,13 @@ local function closeMenu()
 		Size = UDim2.new(0, menuW, 0, 0),
 		BackgroundTransparency = 0.3
 	}):Play()
-	TweenService:Create(shadow, TweenInfo.new(0.15), {ImageTransparency = 1}):Play()
-	TweenService:Create(backdrop, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(glassBg, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
 	task.wait(0.15)
 	gui.Enabled = false
 	main.Size = UDim2.new(0, menuW, 0, menuH)
 	main.BackgroundTransparency = 0
-	backdrop.BackgroundTransparency = 1
+	glassBg.Visible = false
+	glassBg.BackgroundTransparency = 1
 end
 
 closeBtn.MouseButton1Click:Connect(function()
@@ -2807,7 +2880,7 @@ end
 
 -- Toggle Nuke on the Personal page
 createSection(pages.Personal, "💥  Chaos & Fun", 200)
-createToggle(pages.Personal, "🚀  NUKE MODE  (propulsion + explosion)", 201, function(state)
+createToggle(pages.Personal, "🚀  NUKE MODE  (propulsion + explosion)", 201, function(state), "nukeMode")
 	nukeEnabled = state
 	if state then startNuke() else stopNuke() end
 end)
@@ -3439,18 +3512,18 @@ createBtn(pages.ESP, "❌  Disable All", currentTheme.Danger, 1, function()
 	for k in pairs(espState) do espState[k] = false end
 	for _, p in ipairs(Players:GetPlayers()) do clearESPFor(p) end
 end)
-createToggle(pages.ESP, "📦  Boxes", 2, function(s) toggleESP("boxes", s) end)
-createToggle(pages.ESP, "🏷  Names + Team Tag", 3, function(s) toggleESP("names", s) end)
-createToggle(pages.ESP, "❤  Health (text)", 4, function(s) toggleESP("health", s) end)
-createToggle(pages.ESP, "📊  Health Bar", 5, function(s) toggleESP("healthBar", s) end)
-createToggle(pages.ESP, "📏  Distance", 6, function(s) toggleESP("distance", s) end)
+createToggle(pages.ESP, "📦  Boxes", 2, function(s) toggleESP("boxes", s) end, "espBoxes")
+createToggle(pages.ESP, "🏷  Names + Team Tag", 3, function(s) toggleESP("names", s) end, "espNames")
+createToggle(pages.ESP, "❤  Health (text)", 4, function(s) toggleESP("health", s) end, "espHealth")
+createToggle(pages.ESP, "📊  Health Bar", 5, function(s) toggleESP("healthBar", s) end, "espHealthBar")
+createToggle(pages.ESP, "📏  Distance", 6, function(s) toggleESP("distance", s) end, "espDistance")
 
 createSection(pages.ESP, "🎨  Advanced Visual", 6)
-createToggle(pages.ESP, "🔴  Head Dots", 7, function(s) toggleESP("headDots", s) end)
-createToggle(pages.ESP, "💀  Skeleton", 8, function(s) toggleESP("skeletons", s) end)
-createToggle(pages.ESP, "🔆  Chams (Highlight)", 9, function(s) toggleESP("chams", s) end)
-createToggle(pages.ESP, "🎯  Tracers", 10, function(s) toggleESP("tracers", s) end)
-createToggle(pages.ESP, "🔫  Snaplines", 11, function(s) toggleESP("snaplines", s) end)
+createToggle(pages.ESP, "🔴  Head Dots", 7, function(s) toggleESP("headDots", s) end, "espHeadDots")
+createToggle(pages.ESP, "💀  Skeleton", 8, function(s) toggleESP("skeletons", s) end, "espSkeleton")
+createToggle(pages.ESP, "🔆  Chams (Highlight)", 9, function(s) toggleESP("chams", s) end, "espChams")
+createToggle(pages.ESP, "🎯  Tracers", 10, function(s) toggleESP("tracers", s) end, "espTracers")
+createToggle(pages.ESP, "🔫  Snaplines", 11, function(s) toggleESP("snaplines", s) end, "espSnaplines")
 
 createSection(pages.ESP, "🎨  Colors", 19)
 createColorDropdown(pages.ESP, "🔴  Enemy Color", 20,
@@ -3466,7 +3539,7 @@ createSection(pages.ESP, "🤖  Bots / NPC", 22)
 createToggle(pages.ESP, "🤖  ESP Bots & NPC", 23, function(s)
 	espState.bots = s
 	if s then refreshBotESP() else clearAllBotESP() end
-end)
+end, "espBots")
 createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 24, function()
 	if espState.bots then refreshBotESP()
 	else showNotification("⚠  Active ESP Bots d'abord", 2) end
@@ -3526,16 +3599,45 @@ for i, entry in ipairs(credits) do
 	nameLbl.TextWrapped = true
 end
 
-createSection(pages.Other, "ℹ  Version", 98)
-local verLabel = Instance.new("TextLabel", pages.Other)
-verLabel.Size = UDim2.new(1, 0, 0, 40)
+createSection(pages.Other, "ℹ  Informations", 98)
+local verFrame = Instance.new("Frame", pages.Other)
+verFrame.Size = UDim2.new(1, 0, 0, 90)
+verFrame.BackgroundColor3 = currentTheme.Panel
+verFrame.BorderSizePixel = 0
+verFrame.LayoutOrder = 99
+Instance.new("UICorner", verFrame).CornerRadius = UDim.new(0, 10)
+local verPad = Instance.new("UIPadding", verFrame)
+verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
+
+local verLabel = Instance.new("TextLabel", verFrame)
+verLabel.Size = UDim2.new(1, -12, 0, 16)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v4.0\n👉𝐁 Press [B] to open/close\n🔥 Amélioré avec bypass, force modes, son hover"
-verLabel.TextColor3 = currentTheme.SubText
-verLabel.Font = Enum.Font.Gotham
-verLabel.TextSize = 11
-verLabel.TextWrapped = true
-verLabel.LayoutOrder = 99
+verLabel.Text = "🌐 bkz HUB  v4.0"
+verLabel.TextColor3 = currentTheme.Accent
+verLabel.Font = Enum.Font.GothamBold
+verLabel.TextSize = 14
+verLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local controlsLabel = Instance.new("TextLabel", verFrame)
+controlsLabel.Size = UDim2.new(1, -12, 0, 36)
+controlsLabel.Position = UDim2.new(0, 0, 0, 20)
+controlsLabel.BackgroundTransparency = 1
+controlsLabel.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move"
+controlsLabel.TextColor3 = currentTheme.Text
+controlsLabel.Font = Enum.Font.Gotham
+controlsLabel.TextSize = 12
+controlsLabel.TextXAlignment = Enum.TextXAlignment.Left
+controlsLabel.TextWrapped = true
+
+local featLabel = Instance.new("TextLabel", verFrame)
+featLabel.Size = UDim2.new(1, -12, 0, 16)
+featLabel.Position = UDim2.new(0, 0, 0, 58)
+featLabel.BackgroundTransparency = 1
+featLabel.Text = "🔥 Bypass • Force Modes • ESP HD • Son Hover"
+featLabel.TextColor3 = currentTheme.SubText
+featLabel.Font = Enum.Font.Gotham
+featLabel.TextSize = 10
+featLabel.TextXAlignment = Enum.TextXAlignment.Left
 	-- ESP initialized by startESP() below
 
 
