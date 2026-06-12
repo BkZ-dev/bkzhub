@@ -1169,8 +1169,7 @@ end)
 
 -- ================================================
 -- Global toggle states tracking (for config save/load)
-local toggleStates = {}
-local toggleApply = {}
+toggleStates = {}; toggleApply = {}
 
 createSection(pages.Personal, "🏃  Movement", 0)
 
