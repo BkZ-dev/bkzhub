@@ -368,6 +368,10 @@ local function createBtn(parent, text, color, order, func)
 	return frame, btn
 end
 
+-- Global toggle states tracking (for config save/load)
+local toggleStates = {}
+local toggleApply = {}
+
 local function createToggle(parent, text, order, func, configKey)
 	local frame = Instance.new("Frame", parent)
 	frame.Size = UDim2.new(1, 0, 0, 40)
@@ -1168,9 +1172,6 @@ end)
 -- ================================================
 
 -- ================================================
--- Global toggle states tracking (for config save/load)
-toggleStates = {}; toggleApply = {}
-
 createSection(pages.Personal, "🏃  Movement", 0)
 
 local savedWalkSpeed = 16
