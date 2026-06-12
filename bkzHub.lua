@@ -1168,6 +1168,10 @@ end)
 -- ================================================
 
 -- ================================================
+-- Global toggle states tracking (for config save/load)
+local toggleStates = {}
+local toggleApply = {}
+
 createSection(pages.Personal, "🏃  Movement", 0)
 
 local savedWalkSpeed = 16
@@ -2537,10 +2541,6 @@ createBtn(pages.Settings, "🏠  Recenter Menu", currentTheme.Button, 15, functi
 end)
 
 createSection(pages.Settings, "💾  Configuration", 16)
-
--- Global toggle states tracking (for config save/load)
-local toggleStates = {}
-local toggleApply = {}
 
 -- Save/load via writefile/readfile (Roblox executors)
 local CONFIG_FILE = "AdminMenu_config.json"
