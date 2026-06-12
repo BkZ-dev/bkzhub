@@ -1186,9 +1186,9 @@ player.CharacterAdded:Connect(function(char)
 	applyMovement(char)
 end)
 
-createToggle(pages.Personal, "⚡  Goku TP (F + Mouse)", 1, function(state), "gokuTP")
+createToggle(pages.Personal, "⚡  Goku TP (F + Mouse)", 1, function(state)
 	gokuMode = state
-end)
+end, "gokuTP")
 
 createNumberInput(pages.Personal, "🏃  Walk Speed", 16, 2, function(val)
 	savedWalkSpeed = val
@@ -1205,10 +1205,10 @@ createNumberInput(pages.Personal, "🦘  Jump Height", 50, 3, function(val)
 	end
 end)
 
-createToggle(pages.Personal, "🧊  Freeze (no move)", 4, function(state), "freeze")
+createToggle(pages.Personal, "🧊  Freeze (no move)", 4, function(state)
 	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if hrp then hrp.Anchored = state end
-end)
+end, "freeze")
 createSection(pages.Personal, "🦅  Fly", 5)
 
 local flyEnabled = false
@@ -1264,10 +1264,10 @@ local function disableFly()
 	end
 end
 
-createToggle(pages.Personal, "🦅  Fly  (WASD + Space/Ctrl)", 6, function(state), "fly")
+createToggle(pages.Personal, "🦅  Fly  (WASD + Space/Ctrl)", 6, function(state)
 	flyEnabled = state
 	if state then enableFly() else disableFly() end
-end)
+end, "fly")
 
 createNumberInput(pages.Personal, "🦅  Fly Speed", 40, 7, function(val)
 	flySpeed = val
@@ -1275,7 +1275,7 @@ end)
 
 createSection(pages.Personal, "👁  Collision & Visual", 8)
 
-createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(state), "noclip")
+createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(state)
 	if state then
 		RunService:BindToRenderStep("Noclip", Enum.RenderPriority.Character.Value + 1, function()
 			local char = player.Character
@@ -1295,7 +1295,7 @@ createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(st
 			end
 		end
 	end
-end)
+end, "noclip")
 
 createSection(pages.Personal, "🛡  Survival", 10)
 
@@ -1371,9 +1371,9 @@ local function disableGod()
 	if godRespawnConn then godRespawnConn:Disconnect(); godRespawnConn = nil end
 end
 
-createToggle(pages.Personal, "🛡  God Mode (invincible)", 11, function(state), "godMode")
+createToggle(pages.Personal, "🛡  God Mode (invincible)", 11, function(state)
 	if state then enableGod() else disableGod() end
-end)
+end, "godMode")
 
 -- ===== ANTI-KICK BYPASS =====
 local antiKickEnabled = false
@@ -1405,9 +1405,9 @@ local function startAntiKick()
 	table.insert(antiKickConns, c2)
 end
 
-createToggle(pages.Personal, "🚫  Anti-Kick Bypass", 12, function(state), "antiKick")
+createToggle(pages.Personal, "🚫  Anti-Kick Bypass", 12, function(state)
 	if state then startAntiKick() else stopAntiKick() end
-end)
+end, "antiKick")
 
 -- ===== NO FALL DAMAGE =====
 local noFallEnabled = false
@@ -1435,9 +1435,9 @@ local function disableNoFall()
 	if noFallConn then noFallConn:Disconnect(); noFallConn = nil end
 end
 
-createToggle(pages.Personal, "🦶  No Fall Damage", 13, function(state), "noFall")
+createToggle(pages.Personal, "🦶  No Fall Damage", 13, function(state)
 	if state then enableNoFall() else disableNoFall() end
-end)
+end, "noFall")
 
 -- ===== ANTI-TOOL GRAB BYPASS =====
 local antiGrabEnabled = false
@@ -1464,9 +1464,9 @@ local function disableAntiGrab()
 	if antiGrabConn then antiGrabConn:Disconnect(); antiGrabConn = nil end
 end
 
-createToggle(pages.Personal, "🔒  Anti-Tool Grab", 14, function(state), "antiGrab")
+createToggle(pages.Personal, "🔒  Anti-Tool Grab", 14, function(state)
 	if state then enableAntiGrab() else disableAntiGrab() end
-end)
+end, "antiGrab")
 
 -- ===== ANTI-CHEAT BYPASS =====
 local antiCheatEnabled = false
@@ -1497,13 +1497,13 @@ local function startAntiCheat()
 	table.insert(antiCheatConns, c1)
 end
 
-createToggle(pages.Personal, "🛡  Anti-Cheat Bypass", 15, function(state), "antiCheat")
+createToggle(pages.Personal, "🛡  Anti-Cheat Bypass", 15, function(state)
 	if state then startAntiCheat() else stopAntiCheat() end
-end)
+end, "antiCheat")
 
 -- Infinite Jump
 local jumpConn = nil
-createToggle(pages.Personal, "🦘  Infinite Jump", 14, function(state), "infJump")
+createToggle(pages.Personal, "🦘  Infinite Jump", 14, function(state)
 	if state then
 		jumpConn = UIS.JumpRequest:Connect(function()
 			local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
@@ -1512,7 +1512,7 @@ createToggle(pages.Personal, "🦘  Infinite Jump", 14, function(state), "infJum
 	else
 		if jumpConn then jumpConn:Disconnect(); jumpConn = nil end
 	end
-end)
+end, "infJump")
 
 createSection(pages.Personal, "🎯  Combat", 16)
 
@@ -1571,7 +1571,7 @@ local function watchAmmoChar(char)
 	table.insert(ammoConns, c)
 end
 
-createToggle(pages.Personal, "🔫  Unlimited Ammo", 17, function(state), "unlimAmmo")
+createToggle(pages.Personal, "🔫  Unlimited Ammo", 17, function(state)
 	ammoEnabled = state
 	ammoCleanup()
 	if not state then return end
@@ -1581,7 +1581,7 @@ createToggle(pages.Personal, "🔫  Unlimited Ammo", 17, function(state), "unlim
 		if ammoEnabled then watchAmmoChar(ch) end
 	end)
 	table.insert(ammoConns, c)
-end)
+end, "unlimAmmo")
 
 -- ===== INSTANT RELOAD =====
 local reloadEnabled = false
@@ -1633,7 +1633,7 @@ local function watchReloadChar(char)
 	table.insert(reloadConns, c)
 end
 
-createToggle(pages.Personal, "⚡  Instant Reload", 18, function(state), "instReload")
+createToggle(pages.Personal, "⚡  Instant Reload", 18, function(state)
 	reloadEnabled = state
 	reloadCleanup()
 	if not state then return end
@@ -1643,7 +1643,7 @@ createToggle(pages.Personal, "⚡  Instant Reload", 18, function(state), "instRe
 		if reloadEnabled then watchReloadChar(ch) end
 	end)
 	table.insert(reloadConns, c)
-end)
+end, "instReload")
 
 -- ===== NO RECOIL =====
 local recoilEnabled  = false
@@ -1671,7 +1671,7 @@ local function recoilPatchTool(tool)
 	end
 end
 
-createToggle(pages.Personal, "🎯  No Recoil", 19, function(state), "noRecoil")
+createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
 	recoilEnabled = state
 	-- Nettoie les anciennes connexions
 	if recoilConn then recoilConn:Disconnect(); recoilConn = nil end
@@ -1734,7 +1734,7 @@ createToggle(pages.Personal, "🎯  No Recoil", 19, function(state), "noRecoil")
 		table.insert(recoilConns, cc)
 	end)
 	table.insert(recoilConns, c2)
-end)
+end, "noRecoil")
 
 -- ===== AUTO PARRY =====
 local autoParryEnabled = false
@@ -1761,9 +1761,9 @@ local function disableAutoParry()
 	if autoParryConn then autoParryConn:Disconnect(); autoParryConn = nil end
 end
 
-createToggle(pages.Personal, "⚔  Auto Parry (block)", 20, function(state), "autoParry")
+createToggle(pages.Personal, "⚔  Auto Parry (block)", 20, function(state)
 	if state then enableAutoParry() else disableAutoParry() end
-end)
+end, "autoParry")
 
 -- ================================================
 
@@ -1956,10 +1956,10 @@ end
 updateAimStatus()
 
 -- Main Toggle
-createToggle(pages.Personal, "🎯  Aim Lock ON / OFF", 101, function(state), "aimLock")
+createToggle(pages.Personal, "🎯  Aim Lock ON / OFF", 101, function(state)
 	aimEnabled = state
 	if state then startAim() else stopAim() end
-end)
+end, "aimLock")
 
 -- Slider smooth (aiming speed)
 createSlider(pages.Personal, "🎚  Smooth (aim speed)", 1, 30, 8, 102, function(val)
@@ -2153,23 +2153,23 @@ local shader = nil
 for _, v in pairs(Lighting:GetChildren()) do if v.Name == "AdminShader" then shader = v; break end end
 if not shader then shader = Instance.new("ColorCorrectionEffect", Lighting); shader.Name = "AdminShader"; shader.Enabled = false end
 
-createToggle(pages.World, "🎨  Cinematic Shaders", 1, function(state), "cinematic")
+createToggle(pages.World, "🎨  Cinematic Shaders", 1, function(state)
 	shader.Enabled = state
 	if state then
 		shader.Brightness = -0.05; shader.Contrast = 0.08
 		shader.Saturation = 0.15; shader.TintColor = Color3.fromRGB(255, 240, 220)
 	end
-end)
+end, "cinematic")
 
-createToggle(pages.World, "🌙  Night Mode", 2, function(state), "nightMode")
+createToggle(pages.World, "🌙  Night Mode", 2, function(state)
 	if state then
 		TweenService:Create(Lighting, TweenInfo.new(1.5), {ClockTime=0, Brightness=0.5, Ambient=Color3.fromRGB(20,20,50)}):Play()
 	else
 		TweenService:Create(Lighting, TweenInfo.new(1.5), {ClockTime=14, Brightness=2, Ambient=Color3.fromRGB(100,100,100)}):Play()
 	end
-end)
+end, "nightMode")
 
-createToggle(pages.World, "🌈  Rainbow Sky", 4, function(state), "rainbowSky")
+createToggle(pages.World, "🌈  Rainbow Sky", 4, function(state)
 	if state then
 		local hue = 0
 		RunService:BindToRenderStep("RainbowSky", 1, function()
@@ -2182,7 +2182,7 @@ createToggle(pages.World, "🌈  Rainbow Sky", 4, function(state), "rainbowSky")
 		Lighting.Ambient = Color3.fromRGB(100,100,100)
 		Lighting.OutdoorAmbient = Color3.fromRGB(128,128,128)
 	end
-end)
+end, "rainbowSky")
 
 -- Fog
 createSection(pages.World, "🌫  Fog", 4)
@@ -2195,23 +2195,23 @@ local function getAtmo()
 	return a
 end
 
-createToggle(pages.World, "🌫  Dense Fog", 5, function(state), "denseFog")
+createToggle(pages.World, "🌫  Dense Fog", 5, function(state)
 	local atmo = getAtmo()
 	TweenService:Create(atmo, TweenInfo.new(1.5), {
 		Density = state and 0.85 or 0.3,
 		Offset  = state and 0.1  or 0,
 	}):Play()
-end)
+end, "denseFog")
 
-createToggle(pages.World, "☁  Light Fog", 6, function(state), "lightFog")
+createToggle(pages.World, "☁  Light Fog", 6, function(state)
 	local atmo = getAtmo()
 	TweenService:Create(atmo, TweenInfo.new(1.5), {
 		Density = state and 0.5 or 0.3,
 	}):Play()
-end)
+end, "lightFog")
 
 -- Rain: multi-layer high quality system
-createToggle(pages.World, "🌧  Rain", 7, function(state), "rain")
+createToggle(pages.World, "🌧  Rain", 7, function(state)
 	RunService:UnbindFromRenderStep("AdminRain")
 	for _, v in ipairs(workspace:GetChildren()) do
 		if v.Name == "AdminRain" or v.Name == "AdminRainFar" or v.Name == "AdminRainSplash" then v:Destroy() end
@@ -2311,10 +2311,10 @@ createToggle(pages.World, "🌧  Rain", 7, function(state), "rain")
 			rainFar.CFrame = CFrame.new(pos + Vector3.new(0, 50, 0))
 		end
 	end)
-end)
+end, "rain")
 
 -- Snow: high quality multi-layer system
-createToggle(pages.World, "❄  Snow", 8, function(state), "snow")
+createToggle(pages.World, "❄  Snow", 8, function(state)
 	RunService:UnbindFromRenderStep("AdminSnow")
 	for _, v in ipairs(workspace:GetChildren()) do
 		if v.Name == "AdminSnow" or v.Name == "AdminSnowFar" or v.Name == "AdminSnowGround" then v:Destroy() end
@@ -2429,9 +2429,9 @@ createToggle(pages.World, "❄  Snow", 8, function(state), "snow")
 			TweenService:Create(atmo, TweenInfo.new(2), { Density = 0 }):Play()
 		end
 	end
-end)
+end, "snow")
 
-createToggle(pages.World, "🌅  Sunset", 9, function(state), "sunset")
+createToggle(pages.World, "🌅  Sunset", 9, function(state)
 	if state then
 		TweenService:Create(Lighting, TweenInfo.new(2), {
 			ClockTime = 18, Brightness = 1.2,
@@ -2449,7 +2449,7 @@ createToggle(pages.World, "🌅  Sunset", 9, function(state), "sunset")
 			OutdoorAmbient = Color3.fromRGB(128,128,128),
 		}):Play()
 	end
-end)
+end, "sunset")
 
 createSection(pages.World, "⏩  Time", 9)
 
@@ -2881,10 +2881,10 @@ end
 
 -- Toggle Nuke on the Personal page
 createSection(pages.Personal, "💥  Chaos & Fun", 200)
-createToggle(pages.Personal, "🚀  NUKE MODE  (propulsion + explosion)", 201, function(state), "nukeMode")
+createToggle(pages.Personal, "🚀  NUKE MODE  (propulsion + explosion)", 201, function(state)
 	nukeEnabled = state
 	if state then startNuke() else stopNuke() end
-end)
+end, "nukeMode")
 createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 202, function()
 	local char = player.Character
 	local hrp  = char and char:FindFirstChild("HumanoidRootPart")
