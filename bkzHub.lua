@@ -12,6 +12,8 @@ local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 local HttpService = game:GetService("HttpService")
 
+local showNotification
+
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 local playerGui = player:WaitForChild("PlayerGui")
@@ -2632,7 +2634,7 @@ end)
 -- ================================================
 
 -- ================================================
-local function showNotification(message, duration)
+showNotification = function(message, duration)
 	duration = duration or 4
 
 	-- Toast container
