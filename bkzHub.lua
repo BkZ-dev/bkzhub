@@ -1,7 +1,8 @@
 -- ================================================
 --  bkz HUB v4.0 | By bkz | Keys B for open !
 -- ================================================
-task.wait(1)
+local scrSuccess, scrError = pcall(function()
+wait(1)
 
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -215,7 +216,7 @@ closeBtn.TextSize = 14
 closeBtn.BorderSizePixel = 0
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
 closeBtn.MouseEnter:Connect(playHover)
-closeBtn.MouseButton1Click:Connect(function() closeMenu() end)
+closeBtn.Name = "closeBtn"
 
 -- ================================================
 -- ================================================
@@ -1834,19 +1835,19 @@ local function getTarget()
 			-- Skip allies (same team)
 			local myTeam     = player.Team
 			local theirTeam  = p.Team
-			if myTeam and theirTeam and myTeam == theirTeam then continue end
-
-			local hum  = p.Character:FindFirstChildOfClass("Humanoid")
-			local head = p.Character:FindFirstChild("Head")
-			if hum and hum.Health > 0 and head then
-				local sp, onScreen = cam:WorldToViewportPoint(head.Position)
-				if onScreen and sp.Z > 0 then
-					local dx = sp.X - cx
-					local dy = sp.Y - cy
-					local fovDist = math.sqrt(dx*dx + dy*dy)
-					if fovDist < aimFOV and fovDist < bestScore then
-						bestScore = fovDist
-						best = p
+			if not (myTeam and theirTeam and myTeam == theirTeam) then
+				local hum  = p.Character:FindFirstChildOfClass("Humanoid")
+				local head = p.Character:FindFirstChild("Head")
+				if hum and hum.Health > 0 and head then
+					local sp, onScreen = cam:WorldToViewportPoint(head.Position)
+					if onScreen and sp.Z > 0 then
+						local dx = sp.X - cx
+						local dy = sp.Y - cy
+						local fovDist = math.sqrt(dx*dx + dy*dy)
+						if fovDist < aimFOV and fovDist < bestScore then
+							bestScore = fovDist
+							best = p
+						end
 					end
 				end
 			end
@@ -3687,12 +3688,35 @@ startESP()
 task.spawn(function()
 	task.wait(0.5)
 	if readfile then
-		local ok, result = pcall(function()
+		local ok2, result = pcall(function()
 			return game:GetService("HttpService"):JSONDecode(readfile("AdminMenu_config.json"))
 		end)
-		if ok and result then
+		if ok2 and result then
 			applyConfig(result)
 			showNotification("📂 Config loaded automatically!", 3)
 		end
 	end
 end)
+
+end) -- fin du pcall global
+if not scrSuccess then
+	warn("bkz HUB Error:", scrError)
+	-- Still run essential error display
+	pcall(function()
+		local plr = game:GetService("Players").LocalPlayer
+		if plr then
+			local gui2 = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
+			local lbl = Instance.new("TextLabel", gui2)
+			lbl.Size = UDim2.new(1,0,0,50)
+			lbl.Position = UDim2.new(0,0,0,100)
+			lbl.BackgroundTransparency = 0.5
+			lbl.BackgroundColor3 = Color3.new(0,0,0)
+			lbl.TextColor3 = Color3.new(1,0,0)
+			lbl.Text = "bkz HUB Error: " .. tostring(scrError)
+			lbl.Font = Enum.Font.GothamBold
+			lbl.TextSize = 16
+			lbl.TextWrapped = true
+			lbl.ZIndex = 1000
+		end
+	end)
+end
