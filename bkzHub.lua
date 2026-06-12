@@ -110,11 +110,11 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
 gui.ResetOnSpawn = false
 
--- Hover sound system (défini après gui pour éviter parent nil)
-local hoverSoundId = "rbxassetid://8686980613"
+-- Hover sound system (using valid sound asset)
+local HOVER_SOUND = "rbxassetid://9120380692"
 local function playHover()
 	local s = Instance.new("Sound")
-	s.SoundId = hoverSoundId
+	s.SoundId = HOVER_SOUND
 	s.Volume = 0.35
 	s.Parent = gui
 	s:Play()
