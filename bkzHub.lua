@@ -101,6 +101,12 @@ local Themes = {
 }
 local currentTheme = Themes.Dark
 
+-- Theme listener system for dynamic theme updates
+local themeListeners = {}
+local function onThemeChanged(fn)
+	table.insert(themeListeners, fn)
+end
+
 -- ================================================
 -- ================================================
 local gui = Instance.new("ScreenGui", playerGui)
@@ -133,6 +139,12 @@ shadow.ScaleType = Enum.ScaleType.Slice
 shadow.SliceCenter = Rect.new(10, 10, 100, 100)
 shadow.ZIndex = 0
 
+-- Subtle ambient glow pulse on shadow
+TweenService:Create(shadow, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	ImageTransparency = 0.65,
+	Size = UDim2.new(0, 406, 0, 526)
+}):Play()
+
 -- Glass-morphism background overlay
 local glassBg = Instance.new("Frame", gui)
 glassBg.Size = UDim2.new(1, 0, 1, 0)
@@ -163,6 +175,12 @@ strokeGlow.Color = currentTheme.Accent
 strokeGlow.Thickness = 6
 strokeGlow.Transparency = 0.75
 
+-- Pulsing accent glow border animation
+TweenService:Create(strokeGlow, TweenInfo.new(2.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	Transparency = 0.55,
+	Thickness = 8
+}):Play()
+
 -- ================================================
 -- ================================================
 local header = Instance.new("Frame", main)
@@ -178,6 +196,9 @@ accentBar.Position = UDim2.new(0, 15, 1, -1)
 accentBar.BackgroundColor3 = currentTheme.Accent
 accentBar.BorderSizePixel = 0
 accentBar.BackgroundTransparency = 0.4
+TweenService:Create(accentBar, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	BackgroundTransparency = 0.2
+}):Play()
 
 -- Hide bottom corners of the header
 local headerFix = Instance.new("Frame", header)
@@ -205,6 +226,26 @@ subtitle.TextColor3 = currentTheme.SubText
 subtitle.Font = Enum.Font.Gotham
 subtitle.TextSize = 10
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Lock button (toggle interface lock)
+local lockBtn = Instance.new("TextButton", header)
+lockBtn.Text = "🔓"
+lockBtn.Size = UDim2.new(0, 28, 0, 28)
+lockBtn.Position = UDim2.new(1, -72, 0.5, -14)
+lockBtn.BackgroundColor3 = currentTheme.Button
+lockBtn.TextColor3 = Color3.new(1,1,1)
+lockBtn.Font = Enum.Font.GothamBold
+lockBtn.TextSize = 12
+lockBtn.BorderSizePixel = 0
+Instance.new("UICorner", lockBtn).CornerRadius = UDim.new(0, 8)
+lockBtn.MouseEnter:Connect(playHover)
+lockBtn.Name = "lockBtn"
+lockBtn.MouseButton1Click:Connect(function()
+	interfaceLocked = not interfaceLocked
+	lockBtn.Text = interfaceLocked and "🔒" or "🔓"
+	lockBtn.BackgroundColor3 = interfaceLocked and currentTheme.Success or currentTheme.Button
+	showNotification(interfaceLocked and "🔒 Interface locked" or "🔓 Interface unlocked", 1.5)
+end)
 
 -- Close button amélioré avec hover
 local closeBtn = Instance.new("TextButton", header)
@@ -329,6 +370,8 @@ end
 
 local function createBtn(parent, text, color, order, func)
 	color = color or currentTheme.Button
+	local colorKey = nil
+	for k, v in pairs(currentTheme) do if v == color then colorKey = k; break end end
 	local frame = Instance.new("Frame", parent)
 	frame.Size = UDim2.new(1, 0, 0, 40)
 	frame.BackgroundColor3 = color
@@ -355,7 +398,7 @@ local function createBtn(parent, text, color, order, func)
 		TweenService:Create(stroke2, TweenInfo.new(0.12), {Transparency = 0.8, Color = currentTheme.Accent}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
-		TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundColor3 = color}):Play()
+		TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundColor3 = colorKey and currentTheme[colorKey] or color}):Play()
 		TweenService:Create(stroke2, TweenInfo.new(0.12), {Transparency = 0.93, Color = Color3.new(1,1,1)}):Play()
 	end)
 	btn.MouseButton1Click:Connect(function()
@@ -367,6 +410,12 @@ local function createBtn(parent, text, color, order, func)
 		end)
 		func()
 	end)
+
+	onThemeChanged(function(t)
+		if colorKey then frame.BackgroundColor3 = t[colorKey] end
+		btn.TextColor3 = t.Text
+	end)
+
 	return frame, btn
 end
 
@@ -452,6 +501,11 @@ local function createToggle(parent, text, order, func, configKey)
 		if state then task.spawn(function() toggleApply[configKey](true) end) end
 	end
 
+	onThemeChanged(function(t)
+		frame.BackgroundColor3 = t.Button
+		lbl.TextColor3 = t.Text
+	end)
+
 	return frame, lbl
 end
 
@@ -527,7 +581,7 @@ local function createSlider(parent, text, min, max, default, order, func)
 	inputBox.FocusLost:Connect(function()
 		local num = tonumber(inputBox.Text)
 		if num then
-			setVal(num, false)  -- no clamp for manual input
+			setVal(num, false)
 		else
 			inputBox.Text = tostring(currentVal)
 		end
@@ -555,6 +609,13 @@ local function createSlider(parent, text, min, max, default, order, func)
 	UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then draggingSlider = false end end)
 	UIS.InputChanged:Connect(function(i) if draggingSlider and i.UserInputType == Enum.UserInputType.MouseMovement then updateSlider(i) end end)
 	hitbox.MouseButton1Down:Connect(function(x,y) updateSlider({Position = Vector3.new(x,y,0)}) end)
+
+	onThemeChanged(function(t)
+		frame.BackgroundColor3 = t.Button
+		lbl.TextColor3 = t.Text
+		fill.BackgroundColor3 = t.Accent
+		inputBox.TextColor3 = t.Accent
+	end)
 
 	return frame
 end
@@ -608,15 +669,24 @@ local function createNumberInput(parent, text, default, order, func)
 		end
 	end)
 
+	onThemeChanged(function(t)
+		frame.BackgroundColor3 = t.Button
+		lbl.TextColor3 = t.Text
+		box.TextColor3 = t.Accent
+	end)
+
 	return frame
 end
 
 -- ================================================
 
 -- ================================================
+local interfaceLocked = false
 local dragging, dragStart, startPos
+local resizing, resizeStart, resizeStartSize
 
 local function startDrag(input)
+	if interfaceLocked then return end
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		dragging = true; dragStart = input.Position; startPos = main.Position
 	end
@@ -631,14 +701,72 @@ dragZone.InputBegan:Connect(startDrag)
 
 header.InputBegan:Connect(startDrag)
 
+-- Edge resize: visual indicators + mouse-position detection
+local edgeBars = {}
+local edgeZones = {right="x", bottom="y", corner="xy"}
+for name, axis in pairs(edgeZones) do
+	local cfg = name == "right" and {size=UDim2.new(0,4,1,-12), anchor=Vector2.new(1,0), pos=UDim2.new(1,0,0,0)}
+		or name == "bottom" and {size=UDim2.new(1,-12,0,4), anchor=Vector2.new(0,1), pos=UDim2.new(0,0,1,0)}
+		or {size=UDim2.new(0,12,0,12), anchor=Vector2.new(1,1), pos=UDim2.new(1,0,1,0)}
+	local bar = Instance.new("Frame", main)
+	bar.Size = cfg.size; bar.AnchorPoint = cfg.anchor; bar.Position = cfg.pos
+	bar.BackgroundColor3 = currentTheme.Accent; bar.BackgroundTransparency = 1
+	bar.BorderSizePixel = 0; bar.ZIndex = 0; bar.Name = "EdgeBar_" .. name
+	edgeBars[name] = {bar=bar}
+end
+
+onThemeChanged(function(t)
+	for _, v in pairs(edgeBars) do v.bar.BackgroundColor3 = t.Accent end
+end)
+
+UIS.InputBegan:Connect(function(input, gpe)
+	if gpe or interfaceLocked then return end
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+	local mpos = Vector2.new(mouse.X, mouse.Y)
+	local aPos, aSz = main.AbsolutePosition, main.AbsoluteSize
+	local edge = 6
+	local onR = mpos.X >= aPos.X + aSz.X - edge and mpos.X <= aPos.X + aSz.X
+	local onB = mpos.Y >= aPos.Y + aSz.Y - edge and mpos.Y <= aPos.Y + aSz.Y
+	if onR and onB then resizing = "xy"
+	elseif onR then resizing = "x"
+	elseif onB then resizing = "y"
+	end
+	if resizing then resizeStart = input.Position; resizeStartSize = Vector2.new(menuW, menuH) end
+end)
+
 UIS.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+	if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+	if dragging then
 		local delta = input.Position - dragStart
 		main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
+	if resizing then
+		local delta = input.Position - resizeStart
+		local newW, newH = menuW, menuH
+		if resizing == "x" or resizing == "xy" then newW = math.max(280, resizeStartSize.X + delta.X) end
+		if resizing == "y" or resizing == "xy" then newH = math.max(380, resizeStartSize.Y + delta.Y) end
+		applyMenuSize(newW, newH)
+	end
+	-- Show edge indicators on hover
+	if not interfaceLocked then
+		local mpos = Vector2.new(mouse.X, mouse.Y)
+		local aPos, aSz = main.AbsolutePosition, main.AbsoluteSize
+		local edge = 6
+		local onR = mpos.X >= aPos.X + aSz.X - edge and mpos.X <= aPos.X + aSz.X
+		local onB = mpos.Y >= aPos.Y + aSz.Y - edge and mpos.Y <= aPos.Y + aSz.Y
+		for k, v in pairs(edgeBars) do
+			local show = (k == "right" and onR and not onB) or (k == "bottom" and onB and not onR) or (k == "corner" and onR and onB)
+			v.bar.BackgroundTransparency = show and 0.8 or 1
+		end
+	else
+		for _, v in pairs(edgeBars) do v.bar.BackgroundTransparency = 1 end
+	end
 end)
+
 UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false; resizing = nil
+	end
 end)
 -- ================================================
 
@@ -2507,15 +2635,39 @@ end
 local function applyTheme(t)
 	currentTheme = t
 	main.BackgroundColor3 = t.BG
+	shadow.ImageColor3 = t.Accent
 	stroke.Color = t.Accent
+	strokeGlow.Color = t.Accent
+	strokeGlow.Transparency = 0.75
 	header.BackgroundColor3 = t.Panel
+	accentBar.BackgroundColor3 = t.Accent
 	headerFix.BackgroundColor3 = t.Panel
 	title.TextColor3 = t.Text
 	subtitle.TextColor3 = t.SubText
+	closeBtn.BackgroundColor3 = t.Danger
+	lockBtn.BackgroundColor3 = interfaceLocked and t.Success or t.Button
 	tabBar.BackgroundColor3 = t.Tab
 	for name, btn in pairs(tabBtns) do
 		btn.BackgroundColor3 = (name == activeTab) and t.TabActive or t.Tab
 		btn.TextColor3 = (name == activeTab) and Color3.new(1,1,1) or t.SubText
+		btn:FindFirstChildOfClass("TextLabel").TextColor3 = (name == activeTab) and Color3.new(1,1,1) or t.SubText
+	end
+	-- Search / Player page elements
+	ddFrame.BackgroundColor3 = t.Button
+	searchBox.TextColor3 = t.Text
+	searchBox.PlaceholderColor3 = t.SubText
+	refreshFrame.BackgroundColor3 = t.Accent
+	ddList.BackgroundColor3 = t.Panel
+	infoPanel.BackgroundColor3 = t.Panel
+	infoName.TextColor3 = t.Text
+	infoStats.TextColor3 = t.SubText
+	-- Page scrollbars
+	for _, page in pairs(pages) do
+		page.ScrollBarImageColor3 = t.Accent
+	end
+	-- Notify all registered theme listeners (covers createBtn/createToggle/etc)
+	for _, cb in ipairs(themeListeners) do
+		pcall(cb, t)
 	end
 end
 
@@ -2526,20 +2678,19 @@ createBtn(pages.Settings, "💠  Cyber", currentTheme.Button, 3, function() appl
 createBtn(pages.Settings, "🔴  Red",   currentTheme.Button, 4, function() applyTheme(Themes.Rouge) end)
 createBtn(pages.Settings, "🟢  Green", currentTheme.Button, 5, function() applyTheme(Themes.Vert)  end)
 
-createSection(pages.Settings, "📐  Menu Size", 6)
-createBtn(pages.Settings, "➕  Enlarge (+40)",      currentTheme.Button, 7,  function() applyMenuSize(menuW + 40, menuH + 40) end)
-createBtn(pages.Settings, "➖  Reduce (-40)",       currentTheme.Button, 8,  function() applyMenuSize(math.max(280, menuW - 40), math.max(380, menuH - 40)) end)
-createBtn(pages.Settings, "➡  +Width Only",        currentTheme.Button, 9,  function() applyMenuSize(menuW + 40, menuH) end)
-createBtn(pages.Settings, "⬅  -Width Only",        currentTheme.Button, 10, function() applyMenuSize(math.max(280, menuW - 40), menuH) end)
-createBtn(pages.Settings, "⬆  +Height Only",       currentTheme.Button, 11, function() applyMenuSize(menuW, menuH + 40) end)
-createBtn(pages.Settings, "⬇  -Height Only",       currentTheme.Button, 12, function() applyMenuSize(menuW, math.max(380, menuH - 40)) end)
+createSection(pages.Settings, "📐  Menu & Lock", 6)
+createToggle(pages.Settings, "🔒  Lock Interface", 7, function(state)
+	interfaceLocked = state
+	lockBtn.Text = state and "🔒" or "🔓"
+	lockBtn.BackgroundColor3 = state and currentTheme.Success or currentTheme.Button
+	showNotification(state and "🔒 Interface locked" or "🔓 Interface unlocked", 1.5)
+end, "lockInterface")
 createBtn(pages.Settings, "↩  Reset Size",          currentTheme.Button, 13, function() applyMenuSize(380, 500) end)
-
-createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 14, function(val)
-	main.BackgroundTransparency = 1 - (val / 100)
-end)
 createBtn(pages.Settings, "🏠  Recenter Menu", currentTheme.Button, 15, function()
 	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
+end)
+createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 14, function(val)
+	main.BackgroundTransparency = 1 - (val / 100)
 end)
 
 createSection(pages.Settings, "💾  Configuration", 16)
@@ -3569,6 +3720,7 @@ local credits = {
 	{"🤝  Contributor","All people use menu thx you !"},
 }
 
+local creditRows = {}
 for i, entry in ipairs(credits) do
 	local row = Instance.new("Frame", pages.Other)
 	row.Size = UDim2.new(1, 0, 0, 44)
@@ -3600,7 +3752,17 @@ for i, entry in ipairs(credits) do
 	nameLbl.TextSize = 12
 	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
 	nameLbl.TextWrapped = true
+
+	creditRows[i] = {row = row, role = role, nameLbl = nameLbl}
 end
+
+onThemeChanged(function(t)
+	for _, cr in ipairs(creditRows) do
+		cr.row.BackgroundColor3 = t.Panel
+		cr.role.TextColor3 = t.Accent
+		cr.nameLbl.TextColor3 = t.Text
+	end
+end)
 
 createSection(pages.Other, "ℹ  Informations", 98)
 local verFrame = Instance.new("Frame", pages.Other)
@@ -3625,7 +3787,7 @@ local controlsLabel = Instance.new("TextLabel", verFrame)
 controlsLabel.Size = UDim2.new(1, -12, 0, 36)
 controlsLabel.Position = UDim2.new(0, 0, 0, 20)
 controlsLabel.BackgroundTransparency = 1
-controlsLabel.Text = "🎮  [B]  → Open / Close\n🖱  Drag anywhere → Move"
+controlsLabel.Text = "🎮  [B]  Open/Close  |  [Edge] Resize\n🖱  Drag title to move  |  🔒 Lock"
 controlsLabel.TextColor3 = currentTheme.Text
 controlsLabel.Font = Enum.Font.Gotham
 controlsLabel.TextSize = 12
@@ -3636,13 +3798,134 @@ local featLabel = Instance.new("TextLabel", verFrame)
 featLabel.Size = UDim2.new(1, -12, 0, 16)
 featLabel.Position = UDim2.new(0, 0, 0, 58)
 featLabel.BackgroundTransparency = 1
-featLabel.Text = "🔥 Bypass • Force Modes • ESP HD • Son Hover"
+featLabel.Text = "🔥 Bypass • Force Modes • ESP HD • Freecam"
 featLabel.TextColor3 = currentTheme.SubText
 featLabel.Font = Enum.Font.Gotham
 featLabel.TextSize = 10
 featLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+onThemeChanged(function(t)
+	verFrame.BackgroundColor3 = t.Panel
+	verLabel.TextColor3 = t.Accent
+	controlsLabel.TextColor3 = t.Text
+	featLabel.TextColor3 = t.SubText
+end)
 	-- ESP initialized by startESP() below
 
+
+-- ================================================
+-- Freecam Feature
+-- ================================================
+local freecamActive = false
+local freecamMoveConn, freecamRotateConn, freecamScrollConn
+local freecamKeyBeginConn, freecamKeyEndConn
+local freecamCamPos, freecamCamRot, freecamZoom = CFrame.new(), Vector2.new(), 50
+
+local function startFreecam()
+	local cam = workspace.CurrentCamera
+	freecamActive = true
+	freecamCamPos = cam.CFrame.Position
+	freecamCamRot = Vector2.new(cam.CFrame:ToEulerAnglesYXZ())
+	freecamZoom = 50
+
+	local char = player.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then hum.PlatformStand = true end
+	end
+	cam.CameraType = Enum.CameraType.Scriptable
+
+	local moveSpeed = 50
+	local keys = {W=false, A=false, S=false, D=false, Space=false, LShift=false}
+	local mousePressed = false
+	local lastMousePos = Vector2.new()
+
+	freecamMoveConn = RunService.RenderStepped:Connect(function(dt)
+		if not freecamActive then return end
+		local forward = (cam.CFrame.LookVector * Vector3.new(1,0,1)).Unit
+		local right = (cam.CFrame.RightVector * Vector3.new(1,0,1)).Unit
+		local up = Vector3.new(0,1,0)
+		local vel = Vector3.new()
+		if keys.W then vel = vel + forward end
+		if keys.S then vel = vel - forward end
+		if keys.A then vel = vel - right end
+		if keys.D then vel = vel + right end
+		if keys.Space then vel = vel + up end
+		if keys.LShift then vel = vel - up end
+		local spd = (keys.LShift or keys.Space) and moveSpeed * 0.5 or moveSpeed
+		if vel.Magnitude > 0 then
+			vel = vel.Unit * spd * dt
+			freecamCamPos = freecamCamPos + vel
+		end
+		local cf = CFrame.new(freecamCamPos) * CFrame.Angles(0, -freecamCamRot.X, 0) * CFrame.Angles(-freecamCamRot.Y, 0, 0)
+		cf = cf + cf.LookVector * freecamZoom
+		cam.CFrame = cf
+	end)
+
+	freecamRotateConn = UIS.InputChanged:Connect(function(input)
+		if not freecamActive or not mousePressed then return end
+		if input.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = input.Position - lastMousePos
+			freecamCamRot = freecamCamRot + Vector2.new(delta.X, -delta.Y) * 0.003
+			lastMousePos = input.Position
+		end
+	end)
+
+	freecamScrollConn = UIS.InputChanged:Connect(function(input)
+		if not freecamActive then return end
+		if input.UserInputType == Enum.UserInputType.MouseWheel then
+			freecamZoom = math.clamp(freecamZoom - input.Position.Z * 5, 5, 200)
+		end
+	end)
+
+	freecamKeyBeginConn = UIS.InputBegan:Connect(function(input, gpe)
+		if gpe or not freecamActive then return end
+		if input.KeyCode == Enum.KeyCode.W then keys.W = true end
+		if input.KeyCode == Enum.KeyCode.A then keys.A = true end
+		if input.KeyCode == Enum.KeyCode.S then keys.S = true end
+		if input.KeyCode == Enum.KeyCode.D then keys.D = true end
+		if input.KeyCode == Enum.KeyCode.Space then keys.Space = true end
+		if input.KeyCode == Enum.KeyCode.LeftShift then keys.LShift = true end
+		if input.UserInputType == Enum.UserInputType.MouseButton2 then
+			mousePressed = true
+			lastMousePos = input.Position
+		end
+	end)
+
+	freecamKeyEndConn = UIS.InputEnded:Connect(function(input, gpe)
+		if gpe or not freecamActive then return end
+		if input.KeyCode == Enum.KeyCode.W then keys.W = false end
+		if input.KeyCode == Enum.KeyCode.A then keys.A = false end
+		if input.KeyCode == Enum.KeyCode.S then keys.S = false end
+		if input.KeyCode == Enum.KeyCode.D then keys.D = false end
+		if input.KeyCode == Enum.KeyCode.Space then keys.Space = false end
+		if input.KeyCode == Enum.KeyCode.LeftShift then keys.LShift = false end
+		if input.UserInputType == Enum.UserInputType.MouseButton2 then
+			mousePressed = false
+		end
+	end)
+end
+
+local function stopFreecam()
+	freecamActive = false
+	if freecamMoveConn then freecamMoveConn:Disconnect(); freecamMoveConn = nil end
+	if freecamRotateConn then freecamRotateConn:Disconnect(); freecamRotateConn = nil end
+	if freecamScrollConn then freecamScrollConn:Disconnect(); freecamScrollConn = nil end
+	if freecamKeyBeginConn then freecamKeyBeginConn:Disconnect(); freecamKeyBeginConn = nil end
+	if freecamKeyEndConn then freecamKeyEndConn:Disconnect(); freecamKeyEndConn = nil end
+	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+	local char = player.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then hum.PlatformStand = false end
+	end
+end
+
+createToggle(pages.Other, "📷  Freecam (WASD + Right Click)", 50, function(state)
+	if state then startFreecam() else stopFreecam() end
+end, "freecamEnabled")
+
+-- ================================================
 
 -- Start the ESP loop
 local function startESP()
