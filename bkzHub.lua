@@ -1,6 +1,6 @@
--- ================================================
---  bkz HUB v4.0 | By bkz | Keys B for open !
--- ================================================
+
+
+
 local scrSuccess, scrError = pcall(function()
 wait(1)
 
@@ -20,8 +20,8 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 if playerGui:FindFirstChild("AdminMenu") then playerGui.AdminMenu:Destroy() end
 
--- ================================================
--- ================================================
+
+
 local Themes = {
 	Dark = {
 		BG        = Color3.fromRGB(10, 10, 16),
@@ -101,14 +101,14 @@ local Themes = {
 }
 local currentTheme = Themes.Dark
 
--- Theme listener system for dynamic theme updates
+
 local themeListeners = {}
 local function onThemeChanged(fn)
 	table.insert(themeListeners, fn)
 end
 
--- ================================================
--- ================================================
+
+
 local gui = Instance.new("ScreenGui", playerGui)
 gui.Name = "AdminMenu"
 gui.Enabled = false
@@ -116,7 +116,7 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
 gui.ResetOnSpawn = false
 
--- Hover sound system (using valid sound asset)
+
 local HOVER_SOUND = "rbxassetid://9120380692"
 local function playHover()
 	local s = Instance.new("Sound")
@@ -127,7 +127,7 @@ local function playHover()
 	Debris:AddItem(s, 1)
 end
 
--- Drop shadow behind main (effet glow amélioré)
+
 local shadow = Instance.new("ImageLabel", gui)
 shadow.Size = UDim2.new(0, 400, 0, 520)
 shadow.Position = UDim2.new(0.5, -200, 0.5, -260)
@@ -139,13 +139,13 @@ shadow.ScaleType = Enum.ScaleType.Slice
 shadow.SliceCenter = Rect.new(10, 10, 100, 100)
 shadow.ZIndex = 0
 
--- Subtle ambient glow pulse on shadow
+
 TweenService:Create(shadow, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
 	ImageTransparency = 0.65,
 	Size = UDim2.new(0, 406, 0, 526)
 }):Play()
 
--- Glass-morphism background overlay
+
 local glassBg = Instance.new("Frame", gui)
 glassBg.Size = UDim2.new(1, 0, 1, 0)
 glassBg.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -154,7 +154,7 @@ glassBg.BorderSizePixel = 0
 glassBg.ZIndex = 0
 glassBg.Visible = false
 
--- Main window
+
 local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0, 380, 0, 500)
 main.Position = UDim2.new(0.5, -190, 0.5, -250)
@@ -164,7 +164,7 @@ main.ZIndex = 1
 main.ClipsDescendants = true
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
 
--- Accent glow border (double stroke pour effet néon)
+
 local stroke = Instance.new("UIStroke", main)
 stroke.Color = currentTheme.Accent
 stroke.Thickness = 2.5
@@ -175,21 +175,21 @@ strokeGlow.Color = currentTheme.Accent
 strokeGlow.Thickness = 6
 strokeGlow.Transparency = 0.75
 
--- Pulsing accent glow border animation
+
 TweenService:Create(strokeGlow, TweenInfo.new(2.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
 	Transparency = 0.55,
 	Thickness = 8
 }):Play()
 
--- ================================================
--- ================================================
+
+
 local header = Instance.new("Frame", main)
 header.Size = UDim2.new(1, 0, 0, 52)
 header.BackgroundColor3 = currentTheme.Panel
 header.BorderSizePixel = 0
 Instance.new("UICorner", header).CornerRadius = UDim.new(0, 14)
 
--- Accent bar under header
+
 local accentBar = Instance.new("Frame", header)
 accentBar.Size = UDim2.new(1, -30, 0, 2)
 accentBar.Position = UDim2.new(0, 15, 1, -1)
@@ -200,7 +200,7 @@ TweenService:Create(accentBar, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.Ea
 	BackgroundTransparency = 0.2
 }):Play()
 
--- Hide bottom corners of the header
+
 local headerFix = Instance.new("Frame", header)
 headerFix.Size = UDim2.new(1, 0, 0, 14)
 headerFix.Position = UDim2.new(0, 0, 1, -14)
@@ -227,7 +227,7 @@ subtitle.Font = Enum.Font.Gotham
 subtitle.TextSize = 10
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
 
--- Lock button (toggle interface lock)
+
 local lockBtn = Instance.new("TextButton", header)
 lockBtn.Text = "🔓"
 lockBtn.Size = UDim2.new(0, 28, 0, 28)
@@ -247,7 +247,7 @@ lockBtn.MouseButton1Click:Connect(function()
 	showNotification(interfaceLocked and "🔒 Interface locked" or "🔓 Interface unlocked", 1.5)
 end)
 
--- Close button amélioré avec hover
+
 local closeBtn = Instance.new("TextButton", header)
 closeBtn.Text = "✕"
 closeBtn.Size = UDim2.new(0, 28, 0, 28)
@@ -261,8 +261,8 @@ Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
 closeBtn.MouseEnter:Connect(playHover)
 closeBtn.Name = "closeBtn"
 
--- ================================================
--- ================================================
+
+
 local tabBar = Instance.new("Frame", main)
 tabBar.Size = UDim2.new(1, -20, 0, 40)
 tabBar.Position = UDim2.new(0, 10, 0, 57)
@@ -276,8 +276,8 @@ local tabPad = Instance.new("UIPadding", tabBar)
 tabPad.PaddingLeft = UDim.new(0, 4); tabPad.PaddingRight = UDim.new(0, 4)
 tabPad.PaddingTop = UDim.new(0, 4); tabPad.PaddingBottom = UDim.new(0, 4)
 
--- ================================================
--- ================================================
+
+
 local tabDefs = {
 	{ name = "Player",   icon = "👤" },
 	{ name = "Personal", icon = "🔒" },
@@ -342,8 +342,8 @@ for _, def in ipairs(tabDefs) do
 	tabBtns[def.name] = tb
 end
 
--- ================================================
--- ================================================
+
+
 local function createSection(parent, title, order)
 	local frame = Instance.new("Frame", parent)
 	frame.Size = UDim2.new(1, 0, 0, 28)
@@ -419,7 +419,7 @@ local function createBtn(parent, text, color, order, func)
 	return frame, btn
 end
 
--- Global toggle states tracking (for config save/load)
+
 local toggleStates = {}
 local toggleApply = {}
 
@@ -463,7 +463,7 @@ local function createToggle(parent, text, order, func, configKey)
 	local state = false
 	if configKey and toggleStates[configKey] ~= nil then state = toggleStates[configKey] end
 
-	-- Apply initial state from toggleStates
+	
 	if state then
 		track.BackgroundColor3 = currentTheme.Accent
 		knob.Position = UDim2.new(1,-21,0.5,-9)
@@ -490,7 +490,7 @@ local function createToggle(parent, text, order, func, configKey)
 		func(state)
 	end)
 
-	-- Register apply function for config reload
+	
 	if configKey then
 		toggleApply[configKey] = function(newState)
 			state = newState
@@ -527,7 +527,7 @@ local function createSlider(parent, text, min, max, default, order, func)
 	lbl.TextSize = 12
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
 
-	-- Editable input box
+	
 	local inputBox = Instance.new("TextBox", frame)
 	inputBox.Size = UDim2.new(0, 56, 0, 20)
 	inputBox.Position = UDim2.new(1, -68, 0, 5)
@@ -577,7 +577,7 @@ local function createSlider(parent, text, min, max, default, order, func)
 		func(display)
 	end
 
-	-- Manual input: type any number, press Enter or lose focus
+	
 	inputBox.FocusLost:Connect(function()
 		local num = tonumber(inputBox.Text)
 		if num then
@@ -678,9 +678,9 @@ local function createNumberInput(parent, text, default, order, func)
 	return frame
 end
 
--- ================================================
 
--- ================================================
+
+
 local interfaceLocked = false
 local dragging, dragStart, startPos
 local resizing, resizeStart, resizeStartSize
@@ -701,7 +701,7 @@ dragZone.InputBegan:Connect(startDrag)
 
 header.InputBegan:Connect(startDrag)
 
--- Edge resize: visual indicators + mouse-position detection
+
 local edgeBars = {}
 local edgeZones = {right="x", bottom="y", corner="xy"}
 for name, axis in pairs(edgeZones) do
@@ -747,7 +747,7 @@ UIS.InputChanged:Connect(function(input)
 		if resizing == "y" or resizing == "xy" then newH = math.max(380, resizeStartSize.Y + delta.Y) end
 		applyMenuSize(newW, newH)
 	end
-	-- Show edge indicators on hover
+	
 	if not interfaceLocked then
 		local mpos = Vector2.new(mouse.X, mouse.Y)
 		local aPos, aSz = main.AbsolutePosition, main.AbsoluteSize
@@ -768,9 +768,9 @@ UIS.InputEnded:Connect(function(input)
 		dragging = false; resizing = nil
 	end
 end)
--- ================================================
 
--- ================================================
+
+
 local gokuMode = false
 
 local function spawnRing(cframe, color, size)
@@ -795,13 +795,13 @@ local function playInstantTransmissionFX(position)
 	local hrp = char.HumanoidRootPart
 	local originCFrame = hrp.CFrame
 
-	-- His departure: whoosh, powerful!
+	
 	local snd1 = Instance.new("Sound", hrp)
 	snd1.SoundId = "rbxassetid://126099526912322"
 	snd1.Volume = 0.8; snd1.PlaybackSpeed = 1.3
 	snd1:Play(); Debris:AddItem(snd1, 2)
 
-	-- Afterimage of the original character's ghost
+	
 	for _, part in ipairs(char:GetDescendants()) do
 		if part:IsA("BasePart") then
 			local ghost = Instance.new("Part", workspace)
@@ -816,7 +816,7 @@ local function playInstantTransmissionFX(position)
 		end
 	end
 
-	-- Originally a pillar of light
+	
 	local pillar = Instance.new("Part", workspace)
 	pillar.Size = Vector3.new(2.5, 40, 2.5)
 	pillar.CFrame = originCFrame * CFrame.new(0, 20, 0)
@@ -828,15 +828,15 @@ local function playInstantTransmissionFX(position)
 	}):Play()
 	Debris:AddItem(pillar, 0.5)
 
-	-- Starting rings
+	
 	spawnRing(originCFrame, Color3.fromRGB(100, 200, 255), 5)
 	spawnRing(originCFrame, Color3.fromRGB(255, 255, 255), 2.5)
 
-	-- Effective TP
+	
 	task.wait(0.06)
 	hrp.CFrame = CFrame.new(position + Vector3.new(0, 3, 0))
 
-	-- Its arrival impact
+	
 	local snd2 = Instance.new("Sound", hrp)
 	snd2.SoundId = "rbxassetid://3716468774"
 	snd2.Volume = 0.6; snd2.PlaybackSpeed = 0.85
@@ -844,7 +844,7 @@ local function playInstantTransmissionFX(position)
 
 	local arrCF = hrp.CFrame
 
-	-- Shockwave ground arrival
+	
 	local wave = Instance.new("Part", workspace)
 	wave.Shape = Enum.PartType.Cylinder
 	wave.Size = Vector3.new(0.2, 2, 2)
@@ -857,12 +857,12 @@ local function playInstantTransmissionFX(position)
 	}):Play()
 	Debris:AddItem(wave, 0.55)
 
-	-- Arrival rings (3 layers)
+	
 	spawnRing(arrCF, Color3.fromRGB(255, 255, 180), 6)
 	spawnRing(arrCF, Color3.fromRGB(100, 200, 255), 3.5)
 	spawnRing(arrCF, Color3.fromRGB(255, 255, 255), 1.8)
 
-	-- Central flash arrival
+	
 	local burst = Instance.new("Part", workspace)
 	burst.Shape = Enum.PartType.Ball
 	burst.Size = Vector3.new(3, 3, 3)
@@ -896,19 +896,19 @@ UIS.InputBegan:Connect(function(input, gpe)
 	end
 end)
 
--- ================================================
 
--- ================================================
+
+
 createSection(pages.Player, "Targeting", 0)
 
--- Player search container (input + refresh button)
+
 local searchRow = Instance.new("Frame", pages.Player)
 searchRow.Size = UDim2.new(1, 0, 0, 38)
 searchRow.BackgroundTransparency = 1
 searchRow.BorderSizePixel = 0
 searchRow.LayoutOrder = 1
 
--- Search text field
+
 local ddFrame = Instance.new("Frame", searchRow)
 ddFrame.Size = UDim2.new(1, -44, 1, 0)
 ddFrame.Position = UDim2.new(0, 0, 0, 0)
@@ -929,7 +929,7 @@ searchBox.TextSize = 12
 searchBox.TextXAlignment = Enum.TextXAlignment.Left
 searchBox.ClearTextOnFocus = false
 
--- Refresh button
+
 local refreshFrame = Instance.new("Frame", searchRow)
 refreshFrame.Size = UDim2.new(0, 38, 1, 0)
 refreshFrame.Position = UDim2.new(1, -38, 0, 0)
@@ -953,7 +953,7 @@ refreshBtn.TextSize = 16
 		TweenService:Create(refreshFrame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.Accent}):Play()
 	end)
 
--- Results drop-down list
+
 local ddList = Instance.new("ScrollingFrame", pages.Player)
 ddList.Size = UDim2.new(1, 0, 0, 0)
 ddList.BackgroundColor3 = currentTheme.Panel
@@ -968,7 +968,7 @@ Instance.new("UIListLayout", ddList).Padding = UDim.new(0, 2)
 
 local targetPlayer = nil
 
--- Select a player and close the list
+
 local function selectPlayer(p)
 	targetPlayer = p
 	searchBox.Text = p.Name
@@ -977,7 +977,7 @@ local function selectPlayer(p)
 	task.wait(0.15); ddList.Visible = false
 end
 
--- Filter and populate the list according to the entered text.
+
 local function updateDD(filter)
 	filter = filter and filter:lower() or ""
 	for _, c in pairs(ddList:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
@@ -1008,18 +1008,18 @@ local function updateDD(filter)
 	end
 end
 
--- Open/refresh the full list
+
 local function refreshDD()
 	searchBox.Text = ""
 	updateDD("")
 end
 
--- Text field events
+
 searchBox:GetPropertyChangedSignal("Text"):Connect(function()
 	updateDD(searchBox.Text)
 end)
 
--- Press TAB or Enter → selects the first visible result
+
 searchBox.FocusLost:Connect(function(enterPressed)
 	if enterPressed then
 		for _, c in pairs(ddList:GetChildren()) do
@@ -1047,19 +1047,19 @@ UIS.InputBegan:Connect(function(input, gpe)
 	end
 end)
 
--- Refresh button
+
 refreshBtn.MouseButton1Click:Connect(function()
 	refreshDD()
 end)
 
--- Open the list to focus
+
 searchBox.Focused:Connect(function()
 	updateDD(searchBox.Text)
 end)
 
 createSection(pages.Player, "Actions", 2)
 
--- Target player panel information
+
 local infoPanel = Instance.new("Frame", pages.Player)
 infoPanel.Size = UDim2.new(1, 0, 0, 60)
 infoPanel.BackgroundColor3 = currentTheme.Panel
@@ -1099,7 +1099,7 @@ infoHP.Font = Enum.Font.Gotham
 infoHP.TextSize = 10
 infoHP.TextXAlignment = Enum.TextXAlignment.Left
 
--- Updates the panel when targetPlayer changes
+
 local _origSelectPlayer = selectPlayer
 selectPlayer = function(p)
 	_origSelectPlayer(p)
@@ -1114,7 +1114,7 @@ selectPlayer = function(p)
 	end
 end
 
--- HP update live on the panel
+
 RunService.Heartbeat:Connect(function()
 	if targetPlayer and targetPlayer.Character then
 		local hum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
@@ -1152,7 +1152,7 @@ createBtn(pages.Player, "🚀  TP Me to Player", currentTheme.Button, 6, functio
 		pcall(function() myHRP.CFrame = theirHRP.CFrame * CFrame.new(2, 2, 0) end)
 	end
 end)
--- Chat Spy : 3 méthodes compatibles (TextChatService + legacy Player.Chatted)
+
 local chatSpyConns  = {}
 local chatSpyActive = false
 
@@ -1167,7 +1167,7 @@ local function startChatSpy(filterPlayer)
 	chatSpyActive = true
 	local connected = false
 
-	-- Méthode 1 : TextChatService (jeux modernes Roblox)
+	
 	pcall(function()
 		local TCS = game:GetService("TextChatService")
 		if TCS and TCS.MessageReceived then
@@ -1187,7 +1187,7 @@ local function startChatSpy(filterPlayer)
 		end
 	end)
 
-	-- Méthode 2 : Player.Chatted (legacy, le plus compatible)
+	
 	local function hookPlayer(pl)
 		if filterPlayer and pl ~= filterPlayer then return end
 		local c = pl.Chatted:Connect(function(msg)
@@ -1299,9 +1299,9 @@ createBtn(pages.Player, "📡  Force All TP to Me", currentTheme.Accent, 15, fun
 	showNotification("📡  Tous TP à vous!", 2)
 end)
 
--- ================================================
 
--- ================================================
+
+
 createSection(pages.Personal, "🏃  Movement", 0)
 
 local savedWalkSpeed = 16
@@ -1433,7 +1433,7 @@ end, "noclip")
 
 createSection(pages.Personal, "🛡  Survival", 10)
 
--- God Mode — robuste, fonctionne partout
+
 local godConn        = nil
 local godHumConn     = nil
 local godRespawnConn = nil
@@ -1441,19 +1441,19 @@ local godEnabled     = false
 
 local function applyGodToHum(hum)
 	if not hum then return end
-	-- Méthode 1: MaxHealth infini + Health infini
+	
 	pcall(function()
 		hum.MaxHealth = math.huge
 		hum.Health    = math.huge
 	end)
-	-- Méthode 2: si math.huge refusé par le jeu, on force 1e6
+	
 	pcall(function()
 		if hum.MaxHealth < 1e5 then
 			hum.MaxHealth = 1e6
 			hum.Health    = 1e6
 		end
 	end)
-	-- Méthode 3: hook HealthChanged → reset instantané
+	
 	if godHumConn then godHumConn:Disconnect(); godHumConn = nil end
 	godHumConn = hum.HealthChanged:Connect(function()
 		if not godEnabled then return end
@@ -1467,13 +1467,13 @@ end
 
 local function enableGod()
 	godEnabled = true
-	-- Applique au personnage courant
+	
 	local char = player.Character
 	if char then
 		local hum = char:FindFirstChildOfClass("Humanoid")
 		applyGodToHum(hum)
 	end
-	-- Reconnecte à chaque respawn
+	
 	if godRespawnConn then godRespawnConn:Disconnect() end
 	godRespawnConn = player.CharacterAdded:Connect(function(c)
 		task.wait(0.15)
@@ -1481,7 +1481,7 @@ local function enableGod()
 			applyGodToHum(c:FindFirstChildOfClass("Humanoid"))
 		end
 	end)
-	-- Heartbeat léger : maintien continu
+	
 	if godConn then godConn:Disconnect() end
 	godConn = RunService.Heartbeat:Connect(function()
 		if not godEnabled then return end
@@ -1509,7 +1509,7 @@ createToggle(pages.Personal, "🛡  God Mode (invincible)", 11, function(state)
 	if state then enableGod() else disableGod() end
 end, "godMode")
 
--- ===== ANTI-KICK BYPASS =====
+
 local antiKickEnabled = false
 local antiKickConns = {}
 
@@ -1522,7 +1522,7 @@ end
 local function startAntiKick()
 	stopAntiKick()
 	antiKickEnabled = true
-	-- Block Kick/Remove (some games kick via PlayerRemoving or Kick)
+	
 	local c1 = player:GetPropertyChangedSignal("Parent"):Connect(function()
 		if not antiKickEnabled then return end
 		if player.Parent ~= Players then
@@ -1530,7 +1530,7 @@ local function startAntiKick()
 		end
 	end)
 	table.insert(antiKickConns, c1)
-	-- Override Kick method if accessible
+	
 	local c2 = player.ChildAdded:Connect(function(c)
 		if c:IsA("StringValue") and c.Name:lower():find("kick") then
 			c:Destroy()
@@ -1543,7 +1543,7 @@ createToggle(pages.Personal, "🚫  Anti-Kick Bypass", 12, function(state)
 	if state then startAntiKick() else stopAntiKick() end
 end, "antiKick")
 
--- ===== NO FALL DAMAGE =====
+
 local noFallEnabled = false
 local noFallConn = nil
 
@@ -1573,7 +1573,7 @@ createToggle(pages.Personal, "🦶  No Fall Damage", 13, function(state)
 	if state then enableNoFall() else disableNoFall() end
 end, "noFall")
 
--- ===== ANTI-TOOL GRAB BYPASS =====
+
 local antiGrabEnabled = false
 local antiGrabConn = nil
 
@@ -1602,7 +1602,7 @@ createToggle(pages.Personal, "🔒  Anti-Tool Grab", 14, function(state)
 	if state then enableAntiGrab() else disableAntiGrab() end
 end, "antiGrab")
 
--- ===== ANTI-CHEAT BYPASS =====
+
 local antiCheatEnabled = false
 local antiCheatConns = {}
 
@@ -1635,7 +1635,7 @@ createToggle(pages.Personal, "🛡  Anti-Cheat Bypass", 15, function(state)
 	if state then startAntiCheat() else stopAntiCheat() end
 end, "antiCheat")
 
--- Infinite Jump
+
 local jumpConn = nil
 createToggle(pages.Personal, "🦘  Infinite Jump", 14, function(state)
 	if state then
@@ -1650,7 +1650,7 @@ end, "infJump")
 
 createSection(pages.Personal, "🎯  Combat", 16)
 
--- ===== UNLIMITED AMMO =====
+
 local ammoEnabled   = false
 local ammoConns     = {}
 
@@ -1673,7 +1673,7 @@ local function patchAmmoTool(tool)
 			table.insert(ammoConns, c)
 		end
 	end
-	-- Fire ammo remotes
+	
 	for _, v in ipairs(tool:GetDescendants()) do
 		if v:IsA("RemoteEvent") then
 			local n = v.Name:lower()
@@ -1682,7 +1682,7 @@ local function patchAmmoTool(tool)
 			end
 		end
 	end
-	-- Watch new descendants (tools qui créent leurs values après équipement)
+	
 	local c = tool.DescendantAdded:Connect(function(v)
 		if not ammoEnabled then return end
 		local n = v.Name:lower()
@@ -1717,7 +1717,7 @@ createToggle(pages.Personal, "🔫  Unlimited Ammo", 17, function(state)
 	table.insert(ammoConns, c)
 end, "unlimAmmo")
 
--- ===== INSTANT RELOAD =====
+
 local reloadEnabled = false
 local reloadConns   = {}
 
@@ -1727,7 +1727,7 @@ local function reloadCleanup()
 end
 
 local function patchReloadTool(tool)
-	-- Patch delay/cooldown values à 0
+	
 	for _, v in ipairs(tool:GetDescendants()) do
 		local n = v.Name:lower()
 		if (v:IsA("NumberValue") or v:IsA("IntValue")) and
@@ -1739,13 +1739,13 @@ local function patchReloadTool(tool)
 			table.insert(reloadConns, c)
 		end
 	end
-	-- Fire reload remotes
+	
 	for _, v in ipairs(tool:GetDescendants()) do
 		if v:IsA("RemoteEvent") and v.Name:lower():find("reload") then
 			pcall(function() v:FireServer() end)
 		end
 	end
-	-- Accélère les AnimationTrack actives
+	
 	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	local animator = hum and hum:FindFirstChildOfClass("Animator")
 	if animator then
@@ -1779,7 +1779,7 @@ createToggle(pages.Personal, "⚡  Instant Reload", 18, function(state)
 	table.insert(reloadConns, c)
 end, "instReload")
 
--- ===== NO RECOIL =====
+
 local recoilEnabled  = false
 local recoilConn     = nil
 local recoilConns    = {}
@@ -1807,14 +1807,14 @@ end
 
 createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
 	recoilEnabled = state
-	-- Nettoie les anciennes connexions
+	
 	if recoilConn then recoilConn:Disconnect(); recoilConn = nil end
 	for _, c in ipairs(recoilConns) do pcall(function() c:Disconnect() end) end
 	recoilConns = {}
 	if not state then return end
 
 	local cam    = workspace.CurrentCamera
-	-- Stocke le pitch/yaw initial proprement
+	
 	local lastYaw, lastPitch = 0, 0
 	local function getCamAngles()
 		local _, y, _ = cam.CFrame:ToEulerAnglesYXZ()
@@ -1824,19 +1824,19 @@ createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
 	local initP, initY = getCamAngles()
 	lastPitch, lastYaw = initP, initY
 
-	-- RenderStepped : annule uniquement le pitch vers le haut (recul)
-	-- sans toucher au yaw ni aux mouvements normaux
+	
+	
 	recoilConn = RunService.RenderStepped:Connect(function()
 		if not recoilEnabled then return end
 		local curP, curY = getCamAngles()
 		local dPitch = curP - lastPitch
-		-- Recul = pitch monte (valeur augmente en abs quand on vise haut)
-		-- On annule uniquement les sauts soudains > seuil
+		
+		
 		if dPitch > 0.008 then
-			-- Reconstruit CFrame en annulant le recul vertical
+			
 			local pos   = cam.CFrame.Position
 			local look  = cam.CFrame.LookVector
-			-- Soustrait le delta de recul
+			
 			local corrected = CFrame.new(pos) * CFrame.Angles(lastPitch, curY, 0)
 			pcall(function() cam.CFrame = corrected end)
 		else
@@ -1845,7 +1845,7 @@ createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
 		end
 	end)
 
-	-- Patch les valeurs de recul dans les outils équipés
+	
 	local char = player.Character
 	if char then
 		for _, t in ipairs(char:GetChildren()) do
@@ -1870,7 +1870,7 @@ createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
 	table.insert(recoilConns, c2)
 end, "noRecoil")
 
--- ===== AUTO PARRY =====
+
 local autoParryEnabled = false
 local autoParryConn = nil
 
@@ -1880,7 +1880,7 @@ local function enableAutoParry()
 		if not autoParryEnabled then return end
 		local char = player.Character
 		if not char then return end
-		-- Auto-block: tilt torso back slightly (mimics parry)
+		
 		local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
 		if torso then
 			pcall(function()
@@ -1899,9 +1899,9 @@ createToggle(pages.Personal, "⚔  Auto Parry (block)", 20, function(state)
 	if state then enableAutoParry() else disableAutoParry() end
 end, "autoParry")
 
--- ================================================
 
--- ================================================
+
+
 local aimEnabled   = false
 local aimActive    = false
 local aimConn      = nil
@@ -1910,37 +1910,37 @@ local aimKey       = "Mouse2"
 local aimSmooth    = 0.08
 local aimFOV       = 250
 
--- All possible mouse buttons
+
 local MOUSE_KEYS = {
 	{ label = "Right Click  (Mouse2)",   id = "Mouse2"  },
 	{ label = "Left Click  (Mouse1)",  id = "Mouse1"  },
 	{ label = "Middle Click  (Mouse3)", id = "Mouse3"  },
 }
 
--- All valid Roblo keyboard keys (KeyCode.Name)
+
 local KEYBOARD_KEYS = {
-	-- Lettres
+	
 	"A","B","C","D","E","F","G","H","I","J","K","L","M",
 	"N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
-	-- Chiffres rangée du haut
+	
 	"Zero","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
-	-- Touches fonction
+	
 	"F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12",
-	-- Modificateurs
+	
 	"LeftShift","RightShift","LeftControl","RightControl","LeftAlt","RightAlt",
-	-- Navigation
+	
 	"Up","Down","Left","Right","Home","End","PageUp","PageDown","Insert","Delete",
-	-- Pavé numérique
+	
 	"KeypadZero","KeypadOne","KeypadTwo","KeypadThree","KeypadFour",
 	"KeypadFive","KeypadSix","KeypadSeven","KeypadEight","KeypadNine",
 	"KeypadPlus","KeypadMinus","KeypadAsterisk","KeypadSlash","KeypadPeriod",
-	-- Divers
+	
 	"Tab","CapsLock","Space","BackSpace","Return","Escape",
 	"Minus","Equals","LeftBracket","RightBracket","BackSlash",
 	"Semicolon","Quote","Comma","Period","Slash","Backquote",
 }
 
--- Check if an input corresponds to the aim key
+
 local function isAimInput(input, began)
 	if aimKey == "Mouse1" then
 		return input.UserInputType == Enum.UserInputType.MouseButton1
@@ -1954,7 +1954,7 @@ local function isAimInput(input, began)
 	end
 end
 
--- Find the target in the FOV
+
 local function getTarget()
 	local cam   = workspace.CurrentCamera
 	local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -1966,7 +1966,7 @@ local function getTarget()
 
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
-			-- Skip allies (same team)
+			
 			local myTeam     = player.Team
 			local theirTeam  = p.Team
 			if not (myTeam and theirTeam and myTeam == theirTeam) then
@@ -1990,11 +1990,11 @@ local function getTarget()
 	return best
 end
 
--- Aim loop: 3 alternative methods depending on the game
--- Method 1: cam.CFrame direct (works on most games)
--- Method 2: mouse.Move simulation via UserInputService
--- Method 3: HumanoidRootPart CFrame orients towards target (fallback)
-local aimMethod = 1   -- méthode active
+
+
+
+
+local aimMethod = 1   
 
 local aimPrediction = 0.15
 local aimTargetPart = "Head"
@@ -2002,7 +2002,7 @@ local aimTargetPart = "Head"
 local function applyAim(head)
 	local cam = workspace.CurrentCamera
 
-	-- Simple prediction: lead the target based on velocity
+	
 	local targetPos = head.Position
 	local hrpTarget = head.Parent and head.Parent:FindFirstChild("HumanoidRootPart")
 	if hrpTarget and aimPrediction > 0 then
@@ -2051,7 +2051,7 @@ local function stopAim()
 	aimActive = false
 end
 
--- Listen InputBegan/Ended
+
 UIS.InputBegan:Connect(function(input, gpe)
 	if gpe or not aimEnabled then return end
 	if isAimInput(input) then
@@ -2068,12 +2068,12 @@ UIS.InputEnded:Connect(function(input)
 	end
 end)
 
--- ================================================
 
--- ================================================
+
+
 createSection(pages.Personal, "🎯  Aim Lock", 100)
 
--- Declaration BEFORE use
+
 local aimStatusLabel = Instance.new("TextLabel", pages.Personal)
 aimStatusLabel.Size  = UDim2.new(1, 0, 0, 18)
 aimStatusLabel.BackgroundTransparency = 1
@@ -2089,19 +2089,19 @@ local function updateAimStatus()
 end
 updateAimStatus()
 
--- Main Toggle
+
 createToggle(pages.Personal, "🎯  Aim Lock ON / OFF", 101, function(state)
 	aimEnabled = state
 	if state then startAim() else stopAim() end
 end, "aimLock")
 
--- Slider smooth (aiming speed)
+
 createSlider(pages.Personal, "🎚  Smooth (aim speed)", 1, 30, 8, 102, function(val)
 	aimSmooth = val / 100
 	updateAimStatus()
 end)
 
--- Slider FOV
+
 createNumberInput(pages.Personal, "🔵  FOV (radius pixels)", 250, 103, function(val)
 	aimFOV = val
 end)
@@ -2110,7 +2110,7 @@ createSlider(pages.Personal, "🎯  Prediction (lead)", 0, 50, 15, 104, function
 	aimPrediction = val / 100
 end)
 
--- Mode Hold / Toggle
+
 createBtn(pages.Personal, "🔄  Mode: " .. aimMode, currentTheme.Button, 105, function(btn)
 	aimMode = (aimMode == "hold") and "toggle" or "hold"
 	updateAimStatus()
@@ -2123,7 +2123,7 @@ createBtn(pages.Personal, "🔧  Method: " .. methodNames[aimMethod], currentThe
 	showNotification("🎯  Method: " .. methodNames[aimMethod], 2)
 end)
 
--- Generic dropdown (declared here, used for mouse and keyboard)
+
 local function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 	local selIdx = defaultIdx
 	local open   = false
@@ -2200,7 +2200,7 @@ local function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 	end)
 end
 
--- Labels for dropdowns
+
 local MOUSE_LABELS = {}
 for _, m in ipairs(MOUSE_KEYS) do table.insert(MOUSE_LABELS, m.label) end
 
@@ -2228,7 +2228,7 @@ local function applyScale(val)
 	if not hum then return end
 
 	local function setScale()
-		-- Method 1: Humanoid BodyScale ValueObjects (R15 standard)
+		
 		local bd = hum:FindFirstChild("BodyDepthScale")
 		local bh = hum:FindFirstChild("BodyHeightScale")
 		local bw = hum:FindFirstChild("BodyWidthScale")
@@ -2238,13 +2238,13 @@ local function applyScale(val)
 		if bw then bw.Value = currentScale end
 		if hs then hs.Value = currentScale end
 
-		-- Method 2: Humanoid BodyTypeScale (R15 alternate)
+		
 		local bt = hum:FindFirstChild("BodyTypeScale")
 		if bt then bt.Value = math.clamp(currentScale, 0, 1) end
 
-		-- Method 3: CFrame + Size scale all BaseParts directly
+		
 		local hrp = char:FindFirstChild("HumanoidRootPart")
-		if hrp and not bd then  -- fallback if no ValueObjects
+		if hrp and not bd then  
 			for _, part in ipairs(char:GetDescendants()) do
 				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
 					pcall(function()
@@ -2254,7 +2254,7 @@ local function applyScale(val)
 			end
 		end
 
-		-- Method 4: Model:ScaleTo (newer Roblox API)
+		
 		pcall(function()
 			if char.ScaleTo then
 				char:ScaleTo(currentScale)
@@ -2263,12 +2263,12 @@ local function applyScale(val)
 	end
 
 	setScale()
-	-- Retry after short delay (some games set scale server-side)
+	
 	task.delay(0.3, setScale)
 	task.delay(1.0, setScale)
 end
 
--- Also applies to respawning
+
 player.CharacterAdded:Connect(function(char)
 	task.wait(0.5)
 	applyScale(currentScale * 100)
@@ -2278,9 +2278,9 @@ createNumberInput(pages.Personal, "📐  Character Size", 100, 109, function(val
 	applyScale(val)
 end)
 
--- ================================================
 
--- ================================================
+
+
 createSection(pages.World, "☀  Environment", 0)
 
 local shader = nil
@@ -2318,7 +2318,7 @@ createToggle(pages.World, "🌈  Rainbow Sky", 4, function(state)
 	end
 end, "rainbowSky")
 
--- Fog
+
 createSection(pages.World, "🌫  Fog", 4)
 
 createSection(pages.World, "🌫  Fog & Effects", 5)
@@ -2344,14 +2344,14 @@ createToggle(pages.World, "☁  Light Fog", 6, function(state)
 	}):Play()
 end, "lightFog")
 
--- Rain: multi-layer high quality system
+
 createToggle(pages.World, "🌧  Rain", 7, function(state)
 	RunService:UnbindFromRenderStep("AdminRain")
 	for _, v in ipairs(workspace:GetChildren()) do
 		if v.Name == "AdminRain" or v.Name == "AdminRainFar" or v.Name == "AdminRainSplash" then v:Destroy() end
 	end
 	if not state then
-		-- Reset lighting
+		
 		TweenService:Create(Lighting, TweenInfo.new(2), {
 			Brightness = 2,
 			Ambient = Color3.fromRGB(100,100,100),
@@ -2364,7 +2364,7 @@ createToggle(pages.World, "🌧  Rain", 7, function(state)
 		return
 	end
 
-	-- Dark stormy ambiance
+	
 	TweenService:Create(Lighting, TweenInfo.new(2), {
 		Brightness = 0.6,
 		Ambient = Color3.fromRGB(80, 95, 120),
@@ -2374,7 +2374,7 @@ createToggle(pages.World, "🌧  Rain", 7, function(state)
 	if not atmo then atmo = Instance.new("Atmosphere", Lighting) end
 	TweenService:Create(atmo, TweenInfo.new(2), { Density = 0.45 }):Play()
 
-	-- Layer 1: heavy close rain
+	
 	local rain = Instance.new("Part", workspace)
 	rain.Name = "AdminRain"; rain.Anchored = true
 	rain.CanCollide = false; rain.Transparency = 1
@@ -2403,7 +2403,7 @@ createToggle(pages.World, "🌧  Rain", 7, function(state)
 	ps1.LightEmission = 0.05
 	ps1.LightInfluence = 0.8
 
-	-- Layer 2: wide far rain
+	
 	local rainFar = Instance.new("Part", workspace)
 	rainFar.Name = "AdminRainFar"; rainFar.Anchored = true
 	rainFar.CanCollide = false; rainFar.Transparency = 1
@@ -2425,14 +2425,14 @@ createToggle(pages.World, "🌧  Rain", 7, function(state)
 	ps2.LightEmission = 0
 	ps2.LightInfluence = 1
 
-	-- Rain sound
+	
 	local snd = Instance.new("Sound", rain)
 	snd.SoundId = "rbxassetid://9117963093"
 	snd.Volume = 0.25; snd.Looped = true
 	TweenService:Create(snd, TweenInfo.new(1.5), { Volume = 0.25 }):Play()
 	snd:Play()
 
-	-- Thunder ambient sound
+	
 	local thunder = Instance.new("Sound", rain)
 	thunder.SoundId = "rbxassetid://9117963093"
 	thunder.Volume = 0; thunder.Looped = true; thunder:Play()
@@ -2447,7 +2447,7 @@ createToggle(pages.World, "🌧  Rain", 7, function(state)
 	end)
 end, "rain")
 
--- Snow: high quality multi-layer system
+
 createToggle(pages.World, "❄  Snow", 8, function(state)
 	RunService:UnbindFromRenderStep("AdminSnow")
 	for _, v in ipairs(workspace:GetChildren()) do
@@ -2455,7 +2455,7 @@ createToggle(pages.World, "❄  Snow", 8, function(state)
 	end
 
 	if state then
-		-- Cold winter ambiance
+		
 		TweenService:Create(Lighting, TweenInfo.new(2), {
 			Brightness = 1.4,
 			Ambient = Color3.fromRGB(170, 185, 215),
@@ -2465,7 +2465,7 @@ createToggle(pages.World, "❄  Snow", 8, function(state)
 		if not atmo then atmo = Instance.new("Atmosphere", Lighting) end
 		TweenService:Create(atmo, TweenInfo.new(2), { Density = 0.25, Color = Color3.fromRGB(200, 215, 240) }):Play()
 
-		-- Layer 1: heavy close snowflakes
+		
 		local snow = Instance.new("Part", workspace)
 		snow.Name = "AdminSnow"; snow.Anchored = true
 		snow.CanCollide = false; snow.Transparency = 1
@@ -2495,7 +2495,7 @@ createToggle(pages.World, "❄  Snow", 8, function(state)
 		ps1.LightEmission = 0.3
 		ps1.LightInfluence = 0.6
 
-		-- Layer 2: distant wide blizzard
+		
 		local snowFar = Instance.new("Part", workspace)
 		snowFar.Name = "AdminSnowFar"; snowFar.Anchored = true
 		snowFar.CanCollide = false; snowFar.Transparency = 1
@@ -2517,7 +2517,7 @@ createToggle(pages.World, "❄  Snow", 8, function(state)
 		ps2.LightEmission = 0.15
 		ps2.LightInfluence = 0.8
 
-		-- Layer 3: small fast wind particles
+		
 		local snowGround = Instance.new("Part", workspace)
 		snowGround.Name = "AdminSnowGround"; snowGround.Anchored = true
 		snowGround.CanCollide = false; snowGround.Transparency = 1
@@ -2538,7 +2538,7 @@ createToggle(pages.World, "❄  Snow", 8, function(state)
 		ps3.RotSpeed     = NumberRange.new(-50, 50)
 		ps3.LightEmission = 0.4
 
-		-- Wind sound
+		
 		local snd = Instance.new("Sound", snow)
 		snd.SoundId = "rbxassetid://5800330726"
 		snd.Volume = 0.15; snd.Looped = true; snd:Play()
@@ -2619,11 +2619,11 @@ createBtn(pages.World, "🔒  Reset FPS (60)", currentTheme.Button, 15, function
 	if setfpscap then setfpscap(60) end
 end)
 
--- ================================================
 
--- ================================================
 
--- Size stored to avoid the AbsoluteSize+tween bug
+
+
+
 local menuW, menuH = 380, 500
 
 local function applyMenuSize(w, h)
@@ -2631,7 +2631,7 @@ local function applyMenuSize(w, h)
 	main.Size = UDim2.new(0, menuW, 0, menuH)
 end
 
--- Central function of theme application
+
 local function applyTheme(t)
 	currentTheme = t
 	main.BackgroundColor3 = t.BG
@@ -2652,7 +2652,7 @@ local function applyTheme(t)
 		btn.TextColor3 = (name == activeTab) and Color3.new(1,1,1) or t.SubText
 		btn:FindFirstChildOfClass("TextLabel").TextColor3 = (name == activeTab) and Color3.new(1,1,1) or t.SubText
 	end
-	-- Search / Player page elements
+	
 	ddFrame.BackgroundColor3 = t.Button
 	searchBox.TextColor3 = t.Text
 	searchBox.PlaceholderColor3 = t.SubText
@@ -2661,11 +2661,11 @@ local function applyTheme(t)
 	infoPanel.BackgroundColor3 = t.Panel
 	infoName.TextColor3 = t.Text
 	infoStats.TextColor3 = t.SubText
-	-- Page scrollbars
+	
 	for _, page in pairs(pages) do
 		page.ScrollBarImageColor3 = t.Accent
 	end
-	-- Notify all registered theme listeners (covers createBtn/createToggle/etc)
+	
 	for _, cb in ipairs(themeListeners) do
 		pcall(cb, t)
 	end
@@ -2695,7 +2695,7 @@ end)
 
 createSection(pages.Settings, "💾  Configuration", 16)
 
--- Save/load via writefile/readfile (Roblox executors)
+
 local CONFIG_FILE = "AdminMenu_config.json"
 
 local function getConfig()
@@ -2729,7 +2729,7 @@ local function applyConfig(cfg)
 		for k, v in pairs(cfg.toggles) do
 			toggleStates[k] = v
 		end
-		-- Re-trigger toggles for visual update after config load
+		
 		for k, v in pairs(cfg.toggles) do
 			if toggleApply[k] then
 				task.spawn(function() toggleApply[k](v) end)
@@ -2782,13 +2782,13 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  19, functi
 	showNotification("↩  Config reset", 2)
 end)
 
--- ================================================
 
--- ================================================
+
+
 showNotification = function(message, duration)
 	duration = duration or 4
 
-	-- Toast container
+	
 	local toastGui = Instance.new("ScreenGui", playerGui)
 	toastGui.Name = "AdminToast"
 	toastGui.ResetOnSpawn = false
@@ -2802,13 +2802,13 @@ showNotification = function(message, duration)
 	toast.AnchorPoint = Vector2.new(1, 1)
 	Instance.new("UICorner", toast).CornerRadius = UDim.new(0, 12)
 
-	-- Accented border
+	
 	local toastStroke = Instance.new("UIStroke", toast)
 	toastStroke.Color = Color3.fromRGB(100, 80, 255)
 	toastStroke.Thickness = 1.5
 	toastStroke.Transparency = 0.3
 
-	-- Colorful icon on the left
+	
 	local icon = Instance.new("Frame", toast)
 	icon.Size = UDim2.new(0, 4, 1, -16)
 	icon.Position = UDim2.new(0, 8, 0.5, 0)
@@ -2817,7 +2817,7 @@ showNotification = function(message, duration)
 	icon.BorderSizePixel = 0
 	Instance.new("UICorner", icon).CornerRadius = UDim.new(1, 0)
 
-	-- Text
+	
 	local toastLabel = Instance.new("TextLabel", toast)
 	toastLabel.Text = message
 	toastLabel.Size = UDim2.new(1, -26, 1, 0)
@@ -2830,12 +2830,12 @@ showNotification = function(message, duration)
 	toastLabel.TextWrapped = true
 	toastLabel.RichText = true
 
-	-- Slide-in from the right
+	
 	TweenService:Create(toast, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Position = UDim2.new(1, -16, 1, -80)
 	}):Play()
 
-	-- Progress bar
+	
 	local progress = Instance.new("Frame", toast)
 	progress.Size = UDim2.new(1, 0, 0, 3)
 	progress.Position = UDim2.new(0, 0, 1, -3)
@@ -2848,7 +2848,7 @@ showNotification = function(message, duration)
 		Size = UDim2.new(0, 0, 0, 3)
 	}):Play()
 
-	-- Wait, then slide out and destroy
+	
 	task.delay(duration, function()
 		TweenService:Create(toast, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 			Position = UDim2.new(1, 10, 1, -80)
@@ -2858,11 +2858,11 @@ showNotification = function(message, duration)
 	end)
 end
 
--- Displays the notification on launch
+
 showNotification("👉𝐁 Press <b>[B]</b> to open the menu", 5)
 
--- ================================================
--- ================================================
+
+
 local function openMenu()
 	gui.Enabled = true
 	glassBg.Visible = true
@@ -2899,13 +2899,13 @@ UIS.InputBegan:Connect(function(input, gpe)
 	end
 end)
 
--- ================================================
--- ================================================
+
+
 local nukeEnabled = false
 local nukeConn = nil
 
 local function spawnExplosionFX(pos)
-	-- Central fireball
+	
 	local ball = Instance.new("Part", workspace)
 	ball.Shape = Enum.PartType.Ball
 	ball.Size = Vector3.new(2,2,2)
@@ -2918,7 +2918,7 @@ local function spawnExplosionFX(pos)
 	}):Play()
 	Debris:AddItem(ball, 0.65)
 
-	-- Shockwave ring
+	
 	local ring = Instance.new("Part", workspace)
 	ring.Size = Vector3.new(2, 0.5, 2)
 	ring.CFrame = CFrame.new(pos)
@@ -2931,7 +2931,7 @@ local function spawnExplosionFX(pos)
 	}):Play()
 	Debris:AddItem(ring, 0.75)
 
-	-- Black smoke
+	
 	for i = 1, 8 do
 		local smoke = Instance.new("Part", workspace)
 		smoke.Shape = Enum.PartType.Ball
@@ -2948,7 +2948,7 @@ local function spawnExplosionFX(pos)
 		Debris:AddItem(smoke, 1.6)
 	end
 
-	-- His explosion
+	
 	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if hrp then
 		local boom = Instance.new("Sound", hrp)
@@ -2967,7 +2967,7 @@ local function startNuke()
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	if hum then hum:ChangeState(Enum.HumanoidStateType.Physics) end
 
-	-- LinearVelocity (more powerful than BodyVelocity on modern Roblox)
+	
 	local att = Instance.new("Attachment", hrp)
 	att.Name = "NukeAtt"
 	local lv = Instance.new("LinearVelocity", hrp)
@@ -2976,7 +2976,7 @@ local function startNuke()
 	lv.VectorVelocity = Vector3.new(0, 150, 0)
 	lv.MaxForce = math.huge
 
-	-- Rocket sounds (2 layers for a more powerful effect)
+	
 	local snd = Instance.new("Sound", hrp)
 	snd.Name = "NukeSound"
 	snd.SoundId = "rbxassetid://84792688181059"
@@ -2987,7 +2987,7 @@ local function startNuke()
 	sndBoost.SoundId = "rbxassetid://84792688181059"
 	sndBoost.Volume = 0.7; sndBoost.Looped = true; sndBoost:Play()
 
-	-- Trail of fire
+	
 	nukeConn = RunService.Heartbeat:Connect(function()
 		local c = player.Character
 		if not c then return end
@@ -3023,7 +3023,7 @@ local function stopNuke()
 	end
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	if hum then hum:ChangeState(Enum.HumanoidStateType.Freefall) end
-	-- Explosion at the point of impact upon landing
+	
 	task.spawn(function()
 		task.wait(1.2)
 		if char and hrp then
@@ -3032,7 +3032,7 @@ local function stopNuke()
 	end)
 end
 
--- Toggle Nuke on the Personal page
+
 createSection(pages.Personal, "💥  Chaos & Fun", 200)
 createToggle(pages.Personal, "🚀  NUKE MODE  (propulsion + explosion)", 201, function(state)
 	nukeEnabled = state
@@ -3043,7 +3043,7 @@ createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 202, fu
 	local hrp  = char and char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
-	-- Immediate explosion sound (2 layers: impact + bass)
+	
 	local boom1 = Instance.new("Sound", hrp)
 	boom1.SoundId = "rbxassetid://84792688181059"; boom1.Volume = 1.5
 	boom1.RollOffMaxDistance = 300; boom1:Play()
@@ -3056,7 +3056,7 @@ createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 202, fu
 
 	spawnExplosionFX(hrp.Position)
 
-	-- Kill the character (via Humanoid)
+	
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	if hum then
 		task.delay(0.1, function()
@@ -3071,8 +3071,8 @@ createBtn(pages.Personal, "🔄  Reset Character", currentTheme.Button, 203, fun
 	end
 end)
 
--- ================================================
--- ================================================
+
+
 local espState = {
 	boxes     = false,
 	names     = false,
@@ -3093,11 +3093,11 @@ local ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
 local ESP_COLOR_ENEMY = Color3.fromRGB(255, 40, 50)
 local ESP_COLOR_BOT   = Color3.fromRGB(255, 200, 0)
 
--- Distance max ESP (0 = infini)
+
 local ESP_MAX_DIST_PLAYER = 0
 local ESP_MAX_DIST_BOT    = 0
 
--- Nettoie ESP d'un joueur
+
 local function clearESPFor(p)
 	if espObjects[p] then
 		for _, obj in ipairs(espObjects[p]) do
@@ -3107,7 +3107,7 @@ local function clearESPFor(p)
 	end
 end
 
--- Nettoie tous les ESP bots
+
 local function clearAllBotESP()
 	for model, objs in pairs(espBotObjects) do
 		for _, obj in ipairs(objs) do
@@ -3117,21 +3117,21 @@ local function clearAllBotESP()
 	espBotObjects = {}
 end
 
--- Détecte si un Model est un NPC/Bot (Humanoid mais pas un joueur)
+
 local function isBot(model)
 	if not model:IsA("Model") then return false end
 	local hum = model:FindFirstChildOfClass("Humanoid")
 	if not hum then return false end
 	local hrp = model:FindFirstChild("HumanoidRootPart")
 	if not hrp then return false end
-	-- Vérifie que ce n'est pas un vrai joueur
+	
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p.Character == model then return false end
 	end
 	return true
 end
 
--- Construit l'ESP sur un bot/NPC
+
 local function buildESPBot(model)
 	if espBotObjects[model] then return end
 	local hum = model:FindFirstChildOfClass("Humanoid")
@@ -3142,7 +3142,7 @@ local function buildESPBot(model)
 	local color = ESP_COLOR_BOT
 	local objs  = {}
 
-	-- Chams
+	
 	local old = model:FindFirstChild("ESP_BotHL")
 	if old then old:Destroy() end
 	local hl = Instance.new("Highlight", model)
@@ -3154,12 +3154,12 @@ local function buildESPBot(model)
 	hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 	table.insert(objs, hl)
 
-	-- Nom du bot
+	
 	local bb = mkBB(hrp, "ESP_BotName", 120, 18, 3.4)
 	local lbl = mkLbl(bb, "[BOT] " .. model.Name, 10, color)
 	table.insert(objs, bb)
 
-	-- Barre de vie
+	
 	if hum then
 		local bb2 = mkBB(hrp, "ESP_BotBar", 5, 54, 0)
 		bb2.StudsOffset = Vector3.new(-1.3, 0, 0)
@@ -3188,7 +3188,7 @@ local function buildESPBot(model)
 
 	espBotObjects[model] = objs
 
-	-- Nettoie si le bot est détruit
+	
 	model.AncestryChanged:Connect(function()
 		if not model.Parent then
 			for _, obj in ipairs(espBotObjects[model] or {}) do
@@ -3199,7 +3199,7 @@ local function buildESPBot(model)
 	end)
 end
 
--- Scan tous les NPC dans workspace
+
 local function refreshBotESP()
 	clearAllBotESP()
 	if not espState.bots then return end
@@ -3210,20 +3210,20 @@ local function refreshBotESP()
 	end
 end
 
--- BillboardGui : distance infinie (MaxDistance = 0 = illimitée dans Roblox)
+
 local function mkBB(parent, name, w, h, offsetY)
 	local bb = Instance.new("BillboardGui", parent)
 	bb.Name          = name
 	bb.AlwaysOnTop   = true
 	bb.Size          = UDim2.new(0, w, 0, h)
 	bb.StudsOffset   = Vector3.new(0, offsetY, 0)
-	bb.MaxDistance   = 0        -- 0 = distance infinie
+	bb.MaxDistance   = 0        
 	bb.LightInfluence = 0
 	bb.ResetOnSpawn  = false
 	return bb
 end
 
--- Label helper
+
 local function mkLbl(parent, txt, size, color)
 	local l = Instance.new("TextLabel", parent)
 	l.Size                  = UDim2.new(1,0,1,0)
@@ -3253,7 +3253,7 @@ local function buildESPFor(p)
 	local color  = isAlly and ESP_COLOR_ALLY or ESP_COLOR_ENEMY
 	local objs   = {}
 
-	-- CHAMS (Highlight natif Roblox) renforcé
+	
 	if espState.chams then
 		local old = char:FindFirstChild("ESP_Highlight")
 		if old then old:Destroy() end
@@ -3264,7 +3264,7 @@ local function buildESPFor(p)
 		hl.FillTransparency  = 0.55
 		hl.OutlineTransparency = 0.2
 		hl.DepthMode         = Enum.HighlightDepthMode.AlwaysOnTop
-		-- Double highlight pour effet glow
+		
 		local hl2 = Instance.new("Highlight", char)
 		hl2.Name             = "ESP_Highlight2"
 		hl2.FillColor        = color
@@ -3276,20 +3276,20 @@ local function buildESPFor(p)
 		table.insert(objs, hl2)
 	end
 
-	-- BOX ESP : cadre complet ultra-visible avec contour lumineux
+	
 	if espState.boxes then
 		local bb = mkBB(hrp, "ESP_Box", 62, 92, 0)
 		bb.StudsOffset = Vector3.new(0, 0.3, 0)
 		bb.AlwaysOnTop = true
 
-		-- Fond semi-transparent
+		
 		local bg = Instance.new("Frame", bb)
 		bg.Size = UDim2.new(1,0,1,0)
 		bg.BackgroundColor3 = color
 		bg.BackgroundTransparency = 0.82
 		bg.BorderSizePixel = 0
 
-		-- Contour lumineux (double stroke pour effet glow)
+		
 		local stroke1 = Instance.new("UIStroke", bg)
 		stroke1.Color = color
 		stroke1.Thickness = 2
@@ -3301,7 +3301,7 @@ local function buildESPFor(p)
 		stroke2.Transparency = 0.6
 		stroke2.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-		-- Coins décoratifs (L-shapes) renforcés
+		
 		local CORNER = 14
 		local THICK  = 3
 		local corners = {
@@ -3330,7 +3330,7 @@ local function buildESPFor(p)
 		table.insert(objs, bb)
 	end
 
-	-- HEAD DOT
+	
 	if espState.headDots and head then
 		local bb = mkBB(head, "ESP_HeadDot", 12, 12, 0.5)
 		local dot = Instance.new("Frame", bb)
@@ -3343,7 +3343,7 @@ local function buildESPFor(p)
 		table.insert(objs, bb)
 	end
 
-	-- NOMS
+	
 	if espState.names then
 		local bb  = mkBB(hrp, "ESP_Name", 120, 18, 3.4)
 		local lbl = mkLbl(bb, (isAlly and "[A] " or "[E] ") .. p.Name, 10, color)
@@ -3351,7 +3351,7 @@ local function buildESPFor(p)
 		table.insert(objs, bb)
 	end
 
-	-- HEALTH texte
+	
 	if espState.health and hum then
 		local bb  = mkBB(hrp, "ESP_HP", 90, 13, 2.7)
 		local lbl = mkLbl(bb, math.floor(hum.Health) .. " hp", 9,
@@ -3366,7 +3366,7 @@ local function buildESPFor(p)
 		table.insert(objs, bb)
 	end
 
-	-- BARRE DE VIE verticale
+	
 	if espState.healthBar and hum then
 		local bb = mkBB(hrp, "ESP_Bar", 5, 54, 0)
 		bb.StudsOffset = Vector3.new(-1.3, 0, 0)
@@ -3393,14 +3393,14 @@ local function buildESPFor(p)
 		table.insert(objs, bb)
 	end
 
-	-- DISTANCE
+	
 	if espState.distance then
 		local bb = mkBB(hrp, "ESP_Dist", 70, 12, 2.1)
 		mkLbl(bb, "?m", 9, Color3.fromRGB(180,180,255))
 		table.insert(objs, bb)
 	end
 
-	-- TRACER (triangle pointant vers le joueur, toujours visible)
+	
 	if espState.tracers then
 		local bb = mkBB(hrp, "ESP_Tracer", 20, 20, -3)
 		local lbl = Instance.new("TextLabel", bb)
@@ -3417,7 +3417,7 @@ local function buildESPFor(p)
 		table.insert(objs, bb)
 	end
 
-	-- SNAPLINE (ligne verticale du haut vers le bas sur le joueur)
+	
 	if espState.snaplines then
 		local bbTop = mkBB(hrp, "ESP_Snap", 20, 20, 4.5)
 		local lblT = Instance.new("TextLabel", bbTop)
@@ -3443,7 +3443,7 @@ local function buildESPFor(p)
 		table.insert(objs, bbLine)
 	end
 
-	-- SQUELETTE via BillboardGui sur chaque part (100% fiable partout)
+	
 	if espState.skeletons then
 		local PARTS_R15 = {
 			"Head","UpperTorso","LowerTorso",
@@ -3472,7 +3472,7 @@ local function buildESPFor(p)
 			end
 		end
 
-		-- Lignes entre les parts via Highlight coloré léger
+		
 		local hl2 = Instance.new("Highlight", char)
 		hl2.Name = "ESP_SkelHL"
 		hl2.FillTransparency = 1
@@ -3485,12 +3485,12 @@ local function buildESPFor(p)
 	espObjects[p] = objs
 end
 
--- Updates distance + visibility based on max distance (runs every frame via RenderStepped)
+
 local function updateDistances()
 	local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if not myHRP then return end
 
-	-- Joueurs
+	
 	for p, objs in pairs(espObjects) do
 		if p.Character then
 			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
@@ -3512,7 +3512,7 @@ local function updateDistances()
 		end
 	end
 
-	-- Bots
+	
 	for model, objs in pairs(espBotObjects) do
 		if model and model.Parent then
 			local hrp = model:FindFirstChild("HumanoidRootPart")
@@ -3531,7 +3531,7 @@ local function updateDistances()
 	end
 end
 
--- Rebuilds the entire ESP when a state changes
+
 local function refreshAllESP()
 	for _, p in ipairs(Players:GetPlayers()) do
 		buildESPFor(p)
@@ -3539,14 +3539,14 @@ local function refreshAllESP()
 	if espState.bots then refreshBotESP() end
 end
 
--- ================================================
+
 
 local function toggleESP(key, state)
 	espState[key] = state
 	refreshAllESP()
 end
 
--- Helper dropdown color ESP
+
 local function createColorDropdown(parent, label, order, defaultColor, onChange)
 	local colors = {
 		{"Red",    Color3.fromRGB(255,60,60)},
@@ -3562,7 +3562,7 @@ local function createColorDropdown(parent, label, order, defaultColor, onChange)
 	local selected = defaultColor
 	local open = false
 
-	-- Main button
+	
 	local headerF = Instance.new("Frame", parent)
 	headerF.Size = UDim2.new(1,0,0,34)
 	headerF.BackgroundColor3 = currentTheme.Button
@@ -3593,7 +3593,7 @@ local function createColorDropdown(parent, label, order, defaultColor, onChange)
 	arrow.Text = "▾"; arrow.TextColor3 = currentTheme.SubText
 	arrow.Font = Enum.Font.GothamBold; arrow.TextSize = 13
 
-	-- Drop-down list
+	
 	local listF = Instance.new("Frame", parent)
 	listF.Size = UDim2.new(1,0,0,0)
 	listF.BackgroundColor3 = currentTheme.Panel
@@ -3656,7 +3656,7 @@ local function createColorDropdown(parent, label, order, defaultColor, onChange)
 	end)
 end
 
--- UI ESP in pages.ESP
+
 createSection(pages.ESP, "⚡  Shortcuts", -1)
 createBtn(pages.ESP, "⚡  Enable All", currentTheme.Accent, 0, function()
 	for k in pairs(espState) do espState[k] = true end
@@ -3712,7 +3712,7 @@ createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 28, function(val)
 	ESP_MAX_DIST_BOT = val
 	if espState.bots then refreshBotESP() end
 end)
--- ================================================
+
 createSection(pages.Other, "👑  Credits", 0)
 
 local credits = {
@@ -3810,12 +3810,12 @@ onThemeChanged(function(t)
 	controlsLabel.TextColor3 = t.Text
 	featLabel.TextColor3 = t.SubText
 end)
-	-- ESP initialized by startESP() below
+	
 
 
--- ================================================
--- Freecam Feature
--- ================================================
+
+
+
 local freecamActive = false
 local freecamMoveConn, freecamRotateConn, freecamScrollConn
 local freecamKeyBeginConn, freecamKeyEndConn
@@ -3925,23 +3925,23 @@ createToggle(pages.Other, "📷  Freecam (WASD + Right Click)", 50, function(sta
 	if state then startFreecam() else stopFreecam() end
 end, "freecamEnabled")
 
--- ================================================
 
--- Start the ESP loop
+
+
 local function startESP()
 	Players.PlayerAdded:Connect(function(p)
 		p.CharacterAdded:Connect(function() task.wait(1); buildESPFor(p) end)
 	end)
 	Players.PlayerRemoving:Connect(function(p) clearESPFor(p) end)
 
-	-- Loop ESP fluide via RenderStepped (remplace task.wait(0.5))
+	
 	RunService:BindToRenderStep("ESP_Update", Enum.RenderPriority.Last.Value, function()
 		if espState.distance or ESP_MAX_DIST_PLAYER > 0 or ESP_MAX_DIST_BOT > 0 then
 			updateDistances()
 		end
 	end)
 
-	-- Scan bots périodiquement
+	
 	task.spawn(function()
 		while true do
 			task.wait(5)
@@ -3949,7 +3949,7 @@ local function startESP()
 		end
 	end)
 
-	-- Scan nouveaux NPC ajoutés en live
+	
 	workspace.DescendantAdded:Connect(function(obj)
 		if espState.bots and obj:IsA("Model") then
 			task.wait(0.5)
@@ -3969,7 +3969,7 @@ end
 
 startESP()
 
--- Auto-load config at startup
+
 task.spawn(function()
 	task.wait(0.5)
 	if readfile then
@@ -3983,10 +3983,10 @@ task.spawn(function()
 	end
 end)
 
-end) -- fin du pcall global
+end) 
 if not scrSuccess then
 	warn("bkz HUB Error:", scrError)
-	-- Still run essential error display
+	
 	pcall(function()
 		local plr = game:GetService("Players").LocalPlayer
 		if plr then
