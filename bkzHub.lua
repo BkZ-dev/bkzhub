@@ -131,15 +131,6 @@ end
 
 
 
-glassBg = Instance.new("Frame", gui)
-glassBg.Size = UDim2.new(1, 0, 1, 0)
-glassBg.BackgroundColor3 = Color3.new(0, 0, 0)
-glassBg.BackgroundTransparency = 0.55
-glassBg.BorderSizePixel = 0
-glassBg.ZIndex = 0
-glassBg.Visible = false
-
-
 main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0, 380, 0, 500)
 main.Position = UDim2.new(0.5, -190, 0.5, -250)
@@ -155,16 +146,7 @@ stroke.Color = currentTheme.Accent
 stroke.Thickness = 2.5
 stroke.Transparency = 0.2
 
-strokeGlow = Instance.new("UIStroke", main)
-strokeGlow.Color = currentTheme.Accent
-strokeGlow.Thickness = 6
-strokeGlow.Transparency = 0.75
 
-
-TweenService:Create(strokeGlow, TweenInfo.new(2.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-	Transparency = 0.55,
-	Thickness = 8
-}):Play()
 
 
 
@@ -727,7 +709,7 @@ end)
 
 UIS.InputChanged:Connect(function(input)
 	if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
-	if dragging then
+	if dragging and not resizing then
 		local delta = input.Position - dragStart
 		main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
@@ -2665,8 +2647,6 @@ function applyTheme(t)
 	currentTheme = t
 	main.BackgroundColor3 = t.BG
 	stroke.Color = t.Accent
-	strokeGlow.Color = t.Accent
-	strokeGlow.Transparency = 0.75
 	header.BackgroundColor3 = t.Panel
 	accentBar.BackgroundColor3 = t.Accent
 	headerFix.BackgroundColor3 = t.Panel
@@ -2893,14 +2873,12 @@ showNotification("👉𝐁 Press <b>[B]</b> to open the menu", 5)
 
 function openMenu()
 	gui.Enabled = true
-	glassBg.Visible = true
 	main.Size = UDim2.new(0, menuW, 0, 0)
 	main.BackgroundTransparency = 0.3
 	TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Size = UDim2.new(0, menuW, 0, menuH),
 		BackgroundTransparency = 0
 	}):Play()
-	TweenService:Create(glassBg, TweenInfo.new(0.25), {BackgroundTransparency = 0.55}):Play()
 end
 
 function closeMenu()
@@ -2908,13 +2886,10 @@ function closeMenu()
 		Size = UDim2.new(0, menuW, 0, 0),
 		BackgroundTransparency = 0.3
 	}):Play()
-	TweenService:Create(glassBg, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
 	task.wait(0.15)
 	gui.Enabled = false
 	main.Size = UDim2.new(0, menuW, 0, menuH)
 	main.BackgroundTransparency = 0
-	glassBg.Visible = false
-	glassBg.BackgroundTransparency = 1
 end
 
 closeBtn.MouseButton1Click:Connect(function()
