@@ -655,12 +655,10 @@ resizing, resizeStart, resizeStartSize = nil
 function startDrag(input)
 	if interfaceLocked then return end
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		local mpos = Vector2.new(mouse.X, mouse.Y)
+		local mpos = input.Position
 		local aPos, aSz = main.AbsolutePosition, main.AbsoluteSize
-		local edge = 6
-		local onR = mpos.X >= aPos.X + aSz.X - edge and mpos.X <= aPos.X + aSz.X
-		local onB = mpos.Y >= aPos.Y + aSz.Y - edge and mpos.Y <= aPos.Y + aSz.Y
-		if onR or onB then return end
+		if mpos.X >= aPos.X + aSz.X - 8 and mpos.X <= aPos.X + aSz.X then return end
+		if mpos.Y >= aPos.Y + aSz.Y - 8 and mpos.Y <= aPos.Y + aSz.Y then return end
 		dragging = true; dragStart = input.Position; startPos = main.Position
 	end
 end
@@ -678,33 +676,26 @@ header.InputBegan:Connect(startDrag)
 edgeBars = {}
 edgeZones = {right="x", bottom="y", corner="xy"}
 for name, axis in pairs(edgeZones) do
-	local cfg = name == "right" and {size=UDim2.new(0,4,1,-12), anchor=Vector2.new(1,0), pos=UDim2.new(1,0,0,0)}
-		or name == "bottom" and {size=UDim2.new(1,-12,0,4), anchor=Vector2.new(0,1), pos=UDim2.new(0,0,1,0)}
-		or {size=UDim2.new(0,12,0,12), anchor=Vector2.new(1,1), pos=UDim2.new(1,0,1,0)}
-	local bar = Instance.new("Frame", main)
-	bar.Size = cfg.size; bar.AnchorPoint = cfg.anchor; bar.Position = cfg.pos
+	local sz, an, ps
+	if name == "right" then sz=UDim2.new(0,6,1,0); an=Vector2.new(1,0); ps=UDim2.new(1,0,0,0)
+	elseif name == "bottom" then sz=UDim2.new(1,0,0,6); an=Vector2.new(0,1); ps=UDim2.new(0,0,1,0)
+	else sz=UDim2.new(0,14,0,14); an=Vector2.new(1,1); ps=UDim2.new(1,0,1,0) end
+	local bar = Instance.new("TextButton", main)
+	bar.Size = sz; bar.AnchorPoint = an; bar.Position = ps
 	bar.BackgroundColor3 = currentTheme.Accent; bar.BackgroundTransparency = 1
-	bar.BorderSizePixel = 0; bar.ZIndex = 0; bar.Name = "EdgeBar_" .. name
+	bar.BorderSizePixel = 0; bar.ZIndex = 1; bar.Name = "EdgeBar_" .. name
+	bar.Text = ""; bar.AutoButtonColor = false
+	bar.InputBegan:Connect(function(input)
+		if interfaceLocked then return end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			resizing = axis; resizeStart = input.Position; resizeStartSize = Vector2.new(menuW, menuH)
+		end
+	end)
 	edgeBars[name] = {bar=bar}
 end
 
 onThemeChanged(function(t)
 	for _, v in pairs(edgeBars) do v.bar.BackgroundColor3 = t.Accent end
-end)
-
-UIS.InputBegan:Connect(function(input, gpe)
-	if gpe or interfaceLocked then return end
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-	local mpos = Vector2.new(mouse.X, mouse.Y)
-	local aPos, aSz = main.AbsolutePosition, main.AbsoluteSize
-	local edge = 6
-	local onR = mpos.X >= aPos.X + aSz.X - edge and mpos.X <= aPos.X + aSz.X
-	local onB = mpos.Y >= aPos.Y + aSz.Y - edge and mpos.Y <= aPos.Y + aSz.Y
-	if onR and onB then resizing = "xy"
-	elseif onR then resizing = "x"
-	elseif onB then resizing = "y"
-	end
-	if resizing then resizeStart = input.Position; resizeStartSize = Vector2.new(menuW, menuH) end
 end)
 
 UIS.InputChanged:Connect(function(input)
@@ -2701,6 +2692,12 @@ createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 14, function(va
 	main.BackgroundTransparency = 1 - (val / 100)
 end)
 
+createSection(pages.Settings, "👁  Camera", 8)
+createSlider(pages.Settings, "👁  FOV", 30, 120, 70, 9, function(val)
+	local cam = workspace.CurrentCamera
+	if cam then cam.FieldOfView = val end
+end)
+
 createSection(pages.Settings, "💾  Configuration", 16)
 
 
@@ -2716,6 +2713,8 @@ function getConfig()
 		end)(),
 		menuW     = menuW,
 		menuH     = menuH,
+		fov       = workspace.CurrentCamera and workspace.CurrentCamera.FieldOfView or 70,
+		keyLayout = keyLayout,
 		aimKey    = aimKey,
 		aimMode   = aimMode,
 		flySpeed  = flySpeed,
@@ -2728,6 +2727,8 @@ end
 function applyConfig(cfg)
 	if cfg.theme and Themes[cfg.theme] then applyTheme(Themes[cfg.theme]) end
 	if cfg.menuW and cfg.menuH then applyMenuSize(cfg.menuW, cfg.menuH) end
+	if cfg.fov then local cam = workspace.CurrentCamera; if cam then cam.FieldOfView = cfg.fov end end
+	if cfg.keyLayout then keyLayout = cfg.keyLayout end
 	if cfg.aimKey   then aimKey   = cfg.aimKey   end
 	if cfg.aimMode  then aimMode  = cfg.aimMode  end
 	if cfg.flySpeed then flySpeed = cfg.flySpeed end
@@ -2783,6 +2784,9 @@ createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  18, loadCo
 createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  19, function()
 	applyTheme(Themes.Dark)
 	applyMenuSize(380, 500)
+	keyLayout = "QWERTY"
+	local cam = workspace.CurrentCamera
+	if cam then cam.FieldOfView = 70 end
 	aimKey = "Mouse2"; aimMode = "hold"; flySpeed = 40
 	savedWalkSpeed = 16; savedJumpPower = 50
 	applyMovement(player.Character)
@@ -3823,6 +3827,11 @@ freecamActive = false
 freecamMoveConn, freecamRotateConn, freecamScrollConn = nil
 freecamKeyBeginConn, freecamKeyEndConn = nil
 freecamCamPos, freecamCamRot, freecamZoom = CFrame.new(), Vector2.new(), 50
+keyLayout = "QWERTY"
+keyMaps = {
+	QWERTY = {[Enum.KeyCode.W]="W",[Enum.KeyCode.A]="A",[Enum.KeyCode.S]="S",[Enum.KeyCode.D]="D",[Enum.KeyCode.Space]="Space",[Enum.KeyCode.LeftShift]="LShift"},
+	AZERTY = {[Enum.KeyCode.Z]="W",[Enum.KeyCode.Q]="A",[Enum.KeyCode.S]="S",[Enum.KeyCode.D]="D",[Enum.KeyCode.Space]="Space",[Enum.KeyCode.LeftShift]="LShift"},
+}
 
 function startFreecam()
 	local cam = workspace.CurrentCamera
@@ -3869,7 +3878,7 @@ function startFreecam()
 		if not freecamActive or not mousePressed then return end
 		if input.UserInputType == Enum.UserInputType.MouseMovement then
 			local delta = input.Position - lastMousePos
-			freecamCamRot = freecamCamRot + Vector2.new(delta.X, -delta.Y) * 0.003
+			freecamCamRot = freecamCamRot + Vector2.new(delta.X, delta.Y) * 0.003
 			lastMousePos = input.Position
 		end
 	end)
@@ -3883,10 +3892,8 @@ function startFreecam()
 
 	freecamKeyBeginConn = UIS.InputBegan:Connect(function(input, gpe)
 		if gpe or not freecamActive then return end
-		if input.KeyCode == Enum.KeyCode.W then keys.W = true end
-		if input.KeyCode == Enum.KeyCode.A then keys.A = true end
-		if input.KeyCode == Enum.KeyCode.S then keys.S = true end
-		if input.KeyCode == Enum.KeyCode.D then keys.D = true end
+		local m = keyMaps[keyLayout]
+		if m then local k = m[input.KeyCode]; if k then keys[k] = true end end
 		if input.KeyCode == Enum.KeyCode.Space then keys.Space = true end
 		if input.KeyCode == Enum.KeyCode.LeftShift then keys.LShift = true end
 		if input.UserInputType == Enum.UserInputType.MouseButton2 then
@@ -3897,10 +3904,8 @@ function startFreecam()
 
 	freecamKeyEndConn = UIS.InputEnded:Connect(function(input, gpe)
 		if gpe or not freecamActive then return end
-		if input.KeyCode == Enum.KeyCode.W then keys.W = false end
-		if input.KeyCode == Enum.KeyCode.A then keys.A = false end
-		if input.KeyCode == Enum.KeyCode.S then keys.S = false end
-		if input.KeyCode == Enum.KeyCode.D then keys.D = false end
+		local m = keyMaps[keyLayout]
+		if m then local k = m[input.KeyCode]; if k then keys[k] = false end end
 		if input.KeyCode == Enum.KeyCode.Space then keys.Space = false end
 		if input.KeyCode == Enum.KeyCode.LeftShift then keys.LShift = false end
 		if input.UserInputType == Enum.UserInputType.MouseButton2 then
@@ -3924,9 +3929,19 @@ function stopFreecam()
 	end
 end
 
-createToggle(pages.Other, "📷  Freecam (WASD + Right Click)", 50, function(state)
+createToggle(pages.Other, "📷  Freecam (Right Click)", 50, function(state)
 	if state then startFreecam() else stopFreecam() end
 end, "freecamEnabled")
+createBtn(pages.Other, "⌨  Keys: " .. keyLayout, currentTheme.Button, 51, function(btn)
+	local layouts = {"QWERTY", "AZERTY"}
+	for i, l in ipairs(layouts) do
+		if l == keyLayout then
+			keyLayout = layouts[i % #layouts + 1]
+			break
+		end
+	end
+	btn.Text = "⌨  Keys: " .. keyLayout
+end)
 
 
 
