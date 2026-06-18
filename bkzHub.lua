@@ -1898,6 +1898,8 @@ aimActive    = false
 aimConn      = nil
 aimMode      = "hold"
 aimKey       = "Mouse2"
+botList      = {}
+botListTimer = 0
 aimSmooth    = 0.08
 aimFOV       = 250
 
@@ -1946,6 +1948,15 @@ function isAimInput(input, began)
 end
 
 
+function refreshBotList()
+	botList = {}
+	for _, model in ipairs(workspace:GetDescendants()) do
+		if isBot(model) then
+			table.insert(botList, model)
+		end
+	end
+end
+
 function getTarget()
 	local cam   = workspace.CurrentCamera
 	local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -1957,7 +1968,6 @@ function getTarget()
 
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
-			
 			local myTeam     = player.Team
 			local theirTeam  = p.Team
 			if not (myTeam and theirTeam and myTeam == theirTeam) then
@@ -1970,14 +1980,32 @@ function getTarget()
 						local dy = sp.Y - cy
 						local fovDist = math.sqrt(dx*dx + dy*dy)
 						if fovDist < aimFOV and fovDist < bestScore then
-							bestScore = fovDist
-							best = p
+							bestScore = fovDist; best = p
 						end
 					end
 				end
 			end
 		end
 	end
+
+	for _, model in ipairs(botList) do
+		if model and model.Parent then
+			local hum = model:FindFirstChildOfClass("Humanoid")
+			local head = model:FindFirstChild("Head")
+			if hum and hum.Health > 0 and head then
+				local sp, onScreen = cam:WorldToViewportPoint(head.Position)
+				if onScreen and sp.Z > 0 then
+					local dx = sp.X - cx
+					local dy = sp.Y - cy
+					local fovDist = math.sqrt(dx*dx + dy*dy)
+					if fovDist < aimFOV and fovDist < bestScore then
+						bestScore = fovDist; best = model
+					end
+				end
+			end
+		end
+	end
+
 	return best
 end
 
@@ -2029,9 +2057,19 @@ function startAim()
 	if aimConn then return end
 	aimConn = RunService.RenderStepped:Connect(function()
 		if not aimActive then return end
+		botListTimer = botListTimer + 1
+		if botListTimer >= 120 then
+			botListTimer = 0
+			refreshBotList()
+		end
 		local t = getTarget()
-		if not (t and t.Character) then return end
-		local head = t.Character:FindFirstChild("Head")
+		if not t then return end
+		local head
+		if t.ClassName == "Player" then
+			head = t.Character and t.Character:FindFirstChild("Head")
+		else
+			head = t:FindFirstChild("Head")
+		end
 		if not head then return end
 		pcall(applyAim, head)
 	end)
