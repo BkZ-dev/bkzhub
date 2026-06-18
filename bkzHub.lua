@@ -128,22 +128,7 @@ function playHover()
 end
 
 
-shadow = Instance.new("ImageLabel", gui)
-shadow.Size = UDim2.new(0, 400, 0, 520)
-shadow.Position = UDim2.new(0.5, -200, 0.5, -260)
-shadow.BackgroundTransparency = 1
-shadow.Image = "rbxassetid://11081004466"
-shadow.ImageColor3 = currentTheme.Accent
-shadow.ImageTransparency = 0.75
-shadow.ScaleType = Enum.ScaleType.Slice
-shadow.SliceCenter = Rect.new(10, 10, 100, 100)
-shadow.ZIndex = 0
 
-
-TweenService:Create(shadow, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-	ImageTransparency = 0.65,
-	Size = UDim2.new(0, 406, 0, 526)
-}):Play()
 
 
 glassBg = Instance.new("Frame", gui)
@@ -688,6 +673,12 @@ resizing, resizeStart, resizeStartSize = nil
 function startDrag(input)
 	if interfaceLocked then return end
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		local mpos = Vector2.new(mouse.X, mouse.Y)
+		local aPos, aSz = main.AbsolutePosition, main.AbsoluteSize
+		local edge = 6
+		local onR = mpos.X >= aPos.X + aSz.X - edge and mpos.X <= aPos.X + aSz.X
+		local onB = mpos.Y >= aPos.Y + aSz.Y - edge and mpos.Y <= aPos.Y + aSz.Y
+		if onR or onB then return end
 		dragging = true; dragStart = input.Position; startPos = main.Position
 	end
 end
@@ -2635,7 +2626,6 @@ end
 function applyTheme(t)
 	currentTheme = t
 	main.BackgroundColor3 = t.BG
-	shadow.ImageColor3 = t.Accent
 	stroke.Color = t.Accent
 	strokeGlow.Color = t.Accent
 	strokeGlow.Transparency = 0.75
