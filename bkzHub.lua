@@ -676,26 +676,77 @@ header.InputBegan:Connect(startDrag)
 edgeBars = {}
 edgeZones = {right="x", bottom="y", corner="xy"}
 for name, axis in pairs(edgeZones) do
-	local sz, an, ps
-	if name == "right" then sz=UDim2.new(0,6,1,0); an=Vector2.new(1,0); ps=UDim2.new(1,0,0,0)
-	elseif name == "bottom" then sz=UDim2.new(1,0,0,6); an=Vector2.new(0,1); ps=UDim2.new(0,0,1,0)
-	else sz=UDim2.new(0,14,0,14); an=Vector2.new(1,1); ps=UDim2.new(1,0,1,0) end
-	local bar = Instance.new("TextButton", main)
-	bar.Size = sz; bar.AnchorPoint = an; bar.Position = ps
-	bar.BackgroundColor3 = currentTheme.Accent; bar.BackgroundTransparency = 1
-	bar.BorderSizePixel = 0; bar.ZIndex = 1; bar.Name = "EdgeBar_" .. name
-	bar.Text = ""; bar.AutoButtonColor = false
-	bar.InputBegan:Connect(function(input)
-		if interfaceLocked then return end
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			resizing = axis; resizeStart = input.Position; resizeStartSize = Vector2.new(menuW, menuH)
+	if name == "corner" then
+		local handle = Instance.new("Frame", main)
+		handle.Size = UDim2.new(0, 26, 0, 26)
+		handle.AnchorPoint = Vector2.new(1, 1)
+		handle.Position = UDim2.new(1, 0, 1, 0)
+		handle.BackgroundColor3 = Color3.new(0, 0, 0)
+		handle.BackgroundTransparency = 0.35
+		handle.BorderSizePixel = 0
+		handle.ZIndex = 2
+		Instance.new("UICorner", handle).CornerRadius = UDim.new(0, 5)
+		local pat = {{0}, {-1, 0}, {-2, -1, 0}}
+		for ri, offs in ipairs(pat) do
+			for ci, o in ipairs(offs) do
+				local d = Instance.new("Frame", handle)
+				d.Size = UDim2.new(0, 3, 0, 3)
+				d.AnchorPoint = Vector2.new(1, 1)
+				d.Position = UDim2.new(1, -5 - o * 5, 1, -5 - (#pat - ri) * 5)
+				d.BackgroundColor3 = Color3.new(1, 1, 1)
+				d.BorderSizePixel = 0
+				Instance.new("UICorner", d).CornerRadius = UDim.new(1, 0)
+			end
 		end
-	end)
-	edgeBars[name] = {bar=bar}
+		local bar = Instance.new("TextButton", main)
+		bar.Size = UDim2.new(0, 26, 0, 26)
+		bar.AnchorPoint = Vector2.new(1, 1)
+		bar.Position = UDim2.new(1, 0, 1, 0)
+		bar.BackgroundTransparency = 1
+		bar.BorderSizePixel = 0; bar.ZIndex = 3; bar.Text = ""; bar.AutoButtonColor = false
+		bar.InputBegan:Connect(function(input)
+			if interfaceLocked then return end
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				resizing = "xy"; resizeStart = input.Position; resizeStartSize = Vector2.new(menuW, menuH)
+			end
+		end)
+		edgeBars[name] = {bar=bar, handle=handle}
+	else
+		local sz = name == "right" and UDim2.new(0,6,1,0) or UDim2.new(1,0,0,6)
+		local an = name == "right" and Vector2.new(1,0) or Vector2.new(0,1)
+		local ps = name == "right" and UDim2.new(1,0,0,0) or UDim2.new(0,0,1,0)
+		local bar = Instance.new("TextButton", main)
+		bar.Size = sz; bar.AnchorPoint = an; bar.Position = ps
+		bar.BackgroundColor3 = currentTheme.Accent; bar.BackgroundTransparency = 1
+		bar.BorderSizePixel = 0; bar.ZIndex = 1; bar.Name = "EdgeBar_" .. name
+		bar.Text = ""; bar.AutoButtonColor = false
+		bar.InputBegan:Connect(function(input)
+			if interfaceLocked then return end
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				resizing = axis; resizeStart = input.Position; resizeStartSize = Vector2.new(menuW, menuH)
+			end
+		end)
+		edgeBars[name] = {bar=bar}
+	end
 end
 
 onThemeChanged(function(t)
 	for _, v in pairs(edgeBars) do v.bar.BackgroundColor3 = t.Accent end
+end)
+
+UIS.InputBegan:Connect(function(input)
+	if interfaceLocked then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		local mpos = input.Position
+		local aPos, aSz = main.AbsolutePosition, main.AbsoluteSize
+		local onR = mpos.X >= aPos.X + aSz.X - 8 and mpos.X <= aPos.X + aSz.X
+		local onB = mpos.Y >= aPos.Y + aSz.Y - 8 and mpos.Y <= aPos.Y + aSz.Y
+		if onR and onB then resizing = "xy"
+		elseif onR then resizing = "x"
+		elseif onB then resizing = "y"
+		end
+		if resizing then resizeStart = input.Position; resizeStartSize = Vector2.new(menuW, menuH) end
+	end
 end)
 
 UIS.InputChanged:Connect(function(input)
