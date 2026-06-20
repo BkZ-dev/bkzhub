@@ -116,10 +116,10 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
 gui.ResetOnSpawn = false
 
-SND_OPEN = "rbxassetid://97653168540257"
-SND_CLOSE = "rbxassetid://77985512666301"
+SND_OPEN = "rbxassetid://82845990304289"
+SND_CLOSE = "rbxassetid://116271631941040"
 SND_HOVER = "rbxassetid://82343920339686"
-SND_CONFIRM = "rbxassetid://85240253037283"
+SND_CONFIRM = "rbxassetid://81305056334485"
 SND_CANCEL = "rbxassetid://3779045779"
 
 function playSound(id, vol)
