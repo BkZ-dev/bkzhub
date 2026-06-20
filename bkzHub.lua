@@ -116,15 +116,23 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
 gui.ResetOnSpawn = false
 
+SND_OPEN = "rbxassetid://97653168540257"
+SND_CLOSE = "rbxassetid://77985512666301"
+SND_HOVER = "rbxassetid://82343920339686"
+SND_CONFIRM = "rbxassetid://85240253037283"
+SND_CANCEL = "rbxassetid://3779045779"
 
-HOVER_SOUND = "rbxassetid://9120380692"
-function playHover()
+function playSound(id, vol)
 	local s = Instance.new("Sound")
-	s.SoundId = HOVER_SOUND
-	s.Volume = 0.35
+	s.SoundId = id
+	s.Volume = vol or 0.35
 	s.Parent = gui
 	s:Play()
 	Debris:AddItem(s, 1)
+end
+
+function playHover()
+	playSound(SND_HOVER, 0.35)
 end
 
 
@@ -370,6 +378,7 @@ function createBtn(parent, text, color, order, func)
 	end)
 	btn.MouseButton1Click:Connect(function()
 		local label = text:gsub("[^%w%s]","")
+		playSound(SND_CONFIRM, 0.45)
 		showNotification("👉 " .. label, 1.5)
 		TweenService:Create(frame, TweenInfo.new(0.05), {BackgroundColor3 = currentTheme.Accent}):Play()
 		task.delay(0.08, function()
@@ -443,8 +452,8 @@ function createToggle(parent, text, order, func, configKey)
 
 	hitbox.MouseEnter:Connect(playHover)
 	hitbox.MouseButton1Click:Connect(function()
-		playHover()
 		state = not state
+		playSound(state and SND_CONFIRM or SND_CANCEL, 0.5)
 		if configKey then toggleStates[configKey] = state end
 		TweenService:Create(track, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 			BackgroundColor3 = state and currentTheme.Accent or Color3.fromRGB(60,60,80)
@@ -2927,6 +2936,7 @@ showNotification("👉𝐁 Press <b>[B]</b> to open the menu", 5)
 
 
 function openMenu()
+	playSound(SND_OPEN, 0.5)
 	gui.Enabled = true
 	main.Size = UDim2.new(0, menuW, 0, 0)
 	main.BackgroundTransparency = 0.3
@@ -2937,6 +2947,7 @@ function openMenu()
 end
 
 function closeMenu()
+	playSound(SND_CLOSE, 0.5)
 	TweenService:Create(main, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		Size = UDim2.new(0, menuW, 0, 0),
 		BackgroundTransparency = 0.3
