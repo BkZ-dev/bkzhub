@@ -14,9 +14,27 @@ HttpService = game:GetService("HttpService")
 
 showNotification = nil
 
-player = Players.LocalPlayer
-mouse = player:GetMouse()
-playerGui = player:WaitForChild("PlayerGui")
+if Instance == nil then error("Instance nil - executor incompatible") end
+
+player = nil
+mouse = nil
+playerGui = nil
+for i = 1, 30 do
+	local ok = pcall(function()
+		player = Players.LocalPlayer
+		if player then
+			mouse = player:GetMouse()
+			playerGui = player:WaitForChild("PlayerGui", 2)
+		end
+	end)
+	if ok and player and playerGui then break end
+	task.wait(0.5)
+end
+if not player then error("Players.LocalPlayer nil after 15s - retry injection") end
+if not playerGui then
+	playerGui = Instance.new("ScreenGui", player)
+	playerGui.Name = "PlayerGui_Fallback"
+end
 
 if playerGui:FindFirstChild("AdminMenu") then playerGui.AdminMenu:Destroy() end
 
@@ -107,7 +125,188 @@ function onThemeChanged(fn)
 	table.insert(themeListeners, fn)
 end
 
+vcAntiBan = false
+vcAntiBanConns = {}
+vcAntiBanHeartbeat = nil
+vcAntiBanVoiceReal = nil
+vcAntiBanVoiceDecoy = nil
+vcAntiBanVCS = nil
 
+function toggleVCAntiBan(state)
+	vcAntiBan = state
+	if state then
+		task.spawn(function()
+			pcall(function() enableVCAntiBanAdvanced() end)
+		end)
+	else
+		disableVCAntiBanAdvanced()
+	end
+end
+
+function enableVCAntiBanAdvanced()
+	local vcs = game:FindService("VoiceChatService") or game:GetService("VoiceChatService")
+	vcAntiBanVCS = vcs
+
+	-- 1. BLOCK VOICE CHAT SERVICE
+	if vcs then
+		local mt = getrawmetatable and getrawmetatable(vcs)
+		if mt and mt.__namecall then
+			local nc = mt.__namecall
+			if setreadonly then pcall(function() setreadonly(mt, false) end) end
+			mt.__namecall = function(self, ...)
+				local m = getnamecallmethod and getnamecallmethod()
+				if m then
+					local lm = m:lower()
+					if lm:find("voice") or lm == "isvoicechatenabled" or lm == "getvoicechatstatus" or lm == "joinvoicechat" or lm == "leavevoicechat" then
+						if vcAntiBan then
+							if lm == "isvoicechatenabled" then return false end
+							if lm == "getvoicechatstatus" then return "Disabled" end
+							return nil
+						end
+					end
+				end
+				return nc(self, ...)
+			end
+			if setreadonly then pcall(function() setreadonly(mt, true) end) end
+		end
+	end
+
+	-- 2. VOICE INSTANCE CLONING + HIDING
+	local function findVoice()
+		for _, c in ipairs(player:GetChildren()) do
+			if c:IsA("Voice") then return c end
+		end
+		return nil
+	end
+
+	vcAntiBanVoiceReal = findVoice()
+	if not vcAntiBanVoiceReal then
+		for _ = 1, 20 do
+			task.wait(0.3)
+			vcAntiBanVoiceReal = findVoice()
+			if vcAntiBanVoiceReal then break end
+		end
+	end
+	if vcAntiBanVoiceReal then
+		vcAntiBanVoiceDecoy = vcAntiBanVoiceReal:Clone()
+		vcAntiBanVoiceDecoy.Name = "Voice"
+		vcAntiBanVoiceDecoy.Parent = player
+		vcAntiBanVoiceReal.Parent = game:GetService("CoreGui")
+		local dmt = getrawmetatable and getrawmetatable(vcAntiBanVoiceDecoy)
+		if dmt and dmt.__index then
+			local di = dmt.__index
+			if setreadonly then pcall(function() setreadonly(dmt, false) end) end
+			dmt.__index = function(self, k)
+				if vcAntiBan then
+					if k == "VoiceState" then return Enum.ParticleStatus.Inactive end
+					if k == "Parent" then return player end
+				end
+				return di(self, k)
+			end
+			if setreadonly then pcall(function() setreadonly(dmt, true) end) end
+		end
+	end
+
+	-- 3. INTERCEPT VOICE REMOTES VIA __NAMECALL
+	local remMT = nil
+	pcall(function()
+		local test = Instance.new("RemoteEvent")
+		remMT = getrawmetatable and getrawmetatable(test)
+		pcall(function() test:Destroy() end)
+	end)
+	if remMT and remMT.__namecall then
+		local rnc = remMT.__namecall
+		if setreadonly then pcall(function() setreadonly(remMT, false) end) end
+		remMT.__namecall = function(self, ...)
+			local m = getnamecallmethod and getnamecallmethod()
+			if m and vcAntiBan then
+				local lm = m:lower()
+				if lm == "fireserver" or lm == "invokeserver" then
+					local n = type(self) == "userdata" and pcall(function() return self.Name end) or nil
+					local sn = (type(n) == "string" and n and n:lower()) or ""
+					if sn:find("voice") or sn:find("mic") or sn:find("speak") or sn:find("vcs") or sn:find("audio") then
+						if lm == "fireserver" then return end
+						if lm == "invokeserver" then return nil end
+					end
+				end
+			end
+			return rnc(self, ...)
+		end
+		if setreadonly then pcall(function() setreadonly(remMT, true) end) end
+	end
+
+	-- 4. HIDE ALL VOICE UI
+	local function isVoiceUI(v)
+		if not v:IsA("GuiObject") then return false end
+		local n = v.Name:lower()
+		return n:find("voice") or n:find("mic") or n:find("speaker") or n:find("speak") or n:find("mute") or n:find("audio") or n:find("push") or n:find("talk") or n:find("vcs")
+	end
+	for _, v in ipairs(playerGui:GetDescendants()) do
+		if isVoiceUI(v) then v.Visible = false; v.Active = false end
+	end
+	vcAntiBanConns[#vcAntiBanConns+1] = playerGui.DescendantAdded:Connect(function(v)
+		if not vcAntiBan then return end
+		task.wait(0.05)
+		if isVoiceUI(v) then v.Visible = false; v.Active = false end
+	end)
+
+	-- 5. BLOCK PUSH-TO-TALK KEYS
+	vcAntiBanConns[#vcAntiBanConns+1] = UIS.InputBegan:Connect(function(input, gpe)
+		if not vcAntiBan or gpe then return end
+		local k = input.KeyCode
+		if k == Enum.KeyCode.V or k == Enum.KeyCode.B or k == Enum.KeyCode.U then
+			return true
+		end
+	end)
+
+	-- 6. HEARTBEAT MAINTENANCE
+	vcAntiBanHeartbeat = RunService.Heartbeat:Connect(function()
+		if not vcAntiBan then return end
+		pcall(function()
+			for _, v in ipairs(playerGui:GetDescendants()) do
+				if v.Visible and v:IsA("GuiObject") then
+					local n = v.Name:lower()
+					if n:find("voice") or n:find("mic") or n:find("speaker") then
+						v.Visible = false
+					end
+				end
+			end
+			if vcAntiBanVoiceDecoy and vcAntiBanVoiceDecoy.Parent ~= player then
+				vcAntiBanVoiceDecoy.Parent = player
+			end
+		end)
+	end)
+
+	showNotification("🎤  VC Anti-Ban v2: ON", 2)
+end
+
+function disableVCAntiBanAdvanced()
+	for _, conn in ipairs(vcAntiBanConns) do
+		pcall(function() conn:Disconnect() end)
+	end
+	vcAntiBanConns = {}
+	if vcAntiBanHeartbeat then
+		pcall(function() vcAntiBanHeartbeat:Disconnect() end)
+		vcAntiBanHeartbeat = nil
+	end
+	if vcAntiBanVoiceReal then
+		pcall(function() vcAntiBanVoiceReal.Parent = player end)
+	end
+	if vcAntiBanVoiceDecoy then
+		pcall(function() vcAntiBanVoiceDecoy:Destroy() end)
+		vcAntiBanVoiceDecoy = nil
+	end
+	vcAntiBanVoiceReal = nil
+	for _, v in ipairs(playerGui:GetDescendants()) do
+		if v:IsA("GuiObject") then
+			local n = v.Name:lower()
+			if n:find("voice") or n:find("mic") or n:find("speaker") or n:find("mute") then
+				v.Visible = true
+			end
+		end
+	end
+	showNotification("🎤  VC Anti-Ban v2: OFF", 2)
+end
 
 gui = Instance.new("ScreenGui", playerGui)
 gui.Name = "AdminMenu"
@@ -126,7 +325,7 @@ function playSound(id, vol)
 	local s = Instance.new("Sound")
 	s.SoundId = id
 	s.Volume = vol or 0.35
-	s.Parent = gui
+	s.Parent = playerGui
 	s:Play()
 	Debris:AddItem(s, 1)
 end
@@ -193,7 +392,7 @@ title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v4.0  •  " .. player.Name
+subtitle.Text = "v5.0  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -50, 0, 14)
 subtitle.Position = UDim2.new(0, 15, 0, 33)
 subtitle.BackgroundTransparency = 1
@@ -1323,8 +1522,10 @@ createBtn(pages.Player, "📡  Force All TP to Me", currentTheme.Accent, 15, fun
 	showNotification("📡  Tous TP à vous!", 2)
 end)
 
-
-
+createSection(pages.Player, "🎤  Voice Chat", 16)
+createToggle(pages.Player, "🎤  VC Anti-Ban (furtif)", 17, function(state)
+	toggleVCAntiBan(state)
+end, "vcAntiBan")
 
 createSection(pages.Personal, "🏃  Movement", 0)
 
@@ -3846,7 +4047,7 @@ verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
 verLabel = Instance.new("TextLabel", verFrame)
 verLabel.Size = UDim2.new(1, -12, 0, 16)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v4.0"
+verLabel.Text = "🌐 bkz HUB  v5.0"
 verLabel.TextColor3 = currentTheme.Accent
 verLabel.Font = Enum.Font.GothamBold
 verLabel.TextSize = 14
@@ -4063,7 +4264,45 @@ task.spawn(function()
 	end
 end)
 
-end) 
+end)
+
+if UIS.TouchEnabled then
+	local mgui = Instance.new("ScreenGui", playerGui)
+	mgui.Name = "AdminMenuBtn"
+	mgui.ResetOnSpawn = false
+	mgui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	mgui.DisplayOrder = 1000
+	local mbtn = Instance.new("TextButton", mgui)
+	mbtn.Size = UDim2.new(0, 56, 0, 56)
+	mbtn.Position = UDim2.new(1, -20, 1, -20)
+	mbtn.AnchorPoint = Vector2.new(1, 1)
+	mbtn.BackgroundColor3 = currentTheme.Accent
+	mbtn.BorderSizePixel = 0
+	mbtn.Text = "☰"
+	mbtn.TextColor3 = Color3.new(1, 1, 1)
+	mbtn.Font = Enum.Font.GothamBold
+	mbtn.TextSize = 24
+	mbtn.ZIndex = 100
+	Instance.new("UICorner", mbtn).CornerRadius = UDim.new(1, 0)
+	local mstroke = Instance.new("UIStroke", mbtn)
+	mstroke.Color = Color3.new(1,1,1)
+	mstroke.Transparency = 0.7
+	mstroke.Thickness = 1.5
+	mbtn.MouseButton1Click:Connect(function()
+		if gui.Enabled then closeMenu() else openMenu() end
+	end)
+	onThemeChanged(function(t)
+		mbtn.BackgroundColor3 = t.Accent
+	end)
+end
+
+if scrSuccess then
+	task.spawn(function()
+		task.wait(1.5)
+		openMenu()
+	end)
+end
+
 if not scrSuccess then
 	warn("bkz HUB Error:", scrError)
 	
