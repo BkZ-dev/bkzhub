@@ -9,7 +9,7 @@
 ## 🚀 Injection
 
 ```lua
-loadstring(game:HttpGet("https://pastebin.com/raw/..."))()
+loadstring(game:HttpGet("loadstring(game:HttpGet("https://raw.githubusercontent.com/anonymedu04/bkzhub/refs/heads/main/bkzHub.lua", true))()"))()
 ```
 
 > ⚠️ Paste the full script into your executor. Make sure you use a **Lua 5.1 compatible executor** (Synapse, ScriptWare, Krnl, Fluxus, etc.).
