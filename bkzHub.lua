@@ -126,57 +126,97 @@ function onThemeChanged(fn)
 end
 
 vcAntiBan = false
-vcAntiBanVoice = nil
-vcAntiBanToggle = nil
+vcAntiBanConns = {}
+vcAntiBanActive = false
+vcAntiBanKey = "V"
 
-function toggleVCAntiBan(state)
-	vcAntiBan = state
-	if state then
-		task.spawn(function()
-			pcall(function()
-				local function findVoice()
-					for _, c in ipairs(player:GetChildren()) do
-						if c:IsA("Voice") then return c end
-					end
-					return nil
-				end
-				vcAntiBanVoice = findVoice()
-				if not vcAntiBanVoice then
-					for _ = 1, 20 do
-						task.wait(0.3)
-						vcAntiBanVoice = findVoice()
-						if vcAntiBanVoice then break end
-					end
-				end
-				if not vcAntiBanVoice then
-					showNotification("❌  Voice introuvable", 2)
-					vcAntiBan = false
-					return
-				end
-				local origParent = vcAntiBanVoice.Parent
-				local toggleState = false
-				vcAntiBanToggle = RunService.Heartbeat:Connect(function()
-					if not vcAntiBan then return end
-					toggleState = not toggleState
-					if toggleState then
-						pcall(function() vcAntiBanVoice.Parent = nil end)
-					else
-						pcall(function() vcAntiBanVoice.Parent = origParent end)
-					end
-				end)
-				showNotification("🎤  VC Anti-Ban: ON", 2)
-			end)
-		end)
-	else
-		if vcAntiBanToggle then
-			pcall(function() vcAntiBanToggle:Disconnect() end)
-			vcAntiBanToggle = nil
-		end
-		if vcAntiBanVoice then
-			pcall(function() vcAntiBanVoice.Parent = player end)
-		end
-		showNotification("🎤  VC Anti-Ban: OFF", 2)
+function activateVCAntiBan()
+	if vcAntiBanActive then
+		showNotification("🎤  VC Anti-Ban déjà actif", 2)
+		return
 	end
+	task.spawn(function()
+		pcall(function()
+			local vcs = game:FindService("VoiceChatService") or game:GetService("VoiceChatService")
+			local function findVoice()
+				for _, c in ipairs(player:GetChildren()) do
+					if c:IsA("Voice") then return c end
+				end
+				return nil
+			end
+			local voice = findVoice()
+			if not voice then
+				for _ = 1, 20 do
+					task.wait(0.3)
+					voice = findVoice()
+					if voice then break end
+				end
+			end
+			if not voice then
+				showNotification("❌  Voice introuvable", 2)
+				return
+			end
+			local muted = false
+			pcall(function() muted = voice.IsMuted end)
+			if muted then
+				showNotification("🔇  Désactive le mute d'abord", 2)
+				return
+			end
+			vcAntiBan = true
+			vcAntiBanActive = true
+			if vcs then
+				local mt = getrawmetatable and getrawmetatable(vcs)
+				if mt and mt.__namecall then
+					local nc = mt.__namecall
+					if setreadonly then pcall(function() setreadonly(mt, false) end) end
+					mt.__namecall = function(self, ...)
+						local m = getnamecallmethod and getnamecallmethod()
+						if m and vcAntiBan then
+							local lm = m:lower()
+							if lm == "isvoicechatenabled" then return false end
+							if lm == "getvoicechatstatus" then return "Disabled" end
+						end
+						return nc(self, ...)
+					end
+					if setreadonly then pcall(function() setreadonly(mt, true) end) end
+				end
+			end
+			local vmt = getrawmetatable and getrawmetatable(voice)
+			if vmt and vmt.__index then
+				local vi = vmt.__index
+				if setreadonly then pcall(function() setreadonly(vmt, false) end) end
+				vmt.__index = function(self, k)
+					if vcAntiBan then
+						if k == "VoiceState" then return Enum.ParticleStatus.Inactive end
+					end
+					return vi(self, k)
+				end
+				if setreadonly then pcall(function() setreadonly(vmt, true) end) end
+			end
+			local function isV(v)
+				if not v:IsA("GuiObject") then return false end
+				local n = v.Name:lower()
+				return n:find("voice") or n:find("mic") or n:find("speaker") or n:find("speak") or n:find("mute") or n:find("audio") or n:find("push") or n:find("talk") or n:find("vcs")
+			end
+			for _, v in ipairs(playerGui:GetDescendants()) do
+				if isV(v) then v.Visible = false; v.Active = false end
+			end
+			vcAntiBanConns[#vcAntiBanConns+1] = playerGui.DescendantAdded:Connect(function(v)
+				if not vcAntiBan then return end
+				task.wait(0.05)
+				if isV(v) then v.Visible = false; v.Active = false end
+			end)
+			vcAntiBanConns[#vcAntiBanConns+1] = UIS.InputBegan:Connect(function(input, gpe)
+				if not vcAntiBan or gpe then return end
+				if input.KeyCode.Name == vcAntiBanKey then
+					pcall(function()
+						if vcs then vcs:ToggleMicrophone() end
+					end)
+				end
+			end)
+			showNotification("🎤  VC Anti-Ban: ON (" .. vcAntiBanKey .. ")", 2)
+		end)
+	end)
 end
 
 gui = Instance.new("ScreenGui", playerGui)
@@ -1394,9 +1434,73 @@ createBtn(pages.Player, "📡  Force All TP to Me", currentTheme.Accent, 15, fun
 end)
 
 createSection(pages.Player, "🎤  Voice Chat", 16)
-createToggle(pages.Player, "🎤  VC Anti-Ban (furtif)", 17, function(state)
-	toggleVCAntiBan(state)
-end, "vcAntiBan")
+createBtn(pages.Player, "🎤  Activer VC Anti-Ban", currentTheme.Accent, 17, function(btn)
+	activateVCAntiBan()
+	if btn then
+		btn.Text = "🎤  VC Anti-Ban: ON"
+		btn.BackgroundColor3 = currentTheme.Success
+		btn.AutoButtonColor = false
+	end
+end)
+do
+	local vcKf = Instance.new("Frame", pages.Player)
+	vcKf.Size = UDim2.new(1,0,0,34)
+	vcKf.BackgroundColor3 = currentTheme.Button
+	vcKf.BorderSizePixel = 0
+	vcKf.LayoutOrder = 18
+	Instance.new("UICorner", vcKf).CornerRadius = UDim.new(0, 8)
+	local vcKl = Instance.new("TextLabel", vcKf)
+	vcKl.Size = UDim2.new(1,-10,1,0)
+	vcKl.Position = UDim2.new(0,10,0,0)
+	vcKl.BackgroundTransparency = 1
+	vcKl.Text = "⌨  Touche: " .. vcAntiBanKey .. "  [cliquer]"
+	vcKl.TextColor3 = currentTheme.Text
+	vcKl.Font = Enum.Font.Gotham
+	vcKl.TextSize = 12
+	vcKl.TextXAlignment = Enum.TextXAlignment.Left
+	local vcKb = Instance.new("TextButton", vcKf)
+	vcKb.Size = UDim2.new(1,0,1,0)
+	vcKb.BackgroundTransparency = 1
+	vcKb.Text = ""
+	local listening = false
+	local bindConn = nil
+	vcKb.MouseEnter:Connect(playHover)
+	vcKb.MouseButton1Click:Connect(function()
+		playSound(SND_CONFIRM)
+		if listening then return end
+		listening = true
+		vcKl.Text = "⌨  Appuie sur une touche..."
+		if bindConn then bindConn:Disconnect() end
+		bindConn = UIS.InputBegan:Connect(function(input, gpe)
+			if gpe then return end
+			local key = nil
+			if input.UserInputType == Enum.UserInputType.Keyboard then
+				key = input.KeyCode.Name
+			elseif input.UserInputType == Enum.UserInputType.MouseButton1 then key = "Mouse1"
+			elseif input.UserInputType == Enum.UserInputType.MouseButton2 then key = "Mouse2"
+			elseif input.UserInputType == Enum.UserInputType.MouseButton3 then key = "Mouse3"
+			end
+			if key then
+				vcAntiBanKey = key
+				vcKl.Text = "⌨  Touche: " .. key .. "  [cliquer]"
+				listening = false
+				if bindConn then bindConn:Disconnect(); bindConn = nil end
+				showNotification("🎤  Touche: " .. key, 2)
+			end
+		end)
+		task.delay(5, function()
+			if listening then
+				listening = false
+				if bindConn then bindConn:Disconnect(); bindConn = nil end
+				vcKl.Text = "⌨  Touche: " .. vcAntiBanKey .. "  [cliquer]"
+			end
+		end)
+	end)
+	onThemeChanged(function(t)
+		vcKf.BackgroundColor3 = t.Button
+		vcKl.TextColor3 = t.Text
+	end)
+end
 
 createSection(pages.Personal, "🏃  Movement", 0)
 
