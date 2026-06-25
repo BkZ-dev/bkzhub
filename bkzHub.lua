@@ -1,7 +1,9 @@
 
 
 
+local _Instance = Instance
 local scrSuccess, scrError = pcall(function()
+if not Instance then Instance = _Instance end
 wait(1)
 
 UIS = game:GetService("UserInputService")
@@ -13,8 +15,6 @@ Debris = game:GetService("Debris")
 HttpService = game:GetService("HttpService")
 
 showNotification = nil
-
-if Instance == nil then error("Instance nil - executor incompatible") end
 
 player = nil
 mouse = nil
