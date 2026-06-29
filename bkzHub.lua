@@ -1644,6 +1644,33 @@ createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(st
 	end
 end, "noclip")
 
+createSection(pages.Personal, "🕺  Animations", 11)
+
+local jerkAnimTrack = nil
+
+createToggle(pages.Personal, "Jerk Animation", 12, function(state)
+	if state then
+		local char = player.Character
+		if not char then return end
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hum then return end
+		local animator = hum:FindFirstChildOfClass("Animator")
+		if not animator then animator = Instance.new("Animator", hum) end
+		local anim = Instance.new("Animation")
+		anim.AnimationId = "rbxassetid://1842582639"
+		local track = animator:LoadAnimation(anim)
+		track.Looped = true
+		track:Play()
+		jerkAnimTrack = track
+	else
+		if jerkAnimTrack then
+			jerkAnimTrack:Stop()
+			jerkAnimTrack:Destroy()
+			jerkAnimTrack = nil
+		end
+	end
+end, "jerk")
+
 createSection(pages.Personal, "🛡  Survival", 10)
 
 
