@@ -38,7 +38,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/anonymedu04/bkzhub/re
 ### 🔒 Personal
 - **Movement** — Walk Speed, Jump Height, Freeze
 - **Fly** — Toggle fly (WASD + Space/Ctrl) with adjustable speed
-- **Collision & Visual** — Noclip, Character Size
+- **Collision & Visual** — Noclip (invisible platform under feet to catch falls)
 - **Survival** — God Mode, Anti-Kick, No Fall Damage, Anti-Tool Grab, Anti-Cheat Bypass, Infinite Jump
 - **Combat** — Unlimited Ammo, Instant Reload, No Recoil, Auto Parry
 - **Aim Lock** — Full aimbot with FOV, smoothing, prediction, hold/toggle mode, mouse/keyboard selection
@@ -56,6 +56,15 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/anonymedu04/bkzhub/re
 - **Time** — Set Time of Day, Time Speed
 - **Physics** — Gravity control
 - **Performance** — Unlock FPS, Reset FPS (60)
+
+### 💃 Emotes
+- **R6 Emotes** — 52 animations (Faint, Spinner, Levitate, Head Throw, Arm Turbine, Dab, Jerk, and more)
+- **R6 Default Animations** — 29 classic animations (Walk, Jump, Dance, Wave, Point, Cheer, etc.)
+- **R6 Ninja Gear** — 7 ninja animations (Dash, Slash, Sword Thrust, etc.)
+- **R15 Emotes** — 13 animations (Spinner, Circle Arm, Fling Arms, Jerk, etc.)
+- **R15 Default Animations** — 27 animations (Walk, Run, Swim, Dance, Laugh, etc.)
+- **R15 Migrated** — 29 R6-to-R15 converted animations
+- Each toggle plays the animation in **loop**, visible to everyone
 
 ### ⚙ Settings
 - **Themes** — Dark, Light, Cyber, Red, Green
