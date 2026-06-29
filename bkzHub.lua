@@ -1610,18 +1610,31 @@ end)
 createSection(pages.Personal, "👁  Collision & Visual", 8)
 
 createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(state)
+	local platform
 	if state then
+		platform = Instance.new("Part")
+		platform.Name = "NoclipPlatform"
+		platform.Anchored = true
+		platform.CanCollide = true
+		platform.Transparency = 1
+		platform.Size = Vector3.new(50, 1, 50)
+		platform.Material = Enum.Material.ForceField
+		platform.Locked = true
+		platform.Parent = workspace
 		RunService:BindToRenderStep("Noclip", Enum.RenderPriority.Character.Value + 1, function()
 			local char = player.Character
 			if not char then return end
-			for _, part in ipairs(char:GetDescendants()) do
-				if part:IsA("BasePart") then part.CanCollide = false; part.Velocity = part.Velocity * 0.98 end
-			end
 			local hrp = char:FindFirstChild("HumanoidRootPart")
-			if hrp then hrp.CanCollide = false end
+			if not hrp then return end
+			for _, part in ipairs(char:GetDescendants()) do
+				if part:IsA("BasePart") then part.CanCollide = false end
+			end
+			hrp.CanCollide = false
+			platform.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 5, hrp.Position.Z)
 		end)
 	else
 		RunService:UnbindFromRenderStep("Noclip")
+		if platform then platform:Destroy() end
 		local char = player.Character
 		if char then
 			for _, part in ipairs(char:GetDescendants()) do
