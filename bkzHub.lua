@@ -1035,11 +1035,6 @@ function playInstantTransmissionFX(position)
 	hrp.CFrame = CFrame.new(position + Vector3.new(0, 3, 0))
 
 	
-	local snd2 = Instance.new("Sound", hrp)
-	snd2.SoundId = "rbxassetid://3716468774"
-	snd2.Volume = 0.6; snd2.PlaybackSpeed = 0.85
-	snd2:Play(); Debris:AddItem(snd2, 2)
-
 	local arrCF = hrp.CFrame
 
 	
@@ -1530,7 +1525,6 @@ do
 	local bindConn = nil
 	vcKb.MouseEnter:Connect(playHover)
 	vcKb.MouseButton1Click:Connect(function()
-		playSound(SND_CONFIRM)
 		if listening then return end
 		listening = true
 		vcKl.Text = "⌨  Appuie sur une touche..."
@@ -3263,6 +3257,7 @@ end)
 
 createSection(pages.Settings, "💾  Configuration", 16)
 
+local CONFIG_FILE = "AdminMenu_config.json"
 local autoSaveTimer = nil
 
 function autoSave()
@@ -3692,11 +3687,6 @@ createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 202, fu
 	boom1.SoundId = "rbxassetid://84792688181059"; boom1.Volume = 1.5
 	boom1.RollOffMaxDistance = 300; boom1:Play()
 	Debris:AddItem(boom1, 4)
-
-	local boom2 = Instance.new("Sound", hrp)
-	boom2.SoundId = "rbxassetid://3716468774"; boom2.Volume = 1.0
-	boom2.RollOffMaxDistance = 200; boom2:Play()
-	Debris:AddItem(boom2, 3)
 
 	spawnExplosionFX(hrp.Position)
 
