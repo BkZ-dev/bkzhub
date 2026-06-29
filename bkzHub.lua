@@ -1711,6 +1711,14 @@ end, "noclip")
 
 local emoteTracks = {}
 
+local function getRigType()
+	local char = player.Character
+	if not char then return nil end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hum then return nil end
+	return hum.RigType
+end
+
 local function createEmoteToggle(parent, name, order, animId, configKey)
 	createToggle(parent, name, order, function(state)
 		if state then
@@ -1736,119 +1744,88 @@ local function createEmoteToggle(parent, name, order, animId, configKey)
 	end, configKey)
 end
 
-createSection(pages.Emotes, "R6 Emotes", 1)
-
-local emoteR6 = {
-	{"Faint", 181526230}, {"Levitate", 313762630}, {"Spinner", 188632011},
-	{"Float Sit", 179224234}, {"Scared", 180612465}, {"Floating Head", 121572214},
-	{"Crouch", 182724289}, {"Moving Dance", 429703734}, {"Glitch Levitate", 313762630},
-	{"Spin Dance", 429730430}, {"Spin Dance 2", 186934910}, {"Floor Faint", 181525546},
-	{"Super Faint", 181525546}, {"Bow Down", 204292303}, {"Sword Slam", 204295235},
-	{"Insane", 33796059}, {"Mega Insane", 184574340}, {"Sword Slice", 35978879},
-	{"Head Throw", 35154961}, {"Floor Crawl", 282574440}, {"Dino Walk", 204328711},
-	{"Loop Head", 35154961}, {"Hero Jump", 184574340}, {"Weird Move Back", 215384594},
-	{"Clone Illusion", 215384594}, {"Moon Dance", 45834924}, {"Full Punch", 204062532},
-	{"Full Swing", 218504594}, {"Arm Turbine", 259438880}, {"Barrel Roll", 136801964},
-	{"Arm Detach", 33169583}, {"Insane Arms", 27432691}, {"Jerk", 72042024},
-	{"Dab", 248263260}, {"Chop", 33169596}, {"Hmm", 33855276}, {"Hmm 2", 148840371},
-	{"Random", 48977286}, {"Old Dance", 35654637}, {"Stab", 66703241}, {"Kick", 45737360},
-	{"Flying", 46196309}, {"Smelly Run", 30235165}, {"Scream", 180611870},
-	{"Jumping Jacks", 429681631}, {"Super Punch", 126753849}, {"Weird Sway", 248336677},
-	{"Goal!", 28488254}, {"Weird Float", 248336459}, {"Pinch Nose", 30235165},
-	{"Zombie Arms", 183294396}, {"Tele", 147777149},
-}
-
-for i, em in ipairs(emoteR6) do
-	createEmoteToggle(pages.Emotes, em[1], i + 1, em[2], "r6_" .. em[1]:gsub("%s+", ""))
+local function createRigAwareToggle(parent, name, order, r6Id, r15Id, configKey)
+	createToggle(parent, name, order, function(state)
+		if state then
+			local char = player.Character
+			if not char then return end
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			if not hum then return end
+			local animator = hum:FindFirstChildOfClass("Animator")
+			if not animator then animator = Instance.new("Animator", hum) end
+			local anim = Instance.new("Animation")
+			local id = hum.RigType == Enum.HumanoidRigType.R6 and r6Id or r15Id
+			anim.AnimationId = "rbxassetid://" .. tostring(id)
+			local track = animator:LoadAnimation(anim)
+			track.Looped = true
+			track:Play()
+			emoteTracks[configKey] = track
+		else
+			if emoteTracks[configKey] then
+				emoteTracks[configKey]:Stop()
+				emoteTracks[configKey]:Destroy()
+				emoteTracks[configKey] = nil
+			end
+		end
+	end, configKey)
 end
 
-createSection(pages.Emotes, "R6 Default Animations", 50)
+createSection(pages.Emotes, "🎒  My Catalog Emotes", 1)
 
-local defaultR6 = {
-	{"Idle 1", 180435571}, {"Idle 2", 180435792}, {"Idle Alt", 125750544},
-	{"Idle Alt 2", 125750618}, {"Walk", 180426354}, {"Walk Alt", 125749145},
-	{"Jump", 125750702}, {"Fall", 180436148}, {"Fall Alt", 125750759},
-	{"Climb", 180436334}, {"Climb Alt", 125750800}, {"Sit", 178130996},
-	{"Tool Idle", 182393478}, {"Tool Alt", 125750867}, {"Slash", 129967390},
-	{"Lunge", 129967478}, {"Wave", 128777973}, {"Point", 128853357},
-	{"Dance 1", 182435998}, {"Dance 1b", 182491037}, {"Dance 1c", 182491065},
-	{"Dance 2", 182436842}, {"Dance 2b", 182491248}, {"Dance 2c", 182491277},
-	{"Dance 3", 182436935}, {"Dance 3b", 182491368}, {"Dance 3c", 182491423},
-	{"Laugh", 129423131}, {"Cheer", 129423030},
-}
-
-for i, em in ipairs(defaultR6) do
-	createEmoteToggle(pages.Emotes, em[1], i + 51, em[2], "r6def_" .. em[1]:gsub("%s+", ""))
+local function loadPlayerEmotes()
+	local order = 2
+	local defaultEmotes = {
+		{"Wave", 128777973, 507770239}, {"Point", 128853357, 507770453},
+		{"Dance", 182435998, 507771019}, {"Dance 2", 182436842, 507776043},
+		{"Dance 3", 182436935, 507777268}, {"Laugh", 129423131, 507770818},
+		{"Cheer", 129423030, 507770677},
+	}
+	local loaded = {}
+	local ok, playerEmotes = pcall(function() return player:GetEmotes() end)
+	if ok and type(playerEmotes) == "table" then
+		for name, data in pairs(playerEmotes) do
+			local id = type(data) == "table" and data.assetId or data
+			if id and tonumber(id) then
+				createEmoteToggle(pages.Emotes, name, order, tonumber(id), "emote_" .. name:gsub("%s+", ""))
+				order = order + 1
+				loaded[name] = true
+			end
+		end
+	end
+	for _, em in ipairs(defaultEmotes) do
+		if not loaded[em[1]] then
+			createRigAwareToggle(pages.Emotes, em[1], order, em[2], em[3], "emote_" .. em[1]:gsub("%s+", ""))
+			order = order + 1
+		end
+	end
+	if order == 2 then
+		local lbl = Instance.new("TextLabel", pages.Emotes)
+		lbl.Text = "  No emotes found"
+		lbl.Size = UDim2.new(1, 0, 0, 30)
+		lbl.BackgroundTransparency = 1
+		lbl.TextColor3 = currentTheme.SubText
+		lbl.Font = Enum.Font.Gotham
+		lbl.TextSize = 13
+		lbl.LayoutOrder = 2
+	end
 end
 
-createSection(pages.Emotes, "R6 Ninja Gear", 85)
+task.spawn(loadPlayerEmotes)
 
-local ninjaR6 = {
-	{"Ninja Dash", 45828430}, {"Ninja Slash", 45873069}, {"Dual Slash 2", 85576403},
-	{"Sword Pump Up 2", 85723345}, {"Sword Swing Jump", 32659699},
-	{"Sword Thrust", 32659703}, {"Two Hand Sword", 32659706},
+createSection(pages.Emotes, "🎬  Default Animations", 50)
+
+local defaultAnims = {
+	{"Idle 1", 180435571, 507766666}, {"Walk", 180426354, 507777826},
+	{"Jump", 125750702, 507765000}, {"Fall", 180436148, 507767968},
+	{"Climb", 180436334, 507765644}, {"Sit", 178130996, 507768133},
+	{"Wave", 128777973, 507770239}, {"Point", 128853357, 507770453},
+	{"Dance", 182435998, 507771019}, {"Dance 2", 182436842, 507776043},
+	{"Dance 3", 182436935, 507777268}, {"Laugh", 129423131, 507770818},
+	{"Cheer", 129423030, 507770677},
 }
 
-for i, em in ipairs(ninjaR6) do
-	createEmoteToggle(pages.Emotes, em[1], i + 86, em[2], "r6nin_" .. em[1]:gsub("%s+", ""))
-end
-
-createSection(pages.Emotes, "R15 Emotes", 95)
-
-local emoteR15 = {
-	{"Spinner", 754658275}, {"Open", 582855105}, {"Circle Arm", 698251653},
-	{"Fling Arms", 754656200}, {"Crazy Slash", 674871189}, {"Float Slash", 717879555},
-	{"Down Slash", 746398327}, {"Rotate Slash", 675025570}, {"Bend", 696096087},
-	{"Arms out", 582384156}, {"Zombie Attack", 708553116}, {"Pull", 675025795},
-	{"Jerk", 698251653},
-}
-
-for i, em in ipairs(emoteR15) do
-	createEmoteToggle(pages.Emotes, em[1], i + 96, em[2], "r15_" .. em[1]:gsub("%s+", ""))
-end
-
-createSection(pages.Emotes, "R15 Default Animations", 115)
-
-local defaultR15 = {
-	{"Idle 1", 507766666}, {"Idle 2", 507766951}, {"Idle 3", 507766388},
-	{"Walk", 507777826}, {"Run", 507767714}, {"Swim", 507784897},
-	{"Swim Idle", 507785072}, {"Jump", 507765000}, {"Fall", 507767968},
-	{"Climb", 507765644}, {"Sit", 507768133}, {"Tool None", 507768375},
-	{"Tool Slash", 522635514}, {"Tool Lunge", 522638767}, {"Wave", 507770239},
-	{"Point", 507770453}, {"Dance 1", 507771019}, {"Dance 1b", 507771955},
-	{"Dance 1c", 507772104}, {"Dance 2", 507776043}, {"Dance 2b", 507776720},
-	{"Dance 2c", 507776879}, {"Dance 3", 507777268}, {"Dance 3b", 507777451},
-	{"Dance 3c", 507777623}, {"Laugh", 507770818}, {"Cheer", 507770677},
-}
-
-for i, em in ipairs(defaultR15) do
-	createEmoteToggle(pages.Emotes, em[1], i + 116, em[2], "r15def_" .. em[1]:gsub("%s+", ""))
-end
-
-createSection(pages.Emotes, "R15 Migrated (R6 Conversion)", 145)
-
-local migratedR15 = {
-	{"Idle 1 Migrated", 12521158637}, {"Idle 2 Migrated", 12521162526},
-	{"Walk Migrated", 12518152696}, {"Jump Migrated", 12520880485},
-	{"Fall Migrated", 12520972571}, {"Climb Migrated", 12520982150},
-	{"Sit Migrated", 12520993168}, {"Tool Migrated", 12520996634},
-	{"Slash Migrated", 12520999032}, {"Lunge Migrated", 12521002003},
-	{"Wave Migrated", 12521004586}, {"Point Migrated", 12521007694},
-	{"Dance 1 Migrated", 12521009666}, {"Dance 2 Migrated", 12521151637},
-	{"Dance 3 Migrated", 12521015053}, {"Dance 2-1 Migrated", 12521169800},
-	{"Dance 2-2 Migrated", 12521173533}, {"Dance 2-3 Migrated", 12521027874},
-	{"Dance 3-1 Migrated", 12521178362}, {"Dance 3-2 Migrated", 12521181508},
-	{"Dance 3-3 Migrated", 12521184133}, {"Laugh Migrated", 12521018724},
-	{"Cheer Migrated", 12521021991}, {"Ninja Dash Migrated", 13978512316},
-	{"Ninja Slash Migrated", 13978507503}, {"Dual Slash 2 Migrated", 13978510688},
-	{"Sword Pump Up Migrated", 13978511071},
-	{"Sword Swing Jump Migrated", 13978511543},
-	{"Sword Thrust Migrated", 13978511983},
-	{"Two Hand Sword Migrated", 13978504790},
-}
-
-for i, em in ipairs(migratedR15) do
-	createEmoteToggle(pages.Emotes, em[1], i + 146, em[2], "r15mig_" .. em[1]:gsub("%s+", ""))
+for i, em in ipairs(defaultAnims) do
+	createRigAwareToggle(pages.Emotes, em[1], i + 51, em[2], em[3], "defanim_" .. em[1]:gsub("%s+", ""))
 end
 
 createSection(pages.Personal, "🛡  Survival", 10)
@@ -2777,9 +2754,7 @@ createToggle(pages.World, "🌈  Rainbow Sky", 4, function(state)
 end, "rainbowSky")
 
 
-createSection(pages.World, "🌫  Fog", 4)
-
-createSection(pages.World, "🌫  Fog & Effects", 5)
+createSection(pages.World, "🌫  Fog & Effects", 4)
 
 function getAtmo()
 	local a = Lighting:FindFirstChildOfClass("Atmosphere")
@@ -3132,13 +3107,13 @@ createBtn(pages.Settings, "🌕  Light",  currentTheme.Button, 2, function() app
 createBtn(pages.Settings, "💠  Cyber",  currentTheme.Button, 3, function() applyTheme(Themes.Cyber) autoSave() end)
 createBtn(pages.Settings, "🔴  Red",    currentTheme.Button, 4, function() applyTheme(Themes.Rouge) autoSave() end)
 createBtn(pages.Settings, "🟢  Green",  currentTheme.Button, 5, function() applyTheme(Themes.Vert)  autoSave() end)
-createBtn(pages.Settings, "🔵  Blue",   currentTheme.Button, 20, function() applyTheme(Themes.Blue) autoSave() end)
-createBtn(pages.Settings, "💗  Pink",   currentTheme.Button, 21, function() applyTheme(Themes.Pink) autoSave() end)
-createBtn(pages.Settings, "🟠  Orange", currentTheme.Button, 22, function() applyTheme(Themes.Orange) autoSave() end)
-createBtn(pages.Settings, "🟣  Purple", currentTheme.Button, 23, function() applyTheme(Themes.Purple) autoSave() end)
-createBtn(pages.Settings, "⭐  Gold",   currentTheme.Button, 24, function() applyTheme(Themes.Gold) autoSave() end)
-createBtn(pages.Settings, "🌊  Ocean",  currentTheme.Button, 25, function() applyTheme(Themes.Ocean) autoSave() end)
-createBtn(pages.Settings, "💎  Neon",   currentTheme.Button, 26, function() applyTheme(Themes.Neon) autoSave() end)
+createBtn(pages.Settings, "🔵  Blue",   currentTheme.Button, 6, function() applyTheme(Themes.Blue) autoSave() end)
+createBtn(pages.Settings, "💗  Pink",   currentTheme.Button, 7, function() applyTheme(Themes.Pink) autoSave() end)
+createBtn(pages.Settings, "🟠  Orange", currentTheme.Button, 8, function() applyTheme(Themes.Orange) autoSave() end)
+createBtn(pages.Settings, "🟣  Purple", currentTheme.Button, 9, function() applyTheme(Themes.Purple) autoSave() end)
+createBtn(pages.Settings, "⭐  Gold",   currentTheme.Button, 10, function() applyTheme(Themes.Gold) autoSave() end)
+createBtn(pages.Settings, "🌊  Ocean",  currentTheme.Button, 11, function() applyTheme(Themes.Ocean) autoSave() end)
+createBtn(pages.Settings, "💎  Neon",   currentTheme.Button, 12, function() applyTheme(Themes.Neon) autoSave() end)
 
 createSection(pages.Settings, "📐  Menu & Lock", 6)
 createToggle(pages.Settings, "🔒  Lock Interface", 7, function(state)

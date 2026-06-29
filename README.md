@@ -58,12 +58,8 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/anonymedu04/bkzhub/re
 - **Performance** — Unlock FPS, Reset FPS (60)
 
 ### 💃 Emotes
-- **R6 Emotes** — 52 animations (Faint, Spinner, Levitate, Head Throw, Arm Turbine, Dab, Jerk, and more)
-- **R6 Default Animations** — 29 classic animations (Walk, Jump, Dance, Wave, Point, Cheer, etc.)
-- **R6 Ninja Gear** — 7 ninja animations (Dash, Slash, Sword Thrust, etc.)
-- **R15 Emotes** — 13 animations (Spinner, Circle Arm, Fling Arms, Jerk, etc.)
-- **R15 Default Animations** — 27 animations (Walk, Run, Swim, Dance, Laugh, etc.)
-- **R15 Migrated** — 29 R6-to-R15 converted animations
+- **My Catalog Emotes** — Dynamically loads emotes you own from the Roblox catalog (Wave, Point, Dance, Laugh, Cheer, and any purchased emotes)
+- **Default Animations** — Built-in character animations (Idle, Walk, Jump, Fall, Climb, Sit, Dance, Wave, Point, Laugh, Cheer) — adapted to your rig type (R6/R15)
 - Each toggle plays the animation in **loop**, visible to everyone
 
 ### ⚙ Settings
