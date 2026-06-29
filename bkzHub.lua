@@ -116,6 +116,111 @@ Themes = {
 		Success   = Color3.fromRGB(40, 240, 100),
 		Warn      = Color3.fromRGB(255, 210, 40),
 	},
+	Blue = {
+		BG        = Color3.fromRGB(8, 12, 22),
+		Panel     = Color3.fromRGB(14, 20, 38),
+		Button    = Color3.fromRGB(22, 34, 60),
+		ButtonHov = Color3.fromRGB(34, 52, 90),
+		Accent    = Color3.fromRGB(60, 160, 255),
+		AccentHov = Color3.fromRGB(100, 190, 255),
+		Text      = Color3.fromRGB(230, 240, 255),
+		SubText   = Color3.fromRGB(140, 170, 220),
+		Tab       = Color3.fromRGB(10, 16, 30),
+		TabActive = Color3.fromRGB(60, 160, 255),
+		Danger    = Color3.fromRGB(255, 70, 90),
+		Success   = Color3.fromRGB(50, 200, 220),
+		Warn      = Color3.fromRGB(255, 200, 50),
+	},
+	Pink = {
+		BG        = Color3.fromRGB(22, 8, 18),
+		Panel     = Color3.fromRGB(38, 14, 30),
+		Button    = Color3.fromRGB(60, 22, 48),
+		ButtonHov = Color3.fromRGB(90, 34, 72),
+		Accent    = Color3.fromRGB(255, 80, 180),
+		AccentHov = Color3.fromRGB(255, 120, 200),
+		Text      = Color3.fromRGB(255, 235, 245),
+		SubText   = Color3.fromRGB(220, 150, 190),
+		Tab       = Color3.fromRGB(30, 10, 24),
+		TabActive = Color3.fromRGB(255, 80, 180),
+		Danger    = Color3.fromRGB(255, 50, 70),
+		Success   = Color3.fromRGB(80, 220, 150),
+		Warn      = Color3.fromRGB(255, 210, 50),
+	},
+	Orange = {
+		BG        = Color3.fromRGB(22, 14, 6),
+		Panel     = Color3.fromRGB(38, 24, 10),
+		Button    = Color3.fromRGB(60, 38, 16),
+		ButtonHov = Color3.fromRGB(90, 58, 24),
+		Accent    = Color3.fromRGB(255, 150, 40),
+		AccentHov = Color3.fromRGB(255, 180, 80),
+		Text      = Color3.fromRGB(255, 240, 225),
+		SubText   = Color3.fromRGB(220, 170, 120),
+		Tab       = Color3.fromRGB(30, 18, 8),
+		TabActive = Color3.fromRGB(255, 150, 40),
+		Danger    = Color3.fromRGB(255, 60, 60),
+		Success   = Color3.fromRGB(100, 220, 80),
+		Warn      = Color3.fromRGB(255, 230, 50),
+	},
+	Purple = {
+		BG        = Color3.fromRGB(14, 6, 22),
+		Panel     = Color3.fromRGB(24, 10, 38),
+		Button    = Color3.fromRGB(38, 16, 60),
+		ButtonHov = Color3.fromRGB(58, 24, 90),
+		Accent    = Color3.fromRGB(200, 80, 255),
+		AccentHov = Color3.fromRGB(220, 120, 255),
+		Text      = Color3.fromRGB(245, 230, 255),
+		SubText   = Color3.fromRGB(180, 140, 220),
+		Tab       = Color3.fromRGB(18, 8, 30),
+		TabActive = Color3.fromRGB(200, 80, 255),
+		Danger    = Color3.fromRGB(255, 50, 90),
+		Success   = Color3.fromRGB(80, 220, 150),
+		Warn      = Color3.fromRGB(255, 210, 50),
+	},
+	Gold = {
+		BG        = Color3.fromRGB(20, 16, 6),
+		Panel     = Color3.fromRGB(34, 28, 10),
+		Button    = Color3.fromRGB(54, 44, 16),
+		ButtonHov = Color3.fromRGB(82, 66, 24),
+		Accent    = Color3.fromRGB(255, 210, 50),
+		AccentHov = Color3.fromRGB(255, 225, 90),
+		Text      = Color3.fromRGB(255, 248, 220),
+		SubText   = Color3.fromRGB(210, 180, 110),
+		Tab       = Color3.fromRGB(26, 22, 8),
+		TabActive = Color3.fromRGB(255, 210, 50),
+		Danger    = Color3.fromRGB(255, 60, 70),
+		Success   = Color3.fromRGB(130, 220, 70),
+		Warn      = Color3.fromRGB(255, 180, 40),
+	},
+	Ocean = {
+		BG        = Color3.fromRGB(4, 16, 18),
+		Panel     = Color3.fromRGB(8, 28, 32),
+		Button    = Color3.fromRGB(12, 46, 52),
+		ButtonHov = Color3.fromRGB(18, 70, 80),
+		Accent    = Color3.fromRGB(20, 220, 210),
+		AccentHov = Color3.fromRGB(60, 240, 230),
+		Text      = Color3.fromRGB(210, 250, 250),
+		SubText   = Color3.fromRGB(110, 200, 210),
+		Tab       = Color3.fromRGB(6, 22, 25),
+		TabActive = Color3.fromRGB(20, 220, 210),
+		Danger    = Color3.fromRGB(255, 60, 80),
+		Success   = Color3.fromRGB(50, 230, 160),
+		Warn      = Color3.fromRGB(255, 220, 40),
+	},
+	Neon = {
+		BG        = Color3.fromRGB(5, 5, 10),
+		Panel     = Color3.fromRGB(10, 10, 20),
+		Button    = Color3.fromRGB(18, 18, 38),
+		ButtonHov = Color3.fromRGB(28, 28, 60),
+		Accent    = Color3.fromRGB(255, 0, 200),
+		AccentHov = Color3.fromRGB(255, 50, 215),
+		Text      = Color3.fromRGB(240, 240, 255),
+		SubText   = Color3.fromRGB(180, 180, 220),
+		Tab       = Color3.fromRGB(8, 8, 16),
+		TabActive = Color3.fromRGB(255, 0, 200),
+		Danger    = Color3.fromRGB(255, 30, 50),
+		Success   = Color3.fromRGB(0, 255, 130),
+		Warn      = Color3.fromRGB(255, 200, 0),
+	},
 }
 currentTheme = Themes.Dark
 
@@ -226,8 +331,8 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
 gui.ResetOnSpawn = false
 
-SND_OPEN = "rbxassetid://82845990304289"
-SND_CLOSE = "rbxassetid://116271631941040"
+SND_OPEN = "rbxassetid://9120386958"
+SND_CLOSE = "rbxassetid://9120573943"
 SND_HOVER = "rbxassetid://82343920339686"
 SND_CONFIRM = "rbxassetid://81305056334485"
 SND_CANCEL = "rbxassetid://3779045779"
@@ -242,7 +347,6 @@ function playSound(id, vol)
 end
 
 function playHover()
-	playSound(SND_HOVER, 0.35)
 end
 
 
@@ -303,7 +407,7 @@ title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v5.0  •  " .. player.Name
+subtitle.Text = "v5.5  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -50, 0, 14)
 subtitle.Position = UDim2.new(0, 15, 0, 33)
 subtitle.BackgroundTransparency = 1
@@ -419,7 +523,15 @@ for _, def in ipairs(tabDefs) do
 	tb.MouseButton1Click:Connect(function()
 		playHover()
 		activeTab = def.name
-		for n, p in pairs(pages) do p.Visible = (n == def.name) end
+		for n, p in pairs(pages) do
+			if n == def.name then
+				p.Visible = true
+				p.BackgroundTransparency = 1
+				TweenService:Create(p, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
+			else
+				p.Visible = false
+			end
+		end
 		for n, b in pairs(tabBtns) do
 			b.BackgroundColor3 = (n == def.name) and currentTheme.TabActive or currentTheme.Tab
 			b.TextColor3 = (n == def.name) and Color3.new(1,1,1) or currentTheme.SubText
@@ -489,7 +601,6 @@ function createBtn(parent, text, color, order, func)
 	end)
 	btn.MouseButton1Click:Connect(function()
 		local label = text:gsub("[^%w%s]","")
-		playSound(SND_CONFIRM, 0.45)
 		showNotification("👉 " .. label, 1.5)
 		TweenService:Create(frame, TweenInfo.new(0.05), {BackgroundColor3 = currentTheme.Accent}):Play()
 		task.delay(0.08, function()
@@ -564,7 +675,6 @@ function createToggle(parent, text, order, func, configKey)
 	hitbox.MouseEnter:Connect(playHover)
 	hitbox.MouseButton1Click:Connect(function()
 		state = not state
-		playSound(state and SND_CONFIRM or SND_CANCEL, 0.5)
 		if configKey then toggleStates[configKey] = state end
 		TweenService:Create(track, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 			BackgroundColor3 = state and currentTheme.Accent or Color3.fromRGB(60,60,80)
@@ -769,6 +879,9 @@ end
 
 
 interfaceLocked = false
+savedOpacity = 100
+bgAnimEnabled = false
+bgAnimParts = {}
 dragging, dragStart, startPos = nil
 resizing, resizeStart, resizeStartSize = nil
 
@@ -794,79 +907,43 @@ header.InputBegan:Connect(startDrag)
 
 
 edgeBars = {}
-edgeZones = {right="x", bottom="y", corner="xy"}
-for name, axis in pairs(edgeZones) do
-	if name == "corner" then
-		local handle = Instance.new("Frame", main)
-		handle.Size = UDim2.new(0, 26, 0, 26)
-		handle.AnchorPoint = Vector2.new(1, 1)
-		handle.Position = UDim2.new(1, 0, 1, 0)
-		handle.BackgroundColor3 = Color3.new(0, 0, 0)
-		handle.BackgroundTransparency = 0.35
-		handle.BorderSizePixel = 0
-		handle.ZIndex = 2
-		Instance.new("UICorner", handle).CornerRadius = UDim.new(0, 5)
-		local pat = {{0}, {-1, 0}, {-2, -1, 0}}
-		for ri, offs in ipairs(pat) do
-			for ci, o in ipairs(offs) do
-				local d = Instance.new("Frame", handle)
-				d.Size = UDim2.new(0, 3, 0, 3)
-				d.AnchorPoint = Vector2.new(1, 1)
-				d.Position = UDim2.new(1, -5 - o * 5, 1, -5 - (#pat - ri) * 5)
-				d.BackgroundColor3 = Color3.new(1, 1, 1)
-				d.BorderSizePixel = 0
-				Instance.new("UICorner", d).CornerRadius = UDim.new(1, 0)
-			end
-		end
-		local bar = Instance.new("TextButton", main)
-		bar.Size = UDim2.new(0, 26, 0, 26)
-		bar.AnchorPoint = Vector2.new(1, 1)
-		bar.Position = UDim2.new(1, 0, 1, 0)
-		bar.BackgroundTransparency = 1
-		bar.BorderSizePixel = 0; bar.ZIndex = 3; bar.Text = ""; bar.AutoButtonColor = false
-		bar.InputBegan:Connect(function(input)
-			if interfaceLocked then return end
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				resizing = "xy"; resizeStart = input.Position; resizeStartSize = Vector2.new(menuW, menuH)
-			end
-		end)
-		edgeBars[name] = {bar=bar, handle=handle}
-	else
-		local sz = name == "right" and UDim2.new(0,6,1,0) or UDim2.new(1,0,0,6)
-		local an = name == "right" and Vector2.new(1,0) or Vector2.new(0,1)
-		local ps = name == "right" and UDim2.new(1,0,0,0) or UDim2.new(0,0,1,0)
-		local bar = Instance.new("TextButton", main)
-		bar.Size = sz; bar.AnchorPoint = an; bar.Position = ps
-		bar.BackgroundColor3 = currentTheme.Accent; bar.BackgroundTransparency = 1
-		bar.BorderSizePixel = 0; bar.ZIndex = 1; bar.Name = "EdgeBar_" .. name
-		bar.Text = ""; bar.AutoButtonColor = false
-		bar.InputBegan:Connect(function(input)
-			if interfaceLocked then return end
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				resizing = axis; resizeStart = input.Position; resizeStartSize = Vector2.new(menuW, menuH)
-			end
-		end)
-		edgeBars[name] = {bar=bar}
+local handle = Instance.new("Frame", main)
+handle.Size = UDim2.new(0, 36, 0, 36)
+handle.AnchorPoint = Vector2.new(1, 1)
+handle.Position = UDim2.new(1, 4, 1, 4)
+handle.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+handle.BackgroundTransparency = 0.5
+handle.BorderSizePixel = 0
+handle.ZIndex = 2
+Instance.new("UICorner", handle).CornerRadius = UDim.new(0, 6)
+local pat = {{0}, {-1, 0}, {-2, -1, 0}}
+for ri, offs in ipairs(pat) do
+	for ci, o in ipairs(offs) do
+		local d = Instance.new("Frame", handle)
+		d.Size = UDim2.new(0, 4, 0, 4)
+		d.AnchorPoint = Vector2.new(1, 1)
+		d.Position = UDim2.new(1, -6 - o * 6, 1, -6 - (#pat - ri) * 6)
+		d.BackgroundColor3 = Color3.new(1, 1, 1)
+		d.BorderSizePixel = 0
+		Instance.new("UICorner", d).CornerRadius = UDim.new(1, 0)
 	end
 end
+local bar = Instance.new("TextButton", main)
+bar.Size = UDim2.new(0, 36, 0, 36)
+bar.AnchorPoint = Vector2.new(1, 1)
+bar.Position = UDim2.new(1, 4, 1, 4)
+bar.BackgroundTransparency = 1
+bar.BorderSizePixel = 0; bar.ZIndex = 3; bar.Text = ""; bar.AutoButtonColor = false
+bar.InputBegan:Connect(function(input)
+	if interfaceLocked then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		resizing = "xy"; resizeStart = input.Position; resizeStartSize = Vector2.new(menuW, menuH)
+	end
+end)
+edgeBars["corner"] = {bar=bar, handle=handle}
 
 onThemeChanged(function(t)
 	for _, v in pairs(edgeBars) do v.bar.BackgroundColor3 = t.Accent end
-end)
-
-UIS.InputBegan:Connect(function(input)
-	if interfaceLocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		local mpos = input.Position
-		local aPos, aSz = main.AbsolutePosition, main.AbsoluteSize
-		local onR = mpos.X >= aPos.X + aSz.X - 8 and mpos.X <= aPos.X + aSz.X
-		local onB = mpos.Y >= aPos.Y + aSz.Y - 8 and mpos.Y <= aPos.Y + aSz.Y
-		if onR and onB then resizing = "xy"
-		elseif onR then resizing = "x"
-		elseif onB then resizing = "y"
-		end
-		if resizing then resizeStart = input.Position; resizeStartSize = Vector2.new(menuW, menuH) end
-	end
 end)
 
 UIS.InputChanged:Connect(function(input)
@@ -881,20 +958,6 @@ UIS.InputChanged:Connect(function(input)
 		if resizing == "x" or resizing == "xy" then newW = math.max(280, resizeStartSize.X + delta.X) end
 		if resizing == "y" or resizing == "xy" then newH = math.max(380, resizeStartSize.Y + delta.Y) end
 		applyMenuSize(newW, newH)
-	end
-	
-	if not interfaceLocked then
-		local mpos = Vector2.new(mouse.X, mouse.Y)
-		local aPos, aSz = main.AbsolutePosition, main.AbsoluteSize
-		local edge = 6
-		local onR = mpos.X >= aPos.X + aSz.X - edge and mpos.X <= aPos.X + aSz.X
-		local onB = mpos.Y >= aPos.Y + aSz.Y - edge and mpos.Y <= aPos.Y + aSz.Y
-		for k, v in pairs(edgeBars) do
-			local show = (k == "right" and onR and not onB) or (k == "bottom" and onB and not onR) or (k == "corner" and onR and onB)
-			v.bar.BackgroundTransparency = show and 0.8 or 1
-		end
-	else
-		for _, v in pairs(edgeBars) do v.bar.BackgroundTransparency = 1 end
 	end
 end)
 
@@ -3064,11 +3127,18 @@ function applyTheme(t)
 end
 
 createSection(pages.Settings, "🎨  Theme", 0)
-createBtn(pages.Settings, "🌑  Dark",  currentTheme.Button, 1, function() applyTheme(Themes.Dark)  end)
-createBtn(pages.Settings, "🌕  Light", currentTheme.Button, 2, function() applyTheme(Themes.Light) end)
-createBtn(pages.Settings, "💠  Cyber", currentTheme.Button, 3, function() applyTheme(Themes.Cyber) end)
-createBtn(pages.Settings, "🔴  Red",   currentTheme.Button, 4, function() applyTheme(Themes.Rouge) end)
-createBtn(pages.Settings, "🟢  Green", currentTheme.Button, 5, function() applyTheme(Themes.Vert)  end)
+createBtn(pages.Settings, "🌑  Dark",   currentTheme.Button, 1, function() applyTheme(Themes.Dark)  autoSave() end)
+createBtn(pages.Settings, "🌕  Light",  currentTheme.Button, 2, function() applyTheme(Themes.Light) autoSave() end)
+createBtn(pages.Settings, "💠  Cyber",  currentTheme.Button, 3, function() applyTheme(Themes.Cyber) autoSave() end)
+createBtn(pages.Settings, "🔴  Red",    currentTheme.Button, 4, function() applyTheme(Themes.Rouge) autoSave() end)
+createBtn(pages.Settings, "🟢  Green",  currentTheme.Button, 5, function() applyTheme(Themes.Vert)  autoSave() end)
+createBtn(pages.Settings, "🔵  Blue",   currentTheme.Button, 20, function() applyTheme(Themes.Blue) autoSave() end)
+createBtn(pages.Settings, "💗  Pink",   currentTheme.Button, 21, function() applyTheme(Themes.Pink) autoSave() end)
+createBtn(pages.Settings, "🟠  Orange", currentTheme.Button, 22, function() applyTheme(Themes.Orange) autoSave() end)
+createBtn(pages.Settings, "🟣  Purple", currentTheme.Button, 23, function() applyTheme(Themes.Purple) autoSave() end)
+createBtn(pages.Settings, "⭐  Gold",   currentTheme.Button, 24, function() applyTheme(Themes.Gold) autoSave() end)
+createBtn(pages.Settings, "🌊  Ocean",  currentTheme.Button, 25, function() applyTheme(Themes.Ocean) autoSave() end)
+createBtn(pages.Settings, "💎  Neon",   currentTheme.Button, 26, function() applyTheme(Themes.Neon) autoSave() end)
 
 createSection(pages.Settings, "📐  Menu & Lock", 6)
 createToggle(pages.Settings, "🔒  Lock Interface", 7, function(state)
@@ -3076,14 +3146,139 @@ createToggle(pages.Settings, "🔒  Lock Interface", 7, function(state)
 	lockBtn.Text = state and "🔒" or "🔓"
 	lockBtn.BackgroundColor3 = state and currentTheme.Success or currentTheme.Button
 	showNotification(state and "🔒 Interface locked" or "🔓 Interface unlocked", 1.5)
+	autoSave()
 end, "lockInterface")
-createBtn(pages.Settings, "↩  Reset Size",          currentTheme.Button, 13, function() applyMenuSize(380, 500) end)
+createBtn(pages.Settings, "↩  Reset Size",          currentTheme.Button, 13, function() applyMenuSize(380, 500) autoSave() end)
 createBtn(pages.Settings, "🏠  Recenter Menu", currentTheme.Button, 15, function()
 	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
 end)
 createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 14, function(val)
+	savedOpacity = val
 	main.BackgroundTransparency = 1 - (val / 100)
+	autoSave()
 end)
+createToggle(pages.Settings, "✨  Background Animation", 27, function(state)
+	bgAnimEnabled = state
+	if state then enableBgAnim() else disableBgAnim() end
+	autoSave()
+end, "bgAnim")
+
+createSection(pages.Settings, "🎆  Menu Effects", 28)
+
+local menuFx = {snow={}, rain={}}
+local menuFxGui = nil
+local menuFxRunning = false
+
+local function ensureFxGui()
+	if not menuFxGui or not menuFxGui.Parent then
+		menuFxGui = Instance.new("Frame")
+		menuFxGui.Size = UDim2.new(1, 0, 1, 0)
+		menuFxGui.BackgroundTransparency = 1
+		menuFxGui.ZIndex = 0
+		menuFxGui.Parent = gui
+	end
+	return menuFxGui
+end
+
+local function clearFx(name)
+	for _, p in ipairs(menuFx[name]) do
+		pcall(function() p:Destroy() end)
+	end
+	menuFx[name] = {}
+end
+
+local function spawnSnowFlake()
+	if not menuFxRunning then return end
+	local fx = ensureFxGui()
+	local s = Instance.new("Frame")
+	s.Size = UDim2.new(0, math.random(4, 8), 0, math.random(4, 8))
+	s.Position = UDim2.new(math.random(), -10, -0.05, 0)
+	s.BackgroundColor3 = Color3.new(1, 1, 1)
+	s.BorderSizePixel = 0
+	s.BackgroundTransparency = 0.2 + math.random() * 0.3
+	s.ZIndex = 0
+	Instance.new("UICorner", s).CornerRadius = UDim.new(1, 0)
+	s.Parent = fx
+	table.insert(menuFx.snow, s)
+	local dur = math.random(6, 14)
+	local endY = 1.05 + math.random() * 0.1
+	local drift = (math.random() - 0.5) * 0.1
+	TweenService:Create(s, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
+		Position = UDim2.new(s.Position.X.Scale + drift, -10, endY, 0),
+		BackgroundTransparency = 0.9,
+	}):Play()
+	task.delay(dur, function()
+		pcall(function() s:Destroy() end)
+		for i, v in ipairs(menuFx.snow) do if v == s then table.remove(menuFx.snow, i) end end
+	end)
+end
+
+local function spawnRainDrop()
+	if not menuFxRunning then return end
+	local fx = ensureFxGui()
+	local r = Instance.new("Frame")
+	r.Size = UDim2.new(0, 1, 0, math.random(12, 22))
+	r.Position = UDim2.new(math.random(), 0, -0.05, 0)
+	r.BackgroundColor3 = Color3.fromRGB(180, 200, 255)
+	r.BorderSizePixel = 0
+	r.BackgroundTransparency = 0.3
+	r.ZIndex = 0
+	r.Parent = fx
+	table.insert(menuFx.rain, r)
+	local dur = math.random(3, 6)
+	TweenService:Create(r, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
+		Position = UDim2.new(r.Position.X.Scale, 0, 1.05, 0),
+		BackgroundTransparency = 0.7,
+	}):Play()
+	task.delay(dur, function()
+		pcall(function() r:Destroy() end)
+		for i, v in ipairs(menuFx.rain) do if v == r then table.remove(menuFx.rain, i) end end
+	end)
+end
+
+local menuFxLoops = {}
+
+local function startFxLoop(name, fn, interval)
+	if menuFxLoops[name] then menuFxLoops[name]:Cancel() end
+	menuFxRunning = true
+	local function loop()
+		while menuFxRunning do
+			fn()
+			task.wait(interval)
+		end
+	end
+	menuFxLoops[name] = task.spawn(loop)
+end
+
+local function stopFxLoops()
+	menuFxRunning = false
+	for k, v in pairs(menuFxLoops) do
+		pcall(function() task.cancel(v) end)
+	end
+	menuFxLoops = {}
+end
+
+createToggle(pages.Settings, "❄  Menu Snow", 29, function(state)
+	if state then
+		clearFx("snow")
+		startFxLoop("snow", spawnSnowFlake, 0.3)
+	else
+		stopFxLoops()
+		clearFx("snow")
+	end
+	autoSave()
+end, "menuSnow")
+
+createToggle(pages.Settings, "🌧  Menu Rain", 30, function(state)
+	if state then
+		clearFx("rain")
+		startFxLoop("rain", spawnRainDrop, 0.08)
+	else
+		stopFxLoops()
+		clearFx("rain")
+	end
+	autoSave()
+end, "menuRain")
 
 createSection(pages.Settings, "👁  Camera", 8)
 createSlider(pages.Settings, "👁  FOV", 30, 120, 70, 9, function(val)
@@ -3093,8 +3288,67 @@ end)
 
 createSection(pages.Settings, "💾  Configuration", 16)
 
+local autoSaveTimer = nil
 
-CONFIG_FILE = "AdminMenu_config.json"
+function autoSave()
+	if not writefile then return end
+	if autoSaveTimer then autoSaveTimer:Cancel() end
+	autoSaveTimer = task.delay(1, function()
+		pcall(function()
+			local data = game:GetService("HttpService"):JSONEncode(getConfig())
+			writefile(CONFIG_FILE, data)
+		end)
+	end)
+end
+
+
+function enableBgAnim()
+	if #bgAnimParts > 0 then return end
+	local colors = {currentTheme.Accent, currentTheme.Success, currentTheme.Warn}
+	local function createGlow()
+		local g = Instance.new("Frame")
+		g.Size = UDim2.new(0, math.random(80, 160), 0, math.random(80, 160))
+		g.Position = UDim2.new(math.random(), -80, math.random(), -80)
+		g.BackgroundColor3 = colors[math.random(#colors)]
+		g.BorderSizePixel = 0
+		g.BackgroundTransparency = 0.85
+		Instance.new("UICorner", g).CornerRadius = UDim.new(1, 0)
+		g.Parent = main
+		g.ZIndex = 0
+		table.insert(bgAnimParts, g)
+		local xDir = math.random() > 0.5 and 1 or -1
+		local yDir = math.random() > 0.5 and 1 or -1
+		task.spawn(function()
+			while bgAnimEnabled and g.Parent do
+				local dur = math.random(6, 12)
+				local targetX = g.Position.X.Scale + xDir * math.random(5, 15) / 100
+				local targetY = g.Position.Y.Scale + yDir * math.random(5, 15) / 100
+				TweenService:Create(g, TweenInfo.new(dur, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+					Position = UDim2.new(targetX, -80, targetY, -80),
+					BackgroundTransparency = 0.8 + math.random() * 0.15,
+				}):Play()
+				task.wait(dur)
+				xDir = -xDir
+				yDir = -yDir
+			end
+		end)
+	end
+	for i = 1, 4 do createGlow() end
+end
+
+function disableBgAnim()
+	bgAnimEnabled = false
+	for _, g in ipairs(bgAnimParts) do
+		pcall(function() g:Destroy() end)
+	end
+	bgAnimParts = {}
+end
+
+onThemeChanged(function(t)
+	for _, g in ipairs(bgAnimParts) do
+		pcall(function() g.BackgroundColor3 = t.Accent end)
+	end
+end)
 
 function getConfig()
 	local toggles = {}
@@ -3107,12 +3361,14 @@ function getConfig()
 		menuW     = menuW,
 		menuH     = menuH,
 		fov       = workspace.CurrentCamera and workspace.CurrentCamera.FieldOfView or 70,
+		opacity   = savedOpacity,
 		keyLayout = keyLayout,
 		aimKey    = aimKey,
 		aimMode   = aimMode,
 		flySpeed  = flySpeed,
 		walkSpeed = savedWalkSpeed,
 		jumpPower = savedJumpPower,
+		bgAnim    = bgAnimEnabled,
 		toggles   = toggles,
 	}
 end
@@ -3121,12 +3377,20 @@ function applyConfig(cfg)
 	if cfg.theme and Themes[cfg.theme] then applyTheme(Themes[cfg.theme]) end
 	if cfg.menuW and cfg.menuH then applyMenuSize(cfg.menuW, cfg.menuH) end
 	if cfg.fov then local cam = workspace.CurrentCamera; if cam then cam.FieldOfView = cfg.fov end end
+	if cfg.opacity then
+		savedOpacity = cfg.opacity
+		main.BackgroundTransparency = 1 - (cfg.opacity / 100)
+	end
 	if cfg.keyLayout then keyLayout = cfg.keyLayout end
 	if cfg.aimKey   then aimKey   = cfg.aimKey   end
 	if cfg.aimMode  then aimMode  = cfg.aimMode  end
 	if cfg.flySpeed then flySpeed = cfg.flySpeed end
 	if cfg.walkSpeed then savedWalkSpeed = cfg.walkSpeed; applyMovement(player.Character) end
 	if cfg.jumpPower then savedJumpPower = cfg.jumpPower; applyMovement(player.Character) end
+	if cfg.bgAnim ~= nil then
+		bgAnimEnabled = cfg.bgAnim
+		if bgAnimEnabled then enableBgAnim() end
+	end
 	if cfg.toggles then
 		for k, v in pairs(cfg.toggles) do
 			toggleStates[k] = v
@@ -3182,6 +3446,9 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  19, functi
 	if cam then cam.FieldOfView = 70 end
 	aimKey = "Mouse2"; aimMode = "hold"; flySpeed = 40
 	savedWalkSpeed = 16; savedJumpPower = 50
+	savedOpacity = 100
+	main.BackgroundTransparency = 0
+	if bgAnimEnabled then disableBgAnim() end
 	applyMovement(player.Character)
 	updateAimStatus()
 	showNotification("↩  Config reset", 2)
@@ -4179,7 +4446,7 @@ verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
 verLabel = Instance.new("TextLabel", verFrame)
 verLabel.Size = UDim2.new(1, -12, 0, 16)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v5.0"
+verLabel.Text = "🌐 bkz HUB  v5.5"
 verLabel.TextColor3 = currentTheme.Accent
 verLabel.Font = Enum.Font.GothamBold
 verLabel.TextSize = 14

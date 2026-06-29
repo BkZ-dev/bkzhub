@@ -1,4 +1,4 @@
-# 🌐 bkz HUB v5.0
+# 🌐 bkz HUB v5.5
 
 **The All-in-One Roblox Admin & Utility Hub**
 
@@ -20,9 +20,9 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/anonymedu04/bkzhub/re
 
 | Key | Action |
 |-----|--------|
-| `B` | Open / Close menu |
+| `B` | Open / Close menu (with smooth open/close animation) |
 | Drag title bar | Move menu |
-| Edge / Corner | Resize menu |
+| Bottom-right corner drag | Resize menu |
 | Custom key | Mute/Unmute mic (VC Anti-Ban) |
 
 ---
@@ -67,10 +67,10 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/anonymedu04/bkzhub/re
 - Each toggle plays the animation in **loop**, visible to everyone
 
 ### ⚙ Settings
-- **Themes** — Dark, Light, Cyber, Red, Green
-- **Menu & Lock** — Lock Interface, Reset Size, Recenter, Opacity slider
+- **Themes** — 12 themes (Dark, Light, Cyber, Red, Green, Blue, Pink, Orange, Purple, Gold, Ocean, Neon)
+- **Menu & Lock** — Lock Interface, Reset Size, Recenter, Opacity slider, **Background Animation** (glowing orbs), **Menu Effects** (Snow / Rain particles)
 - **Camera** — FOV slider (30–120)
-- **Configuration** — Save / Load / Reset config (uses executor's `writefile`)
+- **Configuration** — **Auto-save** on every change (1s debounce) + **Auto-load** on injection; Manual Save/Load/Reset buttons
 
 ### ℹ Other
 - **Freecam** — Toggle freecam with Right Click (QWERTY/AZERTY key layout)
@@ -138,7 +138,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/anonymedu04/bkzhub/re
 
 - **Owner:** bkz
 - **Contributors:** All users of the menu ❤️
-- **Version:** 5.0
+- **Version:** 5.5
 
 ---
 
