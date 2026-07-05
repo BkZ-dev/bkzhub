@@ -221,6 +221,21 @@ Themes = {
 		Success   = Color3.fromRGB(0, 255, 130),
 		Warn      = Color3.fromRGB(255, 200, 0),
 	},
+	Matrix = {
+		BG        = Color3.fromRGB(0, 5, 0),
+		Panel     = Color3.fromRGB(0, 10, 0),
+		Button    = Color3.fromRGB(0, 20, 5),
+		ButtonHov = Color3.fromRGB(0, 40, 10),
+		Accent    = Color3.fromRGB(0, 255, 65),
+		AccentHov = Color3.fromRGB(60, 255, 110),
+		Text      = Color3.fromRGB(180, 255, 190),
+		SubText   = Color3.fromRGB(80, 200, 100),
+		Tab       = Color3.fromRGB(0, 8, 2),
+		TabActive = Color3.fromRGB(0, 255, 65),
+		Danger    = Color3.fromRGB(255, 50, 70),
+		Success   = Color3.fromRGB(0, 255, 65),
+		Warn      = Color3.fromRGB(255, 220, 0),
+	},
 }
 currentTheme = Themes.Dark
 
@@ -3096,47 +3111,47 @@ function applyTheme(t)
 end
 
 createSection(pages.Settings, "🎨  Theme", 0)
-createBtn(pages.Settings, "🌑  Dark",   currentTheme.Button, 1, function() applyTheme(Themes.Dark)  autoSave() end)
-createBtn(pages.Settings, "🌕  Light",  currentTheme.Button, 2, function() applyTheme(Themes.Light) autoSave() end)
-createBtn(pages.Settings, "💠  Cyber",  currentTheme.Button, 3, function() applyTheme(Themes.Cyber) autoSave() end)
-createBtn(pages.Settings, "🔴  Red",    currentTheme.Button, 4, function() applyTheme(Themes.Rouge) autoSave() end)
-createBtn(pages.Settings, "🟢  Green",  currentTheme.Button, 5, function() applyTheme(Themes.Vert)  autoSave() end)
-createBtn(pages.Settings, "🔵  Blue",   currentTheme.Button, 6, function() applyTheme(Themes.Blue) autoSave() end)
-createBtn(pages.Settings, "💗  Pink",   currentTheme.Button, 7, function() applyTheme(Themes.Pink) autoSave() end)
-createBtn(pages.Settings, "🟠  Orange", currentTheme.Button, 8, function() applyTheme(Themes.Orange) autoSave() end)
-createBtn(pages.Settings, "🟣  Purple", currentTheme.Button, 9, function() applyTheme(Themes.Purple) autoSave() end)
-createBtn(pages.Settings, "⭐  Gold",   currentTheme.Button, 10, function() applyTheme(Themes.Gold) autoSave() end)
-createBtn(pages.Settings, "🌊  Ocean",  currentTheme.Button, 11, function() applyTheme(Themes.Ocean) autoSave() end)
-createBtn(pages.Settings, "💎  Neon",   currentTheme.Button, 12, function() applyTheme(Themes.Neon) autoSave() end)
+createBtn(pages.Settings, "🟣  Purple", currentTheme.Button, 1, function() applyTheme(Themes.Purple) autoSave() end)
+createBtn(pages.Settings, "⭐  Gold",   currentTheme.Button, 2, function() applyTheme(Themes.Gold) autoSave() end)
+createBtn(pages.Settings, "🌊  Ocean",  currentTheme.Button, 3, function() applyTheme(Themes.Ocean) autoSave() end)
+createBtn(pages.Settings, "💎  Neon",   currentTheme.Button, 4, function() applyTheme(Themes.Neon) autoSave() end)
+createBtn(pages.Settings, "🟠  Orange", currentTheme.Button, 5, function() applyTheme(Themes.Orange) autoSave() end)
+createBtn(pages.Settings, "💗  Pink",   currentTheme.Button, 6, function() applyTheme(Themes.Pink) autoSave() end)
+createBtn(pages.Settings, "🌑  Dark",   currentTheme.Button, 7, function() applyTheme(Themes.Dark)  autoSave() end)
+createBtn(pages.Settings, "🌕  Light",  currentTheme.Button, 8, function() applyTheme(Themes.Light) autoSave() end)
+createBtn(pages.Settings, "💠  Cyber",  currentTheme.Button, 9, function() applyTheme(Themes.Cyber) autoSave() end)
+createBtn(pages.Settings, "🔴  Red",    currentTheme.Button, 10, function() applyTheme(Themes.Rouge) autoSave() end)
+createBtn(pages.Settings, "🟢  Green",  currentTheme.Button, 11, function() applyTheme(Themes.Vert)  autoSave() end)
+createBtn(pages.Settings, "🔵  Blue",   currentTheme.Button, 12, function() applyTheme(Themes.Blue) autoSave() end)
+createBtn(pages.Settings, "🌐  Matrix", currentTheme.Button, 13, function() applyTheme(Themes.Matrix) autoSave() end)
 
-createSection(pages.Settings, "📐  Menu & Lock", 6)
-createToggle(pages.Settings, "🔒  Lock Interface", 7, function(state)
+createSection(pages.Settings, "📐  Menu & Lock", 50)
+createToggle(pages.Settings, "🔒  Lock Interface", 51, function(state)
 	interfaceLocked = state
 	lockBtn.Text = state and "🔒" or "🔓"
 	lockBtn.BackgroundColor3 = state and currentTheme.Success or currentTheme.Button
 	showNotification(state and "🔒 Interface locked" or "🔓 Interface unlocked", 1.5)
 	autoSave()
 end, "lockInterface")
-createBtn(pages.Settings, "↩  Reset Size",          currentTheme.Button, 13, function() applyMenuSize(380, 500) autoSave() end)
-createBtn(pages.Settings, "🏠  Recenter Menu", currentTheme.Button, 15, function()
-	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
-end)
-createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 14, function(val)
+createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 52, function(val)
 	savedOpacity = val
 	main.BackgroundTransparency = 1 - (val / 100)
 	autoSave()
 end)
-createToggle(pages.Settings, "✨  Background Animation", 27, function(state)
-	bgAnimEnabled = state
-	if state then enableBgAnim() else disableBgAnim() end
-	autoSave()
-end, "bgAnim")
+createBtn(pages.Settings, "↩  Reset Size",  currentTheme.Button, 53, function() applyMenuSize(380, 500) autoSave() end)
+createBtn(pages.Settings, "🏠  Recenter Menu", currentTheme.Button, 54, function()
+	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
+end)
 
-createSection(pages.Settings, "🎆  Menu Effects", 28)
+createSection(pages.Settings, "🎆  Menu Effects", 60)
 
-local menuFx = {snow={}, rain={}}
+local menuFx = {snow={}, rain={}, fire={}, rocket={}, steve={}, matrixRain={}}
 local menuFxGui = nil
-local menuFxRunning = false
+local blackBgFrame = nil
+local menuBorderParts = {}
+local menuBorderGlowEnabled = false
+
+local matrixChars = {"ﾊ","ﾐ","ﾋ","ｰ","ｳ","ｼ","ﾅ","ﾓ","ﾆ","ｻ","ﾏ","ﾉ","ﾘ","ｹ","ﾁ","ｷ","ﾄ","ﾟ","ﾞ","ﾌ","ﾎ","ﾍ","ﾑ","ﾚ","ﾕ"}
 
 local function ensureFxGui()
 	if not menuFxGui or not menuFxGui.Parent then
@@ -3157,7 +3172,7 @@ local function clearFx(name)
 end
 
 local function spawnSnowFlake()
-	if not menuFxRunning then return end
+	if not menuFx.snow then return end
 	local fx = ensureFxGui()
 	local s = Instance.new("Frame")
 	s.Size = UDim2.new(0, math.random(4, 8), 0, math.random(4, 8))
@@ -3183,79 +3198,316 @@ local function spawnSnowFlake()
 end
 
 local function spawnRainDrop()
-	if not menuFxRunning then return end
+	if not menuFx.rain then return end
 	local fx = ensureFxGui()
-	local r = Instance.new("Frame")
-	r.Size = UDim2.new(0, 1, 0, math.random(12, 22))
+	local r = Instance.new("TextLabel")
+	r.Size = UDim2.new(0, 2, 0, math.random(14, 28))
 	r.Position = UDim2.new(math.random(), 0, -0.05, 0)
-	r.BackgroundColor3 = Color3.fromRGB(180, 200, 255)
-	r.BorderSizePixel = 0
-	r.BackgroundTransparency = 0.3
+	r.BackgroundTransparency = 1
+	r.Text = "│"
+	r.TextSize = math.random(14, 28)
+	r.TextColor3 = Color3.fromRGB(160, 200, 255)
+	r.Font = Enum.Font.Gotham
 	r.ZIndex = 0
 	r.Parent = fx
 	table.insert(menuFx.rain, r)
-	local dur = math.random(3, 6)
-	TweenService:Create(r, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
+	local dur = math.random(2, 5)
+	local speed = 0.9 + math.random() * 0.2
+	TweenService:Create(r, TweenInfo.new(dur / speed, Enum.EasingStyle.Linear), {
 		Position = UDim2.new(r.Position.X.Scale, 0, 1.05, 0),
-		BackgroundTransparency = 0.7,
+		TextTransparency = 0.8,
+	}):Play()
+	task.delay(dur / speed, function()
+		pcall(function() r:Destroy() end)
+		for i, v in ipairs(menuFx.rain) do if v == r then table.remove(menuFx.rain, i) end end
+	end)
+end
+
+local function spawnFire()
+	if not menuFx.fire then return end
+	local fx = ensureFxGui()
+	local f = Instance.new("Frame")
+	local size = math.random(8, 22)
+	f.Size = UDim2.new(0, size, 0, size)
+	f.Position = UDim2.new(math.random(), 0, 1.0, math.random(10, 30))
+	f.BackgroundColor3 = Color3.fromRGB(math.random(200,255), math.random(40,120), 0)
+	f.BorderSizePixel = 0
+	f.BackgroundTransparency = 0.2 + math.random() * 0.3
+	f.ZIndex = 0
+	Instance.new("UICorner", f).CornerRadius = UDim.new(1, 0)
+	f.Parent = fx
+	table.insert(menuFx.fire, f)
+	local dur = math.random(2, 4)
+	local endY = -0.05 - math.random() * 0.1
+	local drift = (math.random() - 0.5) * 0.12
+	TweenService:Create(f, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
+		Position = UDim2.new(f.Position.X.Scale + drift, 0, endY, 0),
+		BackgroundTransparency = 0.95,
+	}):Play()
+	task.delay(dur, function()
+		pcall(function() f:Destroy() end)
+		for i, v in ipairs(menuFx.fire) do if v == f then table.remove(menuFx.fire, i) end end
+	end)
+end
+
+local function spawnRocket()
+	if not menuFx.rocket then return end
+	local fx = ensureFxGui()
+	local r = Instance.new("TextLabel")
+	r.Size = UDim2.new(0, 20, 0, 26)
+	r.Position = UDim2.new(math.random(), 0, 1.0, 0)
+	r.BackgroundTransparency = 1
+	r.Text = "▲"
+	r.TextSize = 20
+	r.TextColor3 = Color3.fromRGB(255, math.random(100,200), 0)
+	r.Font = Enum.Font.Gotham
+	r.ZIndex = 0
+	r.Parent = fx
+	table.insert(menuFx.rocket, r)
+	local dur = math.random(2, 4)
+	TweenService:Create(r, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
+		Position = UDim2.new(r.Position.X.Scale, 0, -0.05, 0),
+		TextTransparency = 0.9,
 	}):Play()
 	task.delay(dur, function()
 		pcall(function() r:Destroy() end)
-		for i, v in ipairs(menuFx.rain) do if v == r then table.remove(menuFx.rain, i) end end
+		for i, v in ipairs(menuFx.rocket) do if v == r then table.remove(menuFx.rocket, i) end end
+	end)
+end
+
+local function spawnSteveHead()
+	if not menuFx.steve then return end
+	local fx = ensureFxGui()
+	local s = Instance.new("Frame")
+	s.Size = UDim2.new(0, 18, 0, 18)
+	s.Position = UDim2.new(math.random(), 0, -0.05, 0)
+	s.BackgroundColor3 = Color3.fromRGB(180, 140, 100)
+	s.BorderSizePixel = 1
+	s.BorderColor3 = Color3.fromRGB(100, 70, 40)
+	s.ZIndex = 0
+	s.Parent = fx
+	table.insert(menuFx.steve, s)
+	local dur = math.random(4, 8)
+	local endY = 1.05 + math.random() * 0.1
+	local drift = (math.random() - 0.5) * 0.15
+	TweenService:Create(s, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
+		Position = UDim2.new(s.Position.X.Scale + drift, 0, endY, 0),
+	}):Play()
+	task.delay(dur, function()
+		pcall(function() s:Destroy() end)
+		for i, v in ipairs(menuFx.steve) do if v == s then table.remove(menuFx.steve, i) end end
+	end)
+end
+
+local function spawnMatrixRain()
+	if not menuFx.matrixRain then return end
+	local fx = ensureFxGui()
+	local char = matrixChars[math.random(#matrixChars)]
+	local r = Instance.new("TextLabel")
+	r.Size = UDim2.new(0, 14, 0, 18)
+	r.Position = UDim2.new(math.random(), 0, -0.05, 0)
+	r.BackgroundTransparency = 1
+	r.Text = char
+	r.TextSize = math.random(12, 20)
+	r.TextColor3 = Color3.fromRGB(0, 255, 65)
+	r.Font = Enum.Font.Code
+	r.ZIndex = 0
+	r.Parent = fx
+	table.insert(menuFx.matrixRain, r)
+	local dur = math.random(2, 6)
+	TweenService:Create(r, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
+		Position = UDim2.new(r.Position.X.Scale, 0, 1.05 + math.random() * 0.1, 0),
+		TextTransparency = 0.9,
+	}):Play()
+	task.delay(dur, function()
+		pcall(function() r:Destroy() end)
+		for i, v in ipairs(menuFx.matrixRain) do if v == r then table.remove(menuFx.matrixRain, i) end end
 	end)
 end
 
 local menuFxLoops = {}
 
 local function startFxLoop(name, fn, interval)
-	if menuFxLoops[name] then menuFxLoops[name]:Cancel() end
-	menuFxRunning = true
-	local function loop()
-		while menuFxRunning do
+	if menuFxLoops[name] then pcall(function() task.cancel(menuFxLoops[name]) end) end
+	menuFxLoops[name] = task.spawn(function()
+		while menuFxLoops[name] do
 			fn()
 			task.wait(interval)
 		end
+	end)
+end
+
+local function stopFxLoop(name)
+	if menuFxLoops[name] then
+		pcall(function() task.cancel(menuFxLoops[name]) end)
+		menuFxLoops[name] = nil
 	end
-	menuFxLoops[name] = task.spawn(loop)
 end
 
 local function stopFxLoops()
-	menuFxRunning = false
 	for k, v in pairs(menuFxLoops) do
 		pcall(function() task.cancel(v) end)
 	end
 	menuFxLoops = {}
 end
 
-createToggle(pages.Settings, "❄  Menu Snow", 29, function(state)
+local function enableBlackBg()
+	if blackBgFrame then return end
+	blackBgFrame = Instance.new("Frame")
+	blackBgFrame.Size = UDim2.new(1, 0, 1, 0)
+	blackBgFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	blackBgFrame.BackgroundTransparency = 0.8
+	blackBgFrame.BorderSizePixel = 0
+	blackBgFrame.ZIndex = 0
+	blackBgFrame.Parent = gui
+end
+
+local function disableBlackBg()
+	if blackBgFrame then
+		blackBgFrame:Destroy()
+		blackBgFrame = nil
+	end
+end
+
+local function enableMenuBorderGlow()
+	if #menuBorderParts > 0 then return end
+	menuBorderGlowEnabled = true
+	local pad = 3
+	local th = 3
+	local function makeBar(szX, szY, pos)
+		local b = Instance.new("Frame")
+		b.Size = szX and UDim2.new(szX, pad*2, 0, th) or UDim2.new(0, th, szY, pad*2)
+		b.Position = pos
+		b.BackgroundColor3 = currentTheme.Accent
+		b.BorderSizePixel = 0
+		b.BackgroundTransparency = 0.5
+		b.ZIndex = 5
+		b.Parent = main
+		table.insert(menuBorderParts, b)
+		return b
+	end
+	makeBar(1, nil, UDim2.new(0, -pad, 0, -pad)) -- top
+	local bb = makeBar(1, nil, UDim2.new(0, -pad, 1, pad-th)) -- bottom
+	local lb = makeBar(nil, 1, UDim2.new(0, -pad, 0, -pad)) -- left
+	local rb = makeBar(nil, 1, UDim2.new(1, pad-th, 0, -pad)) -- right
+	task.spawn(function()
+		while menuBorderGlowEnabled do
+			local dur = 1.5
+			for _, b in ipairs(menuBorderParts) do
+				TweenService:Create(b, TweenInfo.new(dur, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+					BackgroundTransparency = 0.3,
+					BackgroundColor3 = currentTheme.Accent,
+				}):Play()
+			end
+			task.wait(dur)
+			for _, b in ipairs(menuBorderParts) do
+				TweenService:Create(b, TweenInfo.new(dur, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+					BackgroundTransparency = 0.6,
+					BackgroundColor3 = currentTheme.Success,
+				}):Play()
+			end
+			task.wait(dur)
+		end
+	end)
+end
+
+local function disableMenuBorderGlow()
+	menuBorderGlowEnabled = false
+	for _, b in ipairs(menuBorderParts) do
+		pcall(function() b:Destroy() end)
+	end
+	menuBorderParts = {}
+end
+
+createToggle(pages.Settings, "❄  Menu Snow", 61, function(state)
 	if state then
 		clearFx("snow")
 		startFxLoop("snow", spawnSnowFlake, 0.3)
 	else
-		stopFxLoops()
+		stopFxLoop("snow")
 		clearFx("snow")
 	end
 	autoSave()
 end, "menuSnow")
 
-createToggle(pages.Settings, "🌧  Menu Rain", 30, function(state)
+createToggle(pages.Settings, "🌧  Menu Rain", 62, function(state)
 	if state then
 		clearFx("rain")
-		startFxLoop("rain", spawnRainDrop, 0.08)
+		startFxLoop("rain", spawnRainDrop, 0.06)
 	else
-		stopFxLoops()
+		stopFxLoop("rain")
 		clearFx("rain")
 	end
 	autoSave()
 end, "menuRain")
 
-createSection(pages.Settings, "👁  Camera", 8)
-createSlider(pages.Settings, "👁  FOV", 30, 120, 70, 9, function(val)
+createToggle(pages.Settings, "🔥  Menu Fire", 63, function(state)
+	if state then
+		clearFx("fire")
+		startFxLoop("fire", spawnFire, 0.12)
+	else
+		stopFxLoop("fire")
+		clearFx("fire")
+	end
+	autoSave()
+end, "menuFire")
+
+createToggle(pages.Settings, "🚀  Menu Rocket", 64, function(state)
+	if state then
+		clearFx("rocket")
+		startFxLoop("rocket", spawnRocket, 0.8)
+	else
+		stopFxLoop("rocket")
+		clearFx("rocket")
+	end
+	autoSave()
+end, "menuRocket")
+
+createToggle(pages.Settings, "🧑  Steve Head", 65, function(state)
+	if state then
+		clearFx("steve")
+		startFxLoop("steve", spawnSteveHead, 0.4)
+	else
+		stopFxLoop("steve")
+		clearFx("steve")
+	end
+	autoSave()
+end, "menuSteve")
+
+createToggle(pages.Settings, "⬛  Black Background", 66, function(state)
+	if state then enableBlackBg() else disableBlackBg() end
+	autoSave()
+end, "menuBlackBg")
+
+createToggle(pages.Settings, "🌐  Matrix Rain", 67, function(state)
+	if state then
+		clearFx("matrixRain")
+		startFxLoop("matrixRain", spawnMatrixRain, 0.08)
+	else
+		stopFxLoop("matrixRain")
+		clearFx("matrixRain")
+	end
+	autoSave()
+end, "menuMatrixRain")
+
+createToggle(pages.Settings, "✨  Background Animation", 68, function(state)
+	bgAnimEnabled = state
+	if state then enableBgAnim() else disableBgAnim() end
+	autoSave()
+end, "bgAnim")
+
+createToggle(pages.Settings, "🖼  Menu Border Glow", 69, function(state)
+	if state then enableMenuBorderGlow() else disableMenuBorderGlow() end
+	autoSave()
+end, "menuBorderGlow")
+
+createSection(pages.Settings, "👁  Camera", 80)
+createSlider(pages.Settings, "👁  FOV", 30, 120, 70, 81, function(val)
 	local cam = workspace.CurrentCamera
 	if cam then cam.FieldOfView = val end
 end)
 
-createSection(pages.Settings, "💾  Configuration", 16)
+createSection(pages.Settings, "💾  Configuration", 90)
 
 local CONFIG_FILE = "AdminMenu_config.json"
 local autoSaveTimer = nil
@@ -3316,6 +3568,12 @@ end
 
 onThemeChanged(function(t)
 	for _, g in ipairs(bgAnimParts) do
+		pcall(function() g.BackgroundColor3 = t.Accent end)
+	end
+end)
+
+onThemeChanged(function(t)
+	for _, g in ipairs(menuBorderParts) do
 		pcall(function() g.BackgroundColor3 = t.Accent end)
 	end
 end)
@@ -3406,9 +3664,9 @@ function loadConfig()
 	end
 end
 
-createBtn(pages.Settings, "💾  Save Config",  currentTheme.Success, 17, saveConfig)
-createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  18, loadConfig)
-createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  19, function()
+createBtn(pages.Settings, "💾  Save Config",  currentTheme.Success, 91, saveConfig)
+createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  92, loadConfig)
+createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  93, function()
 	applyTheme(Themes.Dark)
 	applyMenuSize(380, 500)
 	keyLayout = "QWERTY"
