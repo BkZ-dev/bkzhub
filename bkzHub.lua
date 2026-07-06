@@ -409,7 +409,7 @@ title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v5.6  •  " .. player.Name
+subtitle.Text = "v5.7  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -50, 0, 14)
 subtitle.Position = UDim2.new(0, 15, 0, 33)
 subtitle.BackgroundTransparency = 1
@@ -1425,49 +1425,49 @@ createBtn(pages.Player, "💬  Chat Spy (tous les joueurs)", currentTheme.Button
 	end
 end)
 
-createSection(pages.Player, "⚡  Force Modes", 9)
+createSection(pages.Player, "🎭  Local Visual Fun", 9)
 
-createBtn(pages.Player, "🪑  Force All Sit", currentTheme.Button, 10, function()
+createBtn(pages.Player, "🪑  Sit All (Local)", currentTheme.Button, 10, function()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
 			local hum = p.Character:FindFirstChildOfClass("Humanoid")
 			if hum then pcall(function() hum.Sit = true end) end
 		end
 	end
-	showNotification("🪑  Tous assis!", 2)
+	showNotification("🪑  Local: All sitting (visual only)", 3)
 end)
 
-createBtn(pages.Player, "💀  Force All Kill", currentTheme.Danger, 11, function()
+createBtn(pages.Player, "💀  Kill All (Local)", currentTheme.Danger, 11, function()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
 			local hum = p.Character:FindFirstChildOfClass("Humanoid")
 			if hum then pcall(function() hum.Health = 0 end) end
 		end
 	end
-	showNotification("💀  Tous tués!", 2)
+	showNotification("💀  Local: All killed (visual only)", 3)
 end)
 
-createBtn(pages.Player, "🧊  Force All Freeze", currentTheme.Button, 12, function()
+createBtn(pages.Player, "🧊  Freeze All (Local)", currentTheme.Button, 12, function()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
 			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
 			if hrp then pcall(function() hrp.Anchored = true end) end
 		end
 	end
-	showNotification("🧊  Tous frozen!", 2)
+	showNotification("🧊  Local: All frozen (visual only)", 3)
 end)
 
-createBtn(pages.Player, "🧊  Force All Unfreeze", currentTheme.Button, 13, function()
+createBtn(pages.Player, "🧊  Unfreeze All (Local)", currentTheme.Button, 13, function()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
 			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
 			if hrp then pcall(function() hrp.Anchored = false end) end
 		end
 	end
-	showNotification("🧊  Tous unfrozen!", 2)
+	showNotification("🧊  Local: All unfrozen (visual only)", 3)
 end)
 
-createBtn(pages.Player, "🗡  Remove All Tools", currentTheme.Button, 14, function()
+createBtn(pages.Player, "🗡  Remove All Tools (Local)", currentTheme.Button, 14, function()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
 			for _, t in ipairs(p.Character:GetChildren()) do
@@ -1475,10 +1475,10 @@ createBtn(pages.Player, "🗡  Remove All Tools", currentTheme.Button, 14, funct
 			end
 		end
 	end
-	showNotification("🗡  Tools supprimées!", 2)
+	showNotification("🗡  Local: Tools removed (visual only)", 3)
 end)
 
-createBtn(pages.Player, "📡  Force All TP to Me", currentTheme.Accent, 15, function()
+createBtn(pages.Player, "📡  TP All to Me (Local)", currentTheme.Accent, 15, function()
 	if not player.Character then return end
 	local myHRP = player.Character:FindFirstChild("HumanoidRootPart")
 	if not myHRP then return end
@@ -1493,7 +1493,7 @@ createBtn(pages.Player, "📡  Force All TP to Me", currentTheme.Accent, 15, fun
 			end
 		end
 	end
-	showNotification("📡  Tous TP à vous!", 2)
+	showNotification("📡  Local: All TP to you (visual only)", 3)
 end)
 
 createSection(pages.Player, "🎤  Voice Chat", 16)
@@ -2298,6 +2298,8 @@ function getTarget()
 	local best, bestScore = nil, math.huge
 	local vp = cam.ViewportSize
 	local cx, cy = vp.X / 2, vp.Y / 2
+	local targetPartName = aimTargetPart or "Head"
+	local targetPartNames = {"Head", "UpperTorso", "Torso", "HumanoidRootPart"}
 
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
@@ -2305,15 +2307,25 @@ function getTarget()
 			local theirTeam  = p.Team
 			if not (myTeam and theirTeam and myTeam == theirTeam) then
 				local hum  = p.Character:FindFirstChildOfClass("Humanoid")
-				local head = p.Character:FindFirstChild("Head")
-				if hum and hum.Health > 0 and head then
-					local sp, onScreen = cam:WorldToViewportPoint(head.Position)
-					if onScreen and sp.Z > 0 then
-						local dx = sp.X - cx
-						local dy = sp.Y - cy
-						local fovDist = math.sqrt(dx*dx + dy*dy)
-						if fovDist < aimFOV and fovDist < bestScore then
-							bestScore = fovDist; best = p
+				if hum and hum.Health > 0 then
+					local targetPart = nil
+					if aimTargetPart and p.Character:FindFirstChild(aimTargetPart) then
+						targetPart = p.Character:FindFirstChild(aimTargetPart)
+					else
+						for _, pn in ipairs(targetPartNames) do
+							local part = p.Character:FindFirstChild(pn)
+							if part then targetPart = part; break end
+						end
+					end
+					if targetPart then
+						local sp, onScreen = cam:WorldToViewportPoint(targetPart.Position)
+						if onScreen and sp.Z > 0 then
+							local dx = sp.X - cx
+							local dy = sp.Y - cy
+							local fovDist = math.sqrt(dx*dx + dy*dy)
+							if fovDist < aimFOV and fovDist < bestScore then
+								bestScore = fovDist; best = p
+							end
 						end
 					end
 				end
@@ -2324,15 +2336,18 @@ function getTarget()
 	for _, model in ipairs(botList) do
 		if model and model.Parent then
 			local hum = model:FindFirstChildOfClass("Humanoid")
-			local head = model:FindFirstChild("Head")
-			if hum and hum.Health > 0 and head then
-				local sp, onScreen = cam:WorldToViewportPoint(head.Position)
-				if onScreen and sp.Z > 0 then
-					local dx = sp.X - cx
-					local dy = sp.Y - cy
-					local fovDist = math.sqrt(dx*dx + dy*dy)
-					if fovDist < aimFOV and fovDist < bestScore then
-						bestScore = fovDist; best = model
+			if hum and hum.Health > 0 then
+				local targetPart = model:FindFirstChild(aimTargetPart or "Head")
+				if not targetPart then targetPart = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart") end
+				if targetPart then
+					local sp, onScreen = cam:WorldToViewportPoint(targetPart.Position)
+					if onScreen and sp.Z > 0 then
+						local dx = sp.X - cx
+						local dy = sp.Y - cy
+						local fovDist = math.sqrt(dx*dx + dy*dy)
+						if fovDist < aimFOV and fovDist < bestScore then
+							bestScore = fovDist; best = model
+						end
 					end
 				end
 			end
@@ -2351,25 +2366,37 @@ aimMethod = 1
 aimPrediction = 0.15
 aimTargetPart = "Head"
 
-function applyAim(head)
+function applyAim(targetPart)
 	local cam = workspace.CurrentCamera
+	if not targetPart or not targetPart.Parent then return end
 
-	
-	local targetPos = head.Position
-	local hrpTarget = head.Parent and head.Parent:FindFirstChild("HumanoidRootPart")
+	local targetPos = targetPart.Position
+	local char = targetPart.Parent
+	local hrpTarget = char:FindFirstChild("HumanoidRootPart")
+	local hum = char:FindFirstChildOfClass("Humanoid")
+
 	if hrpTarget and aimPrediction > 0 then
-		targetPos = targetPos + hrpTarget.Velocity * aimPrediction
+		local vel = hrpTarget.Velocity
+		if hum and hum.WalkSpeed then
+			local speed = hum.WalkSpeed
+			if speed > 0 then
+				vel = vel * (aimPrediction * 1.2)
+			end
+		end
+		targetPos = targetPos + vel * aimPrediction
 	end
+
+	local smoothFactor = math.clamp(aimSmooth, 0.01, 0.95)
 
 	if aimMethod == 1 then
 		local targetCF = CFrame.new(cam.CFrame.Position, targetPos)
-		cam.CFrame = cam.CFrame:Lerp(targetCF, aimSmooth)
+		cam.CFrame = cam.CFrame:Lerp(targetCF, smoothFactor)
 
 	elseif aimMethod == 2 then
 		local prev = cam.CameraType
 		cam.CameraType = Enum.CameraType.Scriptable
 		local targetCF = CFrame.new(cam.CFrame.Position, targetPos)
-		cam.CFrame = cam.CFrame:Lerp(targetCF, aimSmooth)
+		cam.CFrame = cam.CFrame:Lerp(targetCF, smoothFactor)
 		cam.CameraType = prev
 
 	elseif aimMethod == 3 then
@@ -2379,7 +2406,7 @@ function applyAim(head)
 			if dir.Magnitude > 0.1 then
 				myHrp.CFrame = myHrp.CFrame:Lerp(
 					CFrame.new(myHrp.Position, myHrp.Position + dir),
-					aimSmooth * 2
+					smoothFactor * 2
 				)
 			end
 		end
@@ -2397,14 +2424,18 @@ function startAim()
 		end
 		local t = getTarget()
 		if not t then return end
-		local head
-		if t.ClassName == "Player" then
-			head = t.Character and t.Character:FindFirstChild("Head")
+		local targetPart = nil
+		local char = nil
+		if t:IsA("Player") then
+			char = t.Character
 		else
-			head = t:FindFirstChild("Head")
+			char = t
 		end
-		if not head then return end
-		pcall(applyAim, head)
+		if not char then return end
+		targetPart = char:FindFirstChild(aimTargetPart or "Head")
+		if not targetPart then targetPart = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart") end
+		if not targetPart then return end
+		pcall(applyAim, targetPart)
 	end)
 end
 
@@ -2640,6 +2671,13 @@ end)
 mkDropdown(pages.Aim, "⌨  Keyboard", KEYBOARD_KEYS, 1, 9, function(key)
 	aimKey = key
 	updateAimStatus()
+end)
+
+aimTargetPart = aimTargetPart or "Head"
+local aimPartItems = {"Head", "UpperTorso", "Torso", "HumanoidRootPart"}
+mkDropdown(pages.Aim, "🎯  Target Part", aimPartItems, 1, 10, function(selected)
+	aimTargetPart = selected
+	showNotification("🎯  Target: " .. selected, 2)
 end)
 
 
@@ -3015,21 +3053,36 @@ function applyTheme(t)
 end
 
 createSection(pages.Settings, "🎨  Theme", 0)
-createBtn(pages.Settings, "🟣  Purple", currentTheme.Button, 1, function() applyTheme(Themes.Purple) autoSave() end)
-createBtn(pages.Settings, "⭐  Gold",   currentTheme.Button, 2, function() applyTheme(Themes.Gold) autoSave() end)
-createBtn(pages.Settings, "🌊  Ocean",  currentTheme.Button, 3, function() applyTheme(Themes.Ocean) autoSave() end)
-createBtn(pages.Settings, "💎  Neon",   currentTheme.Button, 4, function() applyTheme(Themes.Neon) autoSave() end)
-createBtn(pages.Settings, "🟠  Orange", currentTheme.Button, 5, function() applyTheme(Themes.Orange) autoSave() end)
-createBtn(pages.Settings, "💗  Pink",   currentTheme.Button, 6, function() applyTheme(Themes.Pink) autoSave() end)
-createBtn(pages.Settings, "🌑  Dark",   currentTheme.Button, 7, function() applyTheme(Themes.Dark)  autoSave() end)
-createBtn(pages.Settings, "🌕  Light",  currentTheme.Button, 8, function() applyTheme(Themes.Light) autoSave() end)
-createBtn(pages.Settings, "💠  Cyber",  currentTheme.Button, 9, function() applyTheme(Themes.Cyber) autoSave() end)
-createBtn(pages.Settings, "🔴  Red",    currentTheme.Button, 10, function() applyTheme(Themes.Rouge) autoSave() end)
-createBtn(pages.Settings, "🟢  Green",  currentTheme.Button, 11, function() applyTheme(Themes.Vert)  autoSave() end)
-createBtn(pages.Settings, "🔵  Blue",   currentTheme.Button, 12, function() applyTheme(Themes.Blue) autoSave() end)
-createBtn(pages.Settings, "🌐  Matrix", currentTheme.Button, 13, function() applyTheme(Themes.Matrix) autoSave() end)
+local themeItems = {"🟣  Purple", "⭐  Gold", "🌊  Ocean", "💎  Neon", "🟠  Orange", "💗  Pink", "🌑  Dark", "🌕  Light", "💠  Cyber", "🔴  Red", "🟢  Green", "🔵  Blue", "🌐  Matrix"}
+mkDropdown(pages.Settings, "🎨  Theme", themeItems, 7, 1, function(selected)
+    local themeMap = {
+        ["🟣  Purple"]="Purple", ["⭐  Gold"]="Gold", ["🌊  Ocean"]="Ocean", ["💎  Neon"]="Neon",
+        ["🟠  Orange"]="Orange", ["💗  Pink"]="Pink", ["🌑  Dark"]="Dark", ["🌕  Light"]="Light",
+        ["💠  Cyber"]="Cyber", ["🔴  Red"]="Rouge", ["🟢  Green"]="Vert", ["🔵  Blue"]="Blue",
+        ["🌐  Matrix"]="Matrix",
+    }
+    local key = themeMap[selected]
+    if key and Themes[key] then
+        applyTheme(Themes[key])
+        autoSave()
+        showNotification("🎨  Theme: " .. selected, 2)
+    end
+end)
 
 createSection(pages.Settings, "🎆  Menu Effects", 50)
+
+local fxContainer = Instance.new("Frame", pages.Settings)
+fxContainer.Name = "FxContainer"
+fxContainer.Size = UDim2.new(1, 0, 0, 0)
+fxContainer.AutomaticSize = Enum.AutomaticSize.Y
+fxContainer.BackgroundTransparency = 1
+fxContainer.BorderSizePixel = 0
+fxContainer.LayoutOrder = 51
+fxContainer.Visible = true
+fxContainer.ClipsDescendants = true
+local fxLayout = Instance.new("UIListLayout", fxContainer)
+fxLayout.Padding = UDim.new(0, 6)
+fxLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local menuFx = {snow={}, rain={}, fire={}, rocket={}, steve={}, matrixRain={}}
 local menuFxGui = nil
@@ -3044,7 +3097,8 @@ local function ensureFxGui()
 		menuFxGui = Instance.new("Frame")
 		menuFxGui.Size = UDim2.new(1, 0, 1, 0)
 		menuFxGui.BackgroundTransparency = 1
-		menuFxGui.ZIndex = 1
+		menuFxGui.ZIndex = 0
+		menuFxGui.Active = false
 		menuFxGui.Position = UDim2.new(0, 0, 0, 0)
 		menuFxGui.Parent = main
 	end
@@ -3067,7 +3121,7 @@ local function spawnSnowFlake()
 	s.BackgroundColor3 = Color3.new(1, 1, 1)
 	s.BorderSizePixel = 0
 	s.BackgroundTransparency = 0.2 + math.random() * 0.3
-	s.ZIndex = 2
+	s.ZIndex = 0
 	Instance.new("UICorner", s).CornerRadius = UDim.new(1, 0)
 	s.Parent = fx
 	table.insert(menuFx.snow, s)
@@ -3095,7 +3149,7 @@ local function spawnRainDrop()
 	r.TextSize = math.random(14, 28)
 	r.TextColor3 = Color3.fromRGB(160, 200, 255)
 	r.Font = Enum.Font.Gotham
-	r.ZIndex = 2
+	r.ZIndex = 0
 	r.Parent = fx
 	table.insert(menuFx.rain, r)
 	local dur = math.random(2, 5)
@@ -3120,7 +3174,7 @@ local function spawnFire()
 	f.BackgroundColor3 = Color3.fromRGB(math.random(200,255), math.random(40,120), 0)
 	f.BorderSizePixel = 0
 	f.BackgroundTransparency = 0.2 + math.random() * 0.3
-	f.ZIndex = 2
+	f.ZIndex = 0
 	Instance.new("UICorner", f).CornerRadius = UDim.new(1, 0)
 	f.Parent = fx
 	table.insert(menuFx.fire, f)
@@ -3148,7 +3202,7 @@ local function spawnRocket()
 	r.TextSize = 20
 	r.TextColor3 = Color3.fromRGB(255, math.random(100,200), 0)
 	r.Font = Enum.Font.Gotham
-	r.ZIndex = 2
+	r.ZIndex = 0
 	r.Parent = fx
 	table.insert(menuFx.rocket, r)
 	local dur = math.random(2, 4)
@@ -3171,7 +3225,7 @@ local function spawnSteveHead()
 	s.BackgroundColor3 = Color3.fromRGB(180, 140, 100)
 	s.BorderSizePixel = 1
 	s.BorderColor3 = Color3.fromRGB(100, 70, 40)
-	s.ZIndex = 2
+	s.ZIndex = 0
 	s.Parent = fx
 	table.insert(menuFx.steve, s)
 	local dur = math.random(4, 8)
@@ -3198,7 +3252,7 @@ local function spawnMatrixRain()
 	r.TextSize = math.random(12, 20)
 	r.TextColor3 = Color3.fromRGB(0, 255, 65)
 	r.Font = Enum.Font.Code
-	r.ZIndex = 2
+	r.ZIndex = 0
 	r.Parent = fx
 	table.insert(menuFx.matrixRain, r)
 	local dur = math.random(2, 6)
@@ -3245,8 +3299,9 @@ local function enableBlackBg()
 	blackBgFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 	blackBgFrame.BackgroundTransparency = 0.65
 	blackBgFrame.BorderSizePixel = 0
-	blackBgFrame.ZIndex = 1
-	blackBgFrame.Parent = main
+	blackBgFrame.ZIndex = 0
+	blackBgFrame.Active = false
+	blackBgFrame.Parent = gui
 end
 
 local function disableBlackBg()
@@ -3306,7 +3361,7 @@ local function disableMenuBorderGlow()
 	menuBorderParts = {}
 end
 
-createToggle(pages.Settings, "❄  Menu Snow", 61, function(state)
+createToggle(fxContainer, "❄  Menu Snow", 1, function(state)
 	if state then
 		clearFx("snow")
 		startFxLoop("snow", spawnSnowFlake, 0.3)
@@ -3317,7 +3372,7 @@ createToggle(pages.Settings, "❄  Menu Snow", 61, function(state)
 	autoSave()
 end, "menuSnow")
 
-createToggle(pages.Settings, "🌧  Menu Rain", 62, function(state)
+createToggle(fxContainer, "🌧  Menu Rain", 2, function(state)
 	if state then
 		clearFx("rain")
 		startFxLoop("rain", spawnRainDrop, 0.06)
@@ -3328,7 +3383,7 @@ createToggle(pages.Settings, "🌧  Menu Rain", 62, function(state)
 	autoSave()
 end, "menuRain")
 
-createToggle(pages.Settings, "🔥  Menu Fire", 63, function(state)
+createToggle(fxContainer, "🔥  Menu Fire", 3, function(state)
 	if state then
 		clearFx("fire")
 		startFxLoop("fire", spawnFire, 0.12)
@@ -3339,7 +3394,7 @@ createToggle(pages.Settings, "🔥  Menu Fire", 63, function(state)
 	autoSave()
 end, "menuFire")
 
-createToggle(pages.Settings, "🚀  Menu Rocket", 64, function(state)
+createToggle(fxContainer, "🚀  Menu Rocket", 4, function(state)
 	if state then
 		clearFx("rocket")
 		startFxLoop("rocket", spawnRocket, 0.8)
@@ -3350,7 +3405,7 @@ createToggle(pages.Settings, "🚀  Menu Rocket", 64, function(state)
 	autoSave()
 end, "menuRocket")
 
-createToggle(pages.Settings, "🧑  Steve Head", 65, function(state)
+createToggle(fxContainer, "🧑  Steve Head", 5, function(state)
 	if state then
 		clearFx("steve")
 		startFxLoop("steve", spawnSteveHead, 0.4)
@@ -3361,12 +3416,12 @@ createToggle(pages.Settings, "🧑  Steve Head", 65, function(state)
 	autoSave()
 end, "menuSteve")
 
-createToggle(pages.Settings, "⬛  Black Background", 66, function(state)
+createToggle(fxContainer, "⬛  Black Background", 6, function(state)
 	if state then enableBlackBg() else disableBlackBg() end
 	autoSave()
 end, "menuBlackBg")
 
-createToggle(pages.Settings, "🌐  Matrix Rain", 67, function(state)
+createToggle(fxContainer, "🌐  Matrix Rain", 7, function(state)
 	if state then
 		clearFx("matrixRain")
 		startFxLoop("matrixRain", spawnMatrixRain, 0.08)
@@ -3377,13 +3432,13 @@ createToggle(pages.Settings, "🌐  Matrix Rain", 67, function(state)
 	autoSave()
 end, "menuMatrixRain")
 
-createToggle(pages.Settings, "✨  Background Animation", 68, function(state)
+createToggle(fxContainer, "✨  Background Animation", 8, function(state)
 	bgAnimEnabled = state
 	if state then enableBgAnim() else disableBgAnim() end
 	autoSave()
 end, "bgAnim")
 
-createToggle(pages.Settings, "🖼  Menu Border Glow", 69, function(state)
+createToggle(fxContainer, "🖼  Menu Border Glow", 9, function(state)
 	if state then enableMenuBorderGlow() else disableMenuBorderGlow() end
 	autoSave()
 end, "menuBorderGlow")
@@ -3851,9 +3906,6 @@ espState = {
 	names     = false,
 	health    = false,
 	distance  = false,
-	tracers   = false,
-	snaplines = false,
-	headDots  = false,
 	skeletons = false,
 	chams     = false,
 	healthBar = false,
@@ -4051,32 +4103,24 @@ function buildESPFor(p)
 
 	
 	if espState.boxes then
-		local bb = mkBB(hrp, "ESP_Box", 62, 92, 0)
+		local bb = mkBB(hrp, "ESP_Box", 70, 100, 0)
 		bb.StudsOffset = Vector3.new(0, 0.3, 0)
 		bb.AlwaysOnTop = true
 
-		
 		local bg = Instance.new("Frame", bb)
 		bg.Size = UDim2.new(1,0,1,0)
 		bg.BackgroundColor3 = color
-		bg.BackgroundTransparency = 0.82
+		bg.BackgroundTransparency = 0.9
 		bg.BorderSizePixel = 0
+		Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 4)
 
-		
-		local stroke1 = Instance.new("UIStroke", bg)
-		stroke1.Color = color
-		stroke1.Thickness = 2
-		stroke1.Transparency = 0.1
+		local outline = Instance.new("UIStroke", bg)
+		outline.Color = color
+		outline.Thickness = 1.5
+		outline.Transparency = 0.15
 
-		local stroke2 = Instance.new("UIStroke", bg)
-		stroke2.Color = Color3.new(1,1,1)
-		stroke2.Thickness = 1
-		stroke2.Transparency = 0.6
-		stroke2.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
-		
-		local CORNER = 14
-		local THICK  = 3
+		local CORNER = 18
+		local THICK  = 3.5
 		local corners = {
 			{x=0, y=0, w=CORNER, h=THICK},
 			{x=0, y=0, w=THICK,  h=CORNER},
@@ -4094,25 +4138,13 @@ function buildESPFor(p)
 			f.AnchorPoint = Vector2.new(c.x or 0, c.y or 0)
 			f.Position = UDim2.new(c.x or 0, c.ox or 0, c.y or 0, c.oy or 0)
 			f.Size = UDim2.new(0, c.w, 0, c.h)
+			Instance.new("UICorner", f).CornerRadius = UDim.new(0, 2)
 			local sh = Instance.new("UIStroke", f)
 			sh.Color = Color3.new(0,0,0)
 			sh.Thickness = 1.5
-			sh.Transparency = 0.3
+			sh.Transparency = 0.4
 		end
 
-		table.insert(objs, bb)
-	end
-
-	
-	if espState.headDots and head then
-		local bb = mkBB(head, "ESP_HeadDot", 12, 12, 0.5)
-		local dot = Instance.new("Frame", bb)
-		dot.Size            = UDim2.new(1,0,1,0)
-		dot.BackgroundColor3 = color
-		dot.BorderSizePixel = 0
-		Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
-		local st = Instance.new("UIStroke", dot)
-		st.Color = Color3.new(1,1,1); st.Thickness = 1.2
 		table.insert(objs, bb)
 	end
 
@@ -4174,83 +4206,82 @@ function buildESPFor(p)
 	end
 
 	
-	if espState.tracers then
-		local bb = mkBB(hrp, "ESP_Tracer", 20, 20, -3)
-		local lbl = Instance.new("TextLabel", bb)
-		lbl.Size = UDim2.new(1,0,1,0)
-		lbl.BackgroundTransparency = 1
-		lbl.Text = "▼"
-		lbl.TextColor3 = color
-		lbl.Font = Enum.Font.GothamBold
-		lbl.TextSize = 18
-		lbl.TextStrokeTransparency = 0
-		lbl.TextStrokeColor3 = Color3.new(0,0,0)
-		local glow = Instance.new("UIStroke", lbl)
-		glow.Color = color; glow.Thickness = 2; glow.Transparency = 0.3
-		table.insert(objs, bb)
-	end
-
-	
-	if espState.snaplines then
-		local bbTop = mkBB(hrp, "ESP_Snap", 20, 20, 4.5)
-		local lblT = Instance.new("TextLabel", bbTop)
-		lblT.Size = UDim2.new(1,0,1,0)
-		lblT.BackgroundTransparency = 1
-		lblT.Text = "▲"
-		lblT.TextColor3 = color
-		lblT.Font = Enum.Font.GothamBold
-		lblT.TextSize = 18
-		lblT.TextStrokeTransparency = 0
-		lblT.TextStrokeColor3 = Color3.new(0,0,0)
-		local glow2 = Instance.new("UIStroke", lblT)
-		glow2.Color = color; glow2.Thickness = 2; glow2.Transparency = 0.3
-		local bbLine = mkBB(hrp, "ESP_SnapLine", 4, 90, 0)
-		local lineF = Instance.new("Frame", bbLine)
-		lineF.Size = UDim2.new(1,0,1,0)
-		lineF.BackgroundColor3 = color
-		lineF.BorderSizePixel = 0
-		lineF.BackgroundTransparency = 0.1
-		local lineGlow = Instance.new("UIStroke", lineF)
-		lineGlow.Color = color; lineGlow.Thickness = 2; lineGlow.Transparency = 0.4
-		table.insert(objs, bbTop)
-		table.insert(objs, bbLine)
-	end
-
-	
 	if espState.skeletons then
-		local PARTS_R15 = {
-			"Head","UpperTorso","LowerTorso",
-			"RightUpperArm","RightLowerArm","RightHand",
-			"LeftUpperArm","LeftLowerArm","LeftHand",
-			"RightUpperLeg","RightLowerLeg","RightFoot",
-			"LeftUpperLeg","LeftLowerLeg","LeftFoot",
-		}
-		local PARTS_R6 = {"Head","Torso","Left Arm","Right Arm","Left Leg","Right Leg"}
 		local isR15 = char:FindFirstChild("UpperTorso") ~= nil
-		local partNames = isR15 and PARTS_R15 or PARTS_R6
 
-		for _, pname in ipairs(partNames) do
-			local part = char:FindFirstChild(pname)
-			if part then
-				local bb = mkBB(part, "ESP_Skel", 10, 10, 0)
-				local dot = Instance.new("Frame", bb)
-				dot.Size = UDim2.new(1,0,1,0)
-				dot.BackgroundColor3 = color
-				dot.BorderSizePixel = 0
-				local st = Instance.new("UIStroke", dot)
-				st.Color = Color3.new(0,0,0)
-				st.Thickness = 1
-				Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
-				table.insert(objs, bb)
-			end
+		local function makeBeam(part0, part1, attName)
+			local a0 = part0:FindFirstChild(attName) or Instance.new("Attachment", part0)
+			a0.Name = attName
+			local a1 = part1:FindFirstChild(attName) or Instance.new("Attachment", part1)
+			a1.Name = attName
+			local beam = Instance.new("Beam", char)
+			beam.Attachment0 = a0
+			beam.Attachment1 = a1
+			beam.FaceCamera = true
+			beam.Width0 = 0.15
+			beam.Width1 = 0.15
+			beam.Color = ColorSequence.new(color)
+			beam.Transparency = NumberSequence.new(0.1)
+			beam.LightEmission = 1
+			beam.LightInfluence = 0
+			table.insert(objs, beam)
 		end
 
-		
+		local function getPart(name)
+			return char:FindFirstChild(name)
+		end
+
+		if isR15 then
+			local head = getPart("Head")
+			local ut = getPart("UpperTorso")
+			local lt = getPart("LowerTorso")
+			local rua = getPart("RightUpperArm")
+			local rla = getPart("RightLowerArm")
+			local rh = getPart("RightHand")
+			local lua = getPart("LeftUpperArm")
+			local lla = getPart("LeftLowerArm")
+			local lh = getPart("LeftHand")
+			local rul = getPart("RightUpperLeg")
+			local rll = getPart("RightLowerLeg")
+			local rf = getPart("RightFoot")
+			local lul = getPart("LeftUpperLeg")
+			local lll = getPart("LeftLowerLeg")
+			local lf = getPart("LeftFoot")
+
+			if head and ut then makeBeam(head, ut, "ESP_Skel_Att") end
+			if ut and lt then makeBeam(ut, lt, "ESP_Skel_Att") end
+			if ut and rua then makeBeam(ut, rua, "ESP_Skel_Att") end
+			if rua and rla then makeBeam(rua, rla, "ESP_Skel_Att") end
+			if rla and rh then makeBeam(rla, rh, "ESP_Skel_Att") end
+			if ut and lua then makeBeam(ut, lua, "ESP_Skel_Att") end
+			if lua and lla then makeBeam(lua, lla, "ESP_Skel_Att") end
+			if lla and lh then makeBeam(lla, lh, "ESP_Skel_Att") end
+			if lt and rul then makeBeam(lt, rul, "ESP_Skel_Att") end
+			if rul and rll then makeBeam(rul, rll, "ESP_Skel_Att") end
+			if rll and rf then makeBeam(rll, rf, "ESP_Skel_Att") end
+			if lt and lul then makeBeam(lt, lul, "ESP_Skel_Att") end
+			if lul and lll then makeBeam(lul, lll, "ESP_Skel_Att") end
+			if lll and lf then makeBeam(lll, lf, "ESP_Skel_Att") end
+		else
+			local head = getPart("Head")
+			local torso = getPart("Torso")
+			local la = getPart("Left Arm")
+			local ra = getPart("Right Arm")
+			local ll = getPart("Left Leg")
+			local rl = getPart("Right Leg")
+
+			if head and torso then makeBeam(head, torso, "ESP_Skel_Att") end
+			if torso and la then makeBeam(torso, la, "ESP_Skel_Att") end
+			if torso and ra then makeBeam(torso, ra, "ESP_Skel_Att") end
+			if torso and ll then makeBeam(torso, ll, "ESP_Skel_Att") end
+			if torso and rl then makeBeam(torso, rl, "ESP_Skel_Att") end
+		end
+
 		local hl2 = Instance.new("Highlight", char)
 		hl2.Name = "ESP_SkelHL"
 		hl2.FillTransparency = 1
 		hl2.OutlineColor = color
-		hl2.OutlineTransparency = 0.4
+		hl2.OutlineTransparency = 0.5
 		hl2.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 		table.insert(objs, hl2)
 	end
@@ -4430,60 +4461,47 @@ function createColorDropdown(parent, label, order, defaultColor, onChange)
 end
 
 
-createSection(pages.ESP, "⚡  Shortcuts", 0)
-createBtn(pages.ESP, "⚡  Enable All", currentTheme.Accent, 1, function()
-	for k in pairs(espState) do espState[k] = true end
-	refreshAllESP()
-end)
-createBtn(pages.ESP, "❌  Disable All", currentTheme.Danger, 2, function()
-	for k in pairs(espState) do espState[k] = false end
-	for _, p in ipairs(Players:GetPlayers()) do clearESPFor(p) end
-end)
+createSection(pages.ESP, "📦  Player ESP", 0)
+createToggle(pages.ESP, "📦  Boxes", 1, function(s) toggleESP("boxes", s) end, "espBoxes")
+createToggle(pages.ESP, "🏷  Names + Team Tag", 2, function(s) toggleESP("names", s) end, "espNames")
+createToggle(pages.ESP, "❤  Health (text)", 3, function(s) toggleESP("health", s) end, "espHealth")
+createToggle(pages.ESP, "📊  Health Bar", 4, function(s) toggleESP("healthBar", s) end, "espHealthBar")
+createToggle(pages.ESP, "📏  Distance", 5, function(s) toggleESP("distance", s) end, "espDistance")
 
-createSection(pages.ESP, "📦  Player ESP", 10)
-createToggle(pages.ESP, "📦  Boxes", 11, function(s) toggleESP("boxes", s) end, "espBoxes")
-createToggle(pages.ESP, "🏷  Names + Team Tag", 12, function(s) toggleESP("names", s) end, "espNames")
-createToggle(pages.ESP, "❤  Health (text)", 13, function(s) toggleESP("health", s) end, "espHealth")
-createToggle(pages.ESP, "📊  Health Bar", 14, function(s) toggleESP("healthBar", s) end, "espHealthBar")
-createToggle(pages.ESP, "📏  Distance", 15, function(s) toggleESP("distance", s) end, "espDistance")
+createSection(pages.ESP, "🎨  Visuals", 10)
+createToggle(pages.ESP, "💀  Skeleton", 11, function(s) toggleESP("skeletons", s) end, "espSkeleton")
+createToggle(pages.ESP, "🔆  Chams (Highlight)", 12, function(s) toggleESP("chams", s) end, "espChams")
 
-createSection(pages.ESP, "🎨  Visual Effects", 20)
-createToggle(pages.ESP, "🔴  Head Dots", 21, function(s) toggleESP("headDots", s) end, "espHeadDots")
-createToggle(pages.ESP, "💀  Skeleton", 22, function(s) toggleESP("skeletons", s) end, "espSkeleton")
-createToggle(pages.ESP, "🔆  Chams (Highlight)", 23, function(s) toggleESP("chams", s) end, "espChams")
-createToggle(pages.ESP, "🎯  Tracers", 24, function(s) toggleESP("tracers", s) end, "espTracers")
-createToggle(pages.ESP, "🔫  Snaplines", 25, function(s) toggleESP("snaplines", s) end, "espSnaplines")
-
-createSection(pages.ESP, "🎨  Colors", 30)
-createColorDropdown(pages.ESP, "🔴  Enemy Color", 31,
+createSection(pages.ESP, "🎨  Colors", 20)
+createColorDropdown(pages.ESP, "🔴  Enemy Color", 21,
 	Color3.fromRGB(255,60,60),
 	function(c) ESP_COLOR_ENEMY = c; refreshAllESP() end
 )
-createColorDropdown(pages.ESP, "🔵  Ally Color", 32,
+createColorDropdown(pages.ESP, "🔵  Ally Color", 22,
 	Color3.fromRGB(80,160,255),
 	function(c) ESP_COLOR_ALLY = c; refreshAllESP() end
 )
-
-createSection(pages.ESP, "🤖  Bots / NPC", 40)
-createToggle(pages.ESP, "🤖  ESP Bots & NPC", 41, function(s)
-	espState.bots = s
-	if s then refreshBotESP() else clearAllBotESP() end
-end, "espBots")
-createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 42, function()
-	if espState.bots then refreshBotESP()
-	else showNotification("⚠  Active ESP Bots d'abord", 2) end
-end)
-createColorDropdown(pages.ESP, "🟡  Bot Color", 43,
+createColorDropdown(pages.ESP, "🟡  Bot Color", 23,
 	Color3.fromRGB(255,200,0),
 	function(c) ESP_COLOR_BOT = c; if espState.bots then refreshBotESP() end end
 )
 
-createSection(pages.ESP, "📏  Distance Max", 50)
-createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 51, function(val)
+createSection(pages.ESP, "🤖  Bots / NPC", 30)
+createToggle(pages.ESP, "🤖  ESP Bots & NPC", 31, function(s)
+	espState.bots = s
+	if s then refreshBotESP() else clearAllBotESP() end
+end, "espBots")
+createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 32, function()
+	if espState.bots then refreshBotESP()
+	else showNotification("⚠  Active ESP Bots d'abord", 2) end
+end)
+
+createSection(pages.ESP, "📏  Distance Max", 40)
+createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 41, function(val)
 	ESP_MAX_DIST_PLAYER = val
 	refreshAllESP()
 end)
-createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 52, function(val)
+createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 42, function(val)
 	ESP_MAX_DIST_BOT = val
 	if espState.bots then refreshBotESP() end
 end)
@@ -4552,7 +4570,7 @@ verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
 verLabel = Instance.new("TextLabel", verFrame)
 verLabel.Size = UDim2.new(1, -12, 0, 16)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v5.6"
+verLabel.Text = "🌐 bkz HUB  v5.7"
 verLabel.TextColor3 = currentTheme.Accent
 verLabel.Font = Enum.Font.GothamBold
 verLabel.TextSize = 14

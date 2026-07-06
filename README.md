@@ -4,9 +4,9 @@
 
 ### The All-in-One Roblox Admin & Utility Hub
 
-**v5.6** • Build 2026.07
+**v5.7** • Build 2026.07
 
-> 🔥 Bypass • Force Modes • ESP HD • Freecam • VC Anti-Ban • Aimbot • 13 Themes • 9 Menu Effects
+> 🔥 Bypass • ESP HD • True Skeleton ESP • Aimbot boosted • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects
 
 </div>
 
@@ -79,8 +79,10 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 |:---|:---|
 | **Targeting** | Search bar to find any player by name or display name, with live refresh dropdown |
 | **Actions** | Spectate, Stop Spectate, TP Player to Me, TP Me to Player, Chat Spy (targeted or all players) |
-| **⚡ Force Modes** | Force All Sit, Force All Kill, Force All Freeze, Force All Unfreeze, Remove All Tools, Force All TP to Me |
+| **🎭 Local Visual Fun** | Sit All, Kill All, Freeze All, Unfreeze All, Remove All Tools, TP All to Me — **client-side visual only** (does not affect other players' game) |
 | **🎤 Voice Chat** | Activate VC Anti-Ban + custom mute keybind (keyboard or mouse) |
+
+> 💡 The "Local Visual Fun" section is for **fun only** — changes are local to your client and won't disrupt other players.
 
 </details>
 
@@ -109,7 +111,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ### 🎯 Aim
 
-> 🎯 Full-featured aimbot with customizable settings and keybinds.
+> 🎯 Full-featured aimbot with boosted performance and customizable settings.
 
 <details>
 <summary><b>📌 Features</b></summary>
@@ -119,12 +121,21 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 | **Aim Lock ON/OFF** | Master toggle for the aimbot |
 | **🎚 Smooth** | Aim speed (1–30%) — lower = snappier, higher = smoother |
 | **🔵 FOV** | Radius in pixels for target acquisition (target within circle gets locked) |
-| **🎯 Prediction** | Lead/bullet prediction (0–50%) — accounts for target velocity |
+| **🎯 Prediction** | Lead/bullet prediction (0–50%) — enhanced with WalkSpeed-based velocity |
 | **🔄 Mode** | `hold` (hold key to aim) or `toggle` (click to toggle on/off) |
 | **🔧 Method** | `1 - Direct Cam` (camera lerp), `2 - Scriptable Cam`, `3 - HRP Orient` |
 | **🖱 Mouse** | Select trigger key: Mouse1 / Mouse2 / Mouse3 |
 | **⌨ Keyboard** | Select trigger key from full keyboard layout (A-Z, 0-9, F1-F12, etc.) |
+| **🎯 Target Part** | Select target body part: Head, UpperTorso, Torso, HumanoidRootPart |
 | **Status Display** | Live status showing key, mode, and smooth percentage |
+
+### What's boosted in v5.7
+
+- **Prediction** now factors in the target's **WalkSpeed** for more accurate lead
+- **Target Part selection** — aim at Head, UpperTorso, Torso, or HumanoidRootPart
+- **Smooth factor clamped** (0.01–0.95) to prevent overshooting
+- **Target validation** — checks if the target part still exists every frame
+- **Fallback chain** — if the selected part is missing, falls back to Head → Torso → HRP
 
 Works automatically on **both players and bots/NPCs**.
 
@@ -141,12 +152,20 @@ Works automatically on **both players and bots/NPCs**.
 
 | Section | Features |
 |:---|:---|
-| **⚡ Shortcuts** | Enable All, Disable All ESP |
-| **📦 Player ESP** | Boxes, Names + Team Tag, Health (text), Health Bar, Distance |
-| **🎨 Visual Effects** | Head Dots, Skeleton (R6/R15 aware), Chams (Highlight), Tracers, Snaplines |
-| **🎨 Colors** | Custom Enemy Color, Custom Ally Color (9 color presets) |
-| **🤖 Bots / NPC** | ESP Bots & NPC toggle, Scan Bots Now, Custom Bot Color |
+| **📦 Player ESP** | Boxes (improved styling!), Names + Team Tag, Health (text), Health Bar, Distance |
+| **🎨 Visuals** | Skeleton (real Beams connecting joints!), Chams (Highlight) |
+| **🎨 Colors** | Enemy Color, Ally Color, **Bot Color** (9 color presets each) |
+| **🤖 Bots / NPC** | ESP Bots & NPC toggle, Scan Bots Now |
 | **📏 Distance Max** | Max distance for players (0 = infinite), Max distance for bots (0 = infinite) |
+
+### ESP Improvements in v5.7
+
+| Feature | Before | After |
+|:---|:---|:---|
+| **Boxes** | Flat frame with white edge | Rounded corners + accent-colored corners (18px) + UIStroke outline |
+| **Skeleton** | Dots at each joint | **Real Beams** connecting all body parts (like some pro ESPs) |
+| **Removed** | Head Dots, Tracers, Snaplines | Cleaner, more focused ESP |
+| **Bot Color** | Separate section | Now in the **Colors** section with Enemy and Ally |
 
 </details>
 
@@ -173,7 +192,7 @@ Works automatically on **both players and bots/NPCs**.
 
 ### 💃 Emotes
 
-> 🎬 Play animator-created animations on your character.
+> 🎬 Play animator-created animations on your character. Not Roblox defaults — animations from community creators!
 
 <details>
 <summary><b>📌 Features</b></summary>
@@ -198,8 +217,8 @@ Works automatically on **both players and bots/NPCs**.
 
 | Section | Features |
 |:---|:---|
-| **🎨 Theme** | 13 selectable themes (see [Themes](#-themes)) |
-| **🎆 Menu Effects** | 9 visual effects (see [Menu Effects](#-menu-effects)) |
+| **🎨 Theme** | 13 selectable themes via **dropdown menu** (see [Themes](#-themes)) |
+| **🎆 Menu Effects** | 9 visual effects in an organized container (see [Menu Effects](#-menu-effects)) |
 | **📐 Menu & Lock** | Lock Interface, Menu Opacity slider (20–100%), Reset Size, Recenter Menu |
 | **👁 Camera** | FOV slider (30–120°) |
 | **💾 Configuration** | Save Config, Load Config, Reset Config (auto-save on every change) |
@@ -245,7 +264,7 @@ Works automatically on **both players and bots/NPCs**.
 
 ## 🎨 Themes
 
-> 🎨 13 fully polished themes with coordinated colors for every UI element.
+> 🎨 13 fully polished themes with coordinated colors for every UI element. Now selectable via a **dropdown menu**!
 
 | # | Theme | Style | Accent Color |
 |:---:|:---|:---|:---|
@@ -267,7 +286,7 @@ Works automatically on **both players and bots/NPCs**.
 
 ## 🎆 Menu Effects
 
-> ✨ 9 visual effects that play inside the menu background for extra flair.
+> ✨ 9 visual effects that play within the menu. Effects render **behind the menu content** (ZIndex 0) so you can see them through the semi-transparent pages — they don't block interactions!
 
 | Effect | Description |
 |:---|:---|
@@ -276,12 +295,12 @@ Works automatically on **both players and bots/NPCs**.
 | 🔥 **Menu Fire** | Orange/red glowing embers rising from the bottom |
 | 🚀 **Menu Rocket** | ▲ rockets shooting up from the bottom |
 | 🧑 **Steve Head** | Skin-colored square heads falling with wobble |
-| ⬛ **Black Background** | Semi-transparent black overlay behind menu content |
+| ⬛ **Black Background** | Semi-transparent black overlay over the **game view** behind the menu (not the menu itself) |
 | 🌐 **Matrix Rain** | Katakana characters (ﾊﾐﾋｰ...) falling in digital green |
 | ✨ **Background Animation** | 4 glowing orbs floating behind the menu in theme colors |
 | 🖼 **Menu Border Glow** | 4 pulsing bars around the menu border (Accent ↔ Success) |
 
-> 💡 All effects are **clipped within the menu bounds** and managed by per-effect loops for performance.
+> 💡 All effects are managed by **per-effect loops** for performance. The Black Background effect covers the game view, not the menu — giving you a cinematic darkened game while the menu stays readable.
 
 ---
 
@@ -331,8 +350,9 @@ Works automatically on **both players and bots/NPCs**.
 | `Voice introuvable` | You're not in a voice chat enabled game, or VC is off. Join voice chat first. |
 | Config not saving | Your executor doesn't support `writefile`. Auto-save is skipped silently. |
 | Menu not opening | Press `B` key. If still not working, re-inject the script after the game loads. |
-| Effects not visible | Make sure the menu is open. Effects render within the menu bounds. Try lowering Menu Opacity for better visibility. |
+| Effects not visible | Make sure the menu is open. Effects render behind menu content — try lowering Menu Opacity for better visibility. |
 | Emotes not playing | Make sure your character is spawned. Emotes force on any rig type (R6/R15). |
+| Skeleton ESP looking flat | Skeleton uses Beams — make sure the target character has the expected body parts (R15 or R6). |
 
 ---
 
@@ -342,7 +362,7 @@ Works automatically on **both players and bots/NPCs**.
 |:---|:---|
 | 👑 **Owner** | bkz |
 | 🤝 **Contributors** | All people who use this menu ❤️ |
-| 📦 **Version** | **5.6** (Build 2026.07) |
+| 📦 **Version** | **5.7** (Build 2026.07) |
 
 ---
 
