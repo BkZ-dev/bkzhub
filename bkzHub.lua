@@ -346,21 +346,6 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
 gui.ResetOnSpawn = false
 
-SND_OPEN = "rbxassetid://9120386958"
-SND_CLOSE = "rbxassetid://9120573943"
-SND_HOVER = "rbxassetid://82343920339686"
-SND_CONFIRM = "rbxassetid://81305056334485"
-SND_CANCEL = "rbxassetid://3779045779"
-
-function playSound(id, vol)
-	local s = Instance.new("Sound")
-	s.SoundId = id
-	s.Volume = vol or 0.35
-	s.Parent = playerGui
-	s:Play()
-	Debris:AddItem(s, 1)
-end
-
 function playHover()
 end
 
@@ -375,13 +360,13 @@ main.BackgroundColor3 = currentTheme.BG
 main.BorderSizePixel = 0
 main.ZIndex = 1
 main.ClipsDescendants = true
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 16)
 
 
 stroke = Instance.new("UIStroke", main)
 stroke.Color = currentTheme.Accent
-stroke.Thickness = 2.5
-stroke.Transparency = 0.2
+stroke.Thickness = 2
+stroke.Transparency = 0.25
 
 
 
@@ -391,17 +376,19 @@ header = Instance.new("Frame", main)
 header.Size = UDim2.new(1, 0, 0, 52)
 header.BackgroundColor3 = currentTheme.Panel
 header.BorderSizePixel = 0
-Instance.new("UICorner", header).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", header).CornerRadius = UDim.new(0, 16)
 
 
 accentBar = Instance.new("Frame", header)
-accentBar.Size = UDim2.new(1, -30, 0, 2)
-accentBar.Position = UDim2.new(0, 15, 1, -1)
+accentBar.Size = UDim2.new(1, -40, 0, 2)
+accentBar.Position = UDim2.new(0, 20, 1, -1)
 accentBar.BackgroundColor3 = currentTheme.Accent
 accentBar.BorderSizePixel = 0
 accentBar.BackgroundTransparency = 0.4
-TweenService:Create(accentBar, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-	BackgroundTransparency = 0.2
+Instance.new("UICorner", accentBar).CornerRadius = UDim.new(1, 0)
+TweenService:Create(accentBar, TweenInfo.new(2.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	BackgroundTransparency = 0.15,
+	Size = UDim2.new(1, -80, 0, 2)
 }):Play()
 
 
@@ -422,7 +409,7 @@ title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v5.5  •  " .. player.Name
+subtitle.Text = "v5.6  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -50, 0, 14)
 subtitle.Position = UDim2.new(0, 15, 0, 33)
 subtitle.BackgroundTransparency = 1
@@ -434,12 +421,12 @@ subtitle.TextXAlignment = Enum.TextXAlignment.Left
 
 lockBtn = Instance.new("TextButton", header)
 lockBtn.Text = "🔓"
-lockBtn.Size = UDim2.new(0, 28, 0, 28)
-lockBtn.Position = UDim2.new(1, -72, 0.5, -14)
+lockBtn.Size = UDim2.new(0, 30, 0, 30)
+lockBtn.Position = UDim2.new(1, -74, 0.5, -15)
 lockBtn.BackgroundColor3 = currentTheme.Button
 lockBtn.TextColor3 = Color3.new(1,1,1)
 lockBtn.Font = Enum.Font.GothamBold
-lockBtn.TextSize = 12
+lockBtn.TextSize = 13
 lockBtn.BorderSizePixel = 0
 Instance.new("UICorner", lockBtn).CornerRadius = UDim.new(0, 8)
 lockBtn.MouseEnter:Connect(playHover)
@@ -454,8 +441,8 @@ end)
 
 closeBtn = Instance.new("TextButton", header)
 closeBtn.Text = "✕"
-closeBtn.Size = UDim2.new(0, 28, 0, 28)
-closeBtn.Position = UDim2.new(1, -38, 0.5, -14)
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -38, 0.5, -15)
 closeBtn.BackgroundColor3 = currentTheme.Danger
 closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.Font = Enum.Font.GothamBold
@@ -464,6 +451,16 @@ closeBtn.BorderSizePixel = 0
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
 closeBtn.MouseEnter:Connect(playHover)
 closeBtn.Name = "closeBtn"
+
+glassOverlay = Instance.new("Frame", main)
+glassOverlay.Size = UDim2.new(1, 0, 1, 0)
+glassOverlay.Position = UDim2.new(0, 0, 0, 0)
+glassOverlay.BackgroundColor3 = currentTheme.BG
+glassOverlay.BackgroundTransparency = 0.92
+glassOverlay.BorderSizePixel = 0
+glassOverlay.ZIndex = 0
+Instance.new("UICorner", glassOverlay).CornerRadius = UDim.new(0, 16)
+glassOverlay.ClipsDescendants = true
 
 
 
@@ -485,6 +482,7 @@ tabPad.PaddingTop = UDim.new(0, 4); tabPad.PaddingBottom = UDim.new(0, 4)
 tabDefs = {
 	{ name = "Player",   icon = "👤" },
 	{ name = "Personal", icon = "🔒" },
+	{ name = "Aim",      icon = "🎯" },
 	{ name = "ESP",      icon = "👁" },
 	{ name = "World",    icon = "🌍" },
 	{ name = "Emotes",   icon = "💃" },
@@ -518,7 +516,7 @@ for _, def in ipairs(tabDefs) do
 
 	local tb = Instance.new("TextButton", tabBar)
 	tb.Text = def.icon
-	tb.Size = UDim2.new(0.1667, -3, 1, 0)
+	tb.Size = UDim2.new(0.125, -3, 1, 0)
 	tb.BackgroundColor3 = (def.name == "Player") and currentTheme.TabActive or currentTheme.Tab
 	tb.TextColor3 = (def.name == "Player") and Color3.new(1,1,1) or currentTheme.SubText
 	tb.Font = Enum.Font.GothamBold
@@ -534,15 +532,26 @@ for _, def in ipairs(tabDefs) do
 	nameLbl.Font = Enum.Font.Gotham
 	nameLbl.TextSize = 8
 	nameLbl.TextColor3 = currentTheme.SubText
-	tb.MouseEnter:Connect(playHover)
+	tb.MouseEnter:Connect(function()
+		if def.name ~= activeTab then
+			TweenService:Create(tb, TweenInfo.new(0.15), {BackgroundColor3 = currentTheme.Button}):Play()
+		end
+	end)
+	tb.MouseLeave:Connect(function()
+		if def.name ~= activeTab then
+			TweenService:Create(tb, TweenInfo.new(0.15), {BackgroundColor3 = currentTheme.Tab}):Play()
+		end
+	end)
 	tb.MouseButton1Click:Connect(function()
-		playHover()
 		activeTab = def.name
 		for n, p in pairs(pages) do
 			if n == def.name then
 				p.Visible = true
-				p.BackgroundTransparency = 1
-				TweenService:Create(p, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
+				p.Position = UDim2.new(0, 10, 0, 110)
+				TweenService:Create(p, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					Position = UDim2.new(0, 10, 0, 100),
+					BackgroundTransparency = 1
+				}):Play()
 			else
 				p.Visible = false
 			end
@@ -606,20 +615,20 @@ function createBtn(parent, text, color, order, func)
 	btn.BorderSizePixel = 0
 
 	btn.MouseEnter:Connect(function()
-		playHover()
-		TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.ButtonHov}):Play()
-		TweenService:Create(stroke2, TweenInfo.new(0.12), {Transparency = 0.8, Color = currentTheme.Accent}):Play()
+		TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundColor3 = currentTheme.ButtonHov}):Play()
+		TweenService:Create(stroke2, TweenInfo.new(0.2), {Transparency = 0.75, Color = currentTheme.Accent}):Play()
+		TweenService:Create(frame, TweenInfo.new(0.15), {Size = UDim2.new(1, 0, 0, 42)}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
-		TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundColor3 = colorKey and currentTheme[colorKey] or color}):Play()
-		TweenService:Create(stroke2, TweenInfo.new(0.12), {Transparency = 0.93, Color = Color3.new(1,1,1)}):Play()
+		TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundColor3 = colorKey and currentTheme[colorKey] or color, Size = UDim2.new(1, 0, 0, 40)}):Play()
+		TweenService:Create(stroke2, TweenInfo.new(0.2), {Transparency = 0.93, Color = Color3.new(1,1,1)}):Play()
 	end)
 	btn.MouseButton1Click:Connect(function()
 		local label = text:gsub("[^%w%s]","")
 		showNotification("👉 " .. label, 1.5)
-		TweenService:Create(frame, TweenInfo.new(0.05), {BackgroundColor3 = currentTheme.Accent}):Play()
-		task.delay(0.08, function()
-			TweenService:Create(frame, TweenInfo.new(0.1), {BackgroundColor3 = currentTheme.ButtonHov}):Play()
+		TweenService:Create(frame, TweenInfo.new(0.04), {BackgroundColor3 = currentTheme.Accent, Size = UDim2.new(1, 0, 0, 38)}):Play()
+		task.delay(0.06, function()
+			TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.ButtonHov, Size = UDim2.new(1, 0, 0, 40)}):Play()
 		end)
 		func()
 	end)
@@ -691,14 +700,14 @@ function createToggle(parent, text, order, func, configKey)
 	hitbox.MouseButton1Click:Connect(function()
 		state = not state
 		if configKey then toggleStates[configKey] = state end
-		TweenService:Create(track, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		TweenService:Create(track, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 			BackgroundColor3 = state and currentTheme.Accent or Color3.fromRGB(60,60,80)
 		}):Play()
-		TweenService:Create(knob, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Position = state and UDim2.new(1,-21,0.5,-9) or UDim2.new(0,3,0.5,-9)
+		TweenService:Create(knob, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Position = state and UDim2.new(1,-21,0.5,-9) or UDim2.new(0,3,0.5,-9),
+			Size = state and UDim2.new(0, 20, 0, 20) or UDim2.new(0, 18, 0, 18)
 		}):Play()
 		local label = text:gsub("[^%w%s]","")
-		showNotification((state and "✅ " or "❌ ") .. label, 1.2)
 		func(state)
 	end)
 
@@ -815,7 +824,6 @@ function createSlider(parent, text, min, max, default, order, func)
 
 	hitbox.MouseButton1Down:Connect(function(x,y)
 		draggingSlider = true
-		playHover()
 		updateSlider({Position = Vector3.new(x,y,0)})
 	end)
 	UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then draggingSlider = false end end)
@@ -1009,11 +1017,6 @@ function playInstantTransmissionFX(position)
 	local originCFrame = hrp.CFrame
 
 	
-	local snd1 = Instance.new("Sound", hrp)
-	snd1.SoundId = "rbxassetid://126099526912322"
-	snd1.Volume = 0.8; snd1.PlaybackSpeed = 1.3
-	snd1:Play(); Debris:AddItem(snd1, 2)
-
 	
 	for _, part in ipairs(char:GetDescendants()) do
 		if part:IsA("BasePart") then
@@ -1086,20 +1089,6 @@ end
 
 UIS.InputBegan:Connect(function(input, gpe)
 	if not gpe and gokuMode and input.KeyCode == Enum.KeyCode.F then
-
-		local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-		if hrp then
-			local sndTP = Instance.new("Sound", hrp)
-			sndTP.SoundId = "rbxassetid://126099526912322"
-			sndTP.Volume = 0.5; sndTP.PlaybackSpeed = 1.2
-			sndTP:Play(); Debris:AddItem(sndTP, 2)
-
-			local sndImpact = Instance.new("Sound", hrp)
-			sndImpact.SoundId = "rbxassetid://135938385687045"
-			sndImpact.Volume = 0.35; sndImpact.PlaybackSpeed = 0.9
-			task.delay(0.05, function() sndImpact:Play() end)
-			Debris:AddItem(sndImpact, 2)
-		end
 		playInstantTransmissionFX(mouse.Hit.p)
 	end
 end)
@@ -1720,14 +1709,6 @@ end, "noclip")
 
 local emoteTracks = {}
 
-local function getRigType()
-	local char = player.Character
-	if not char then return nil end
-	local hum = char:FindFirstChildOfClass("Humanoid")
-	if not hum then return nil end
-	return hum.RigType
-end
-
 local function createEmoteToggle(parent, name, order, animId, configKey)
 	createToggle(parent, name, order, function(state)
 		if state then
@@ -1753,88 +1734,25 @@ local function createEmoteToggle(parent, name, order, animId, configKey)
 	end, configKey)
 end
 
-local function createRigAwareToggle(parent, name, order, r6Id, r15Id, configKey)
-	createToggle(parent, name, order, function(state)
-		if state then
-			local char = player.Character
-			if not char then return end
-			local hum = char:FindFirstChildOfClass("Humanoid")
-			if not hum then return end
-			local animator = hum:FindFirstChildOfClass("Animator")
-			if not animator then animator = Instance.new("Animator", hum) end
-			local anim = Instance.new("Animation")
-			local id = hum.RigType == Enum.HumanoidRigType.R6 and r6Id or r15Id
-			anim.AnimationId = "rbxassetid://" .. tostring(id)
-			local track = animator:LoadAnimation(anim)
-			track.Looped = true
-			track:Play()
-			emoteTracks[configKey] = track
-		else
-			if emoteTracks[configKey] then
-				emoteTracks[configKey]:Stop()
-				emoteTracks[configKey]:Destroy()
-				emoteTracks[configKey] = nil
-			end
-		end
-	end, configKey)
-end
+createSection(pages.Emotes, "🎬  Animator Packs", 1)
 
-createSection(pages.Emotes, "🎒  My Catalog Emotes", 1)
-
-local function loadPlayerEmotes()
-	local order = 2
-	local defaultEmotes = {
-		{"Wave", 128777973, 507770239}, {"Point", 128853357, 507770453},
-		{"Dance", 182435998, 507771019}, {"Dance 2", 182436842, 507776043},
-		{"Dance 3", 182436935, 507777268}, {"Laugh", 129423131, 507770818},
-		{"Cheer", 129423030, 507770677},
-	}
-	local loaded = {}
-	local ok, playerEmotes = pcall(function() return player:GetEmotes() end)
-	if ok and type(playerEmotes) == "table" then
-		for name, data in pairs(playerEmotes) do
-			local id = type(data) == "table" and data.assetId or data
-			if id and tonumber(id) then
-				createEmoteToggle(pages.Emotes, name, order, tonumber(id), "emote_" .. name:gsub("%s+", ""))
-				order = order + 1
-				loaded[name] = true
-			end
-		end
-	end
-	for _, em in ipairs(defaultEmotes) do
-		if not loaded[em[1]] then
-			createRigAwareToggle(pages.Emotes, em[1], order, em[2], em[3], "emote_" .. em[1]:gsub("%s+", ""))
-			order = order + 1
-		end
-	end
-	if order == 2 then
-		local lbl = Instance.new("TextLabel", pages.Emotes)
-		lbl.Text = "  No emotes found"
-		lbl.Size = UDim2.new(1, 0, 0, 30)
-		lbl.BackgroundTransparency = 1
-		lbl.TextColor3 = currentTheme.SubText
-		lbl.Font = Enum.Font.Gotham
-		lbl.TextSize = 13
-		lbl.LayoutOrder = 2
-	end
-end
-
-task.spawn(loadPlayerEmotes)
-
-createSection(pages.Emotes, "🎬  Default Animations", 50)
-
-local defaultAnims = {
-	{"Idle 1", 180435571, 507766666}, {"Walk", 180426354, 507777826},
-	{"Jump", 125750702, 507765000}, {"Fall", 180436148, 507767968},
-	{"Climb", 180436334, 507765644}, {"Sit", 178130996, 507768133},
-	{"Wave", 128777973, 507770239}, {"Point", 128853357, 507770453},
-	{"Dance", 182435998, 507771019}, {"Dance 2", 182436842, 507776043},
-	{"Dance 3", 182436935, 507777268}, {"Laugh", 129423131, 507770818},
-	{"Cheer", 129423030, 507770677},
+local animEmotes = {
+	{"Wave", 18455766909},
+	{"Point", 18455774293},
+	{"Dance", 18455789433},
+	{"Dance 2", 18378430756},
+	{"Dance 3", 18378426625},
+	{"Laugh", 18455781785},
+	{"Cheer", 18455778635},
+	{"Idle", 18376648560},
+	{"Walk Style", 18376651750},
+	{"Run Style", 18376654895},
+	{"Fall", 18376657688},
+	{"Sit", 18376662353},
 }
 
-for i, em in ipairs(defaultAnims) do
-	createRigAwareToggle(pages.Emotes, em[1], i + 51, em[2], em[3], "defanim_" .. em[1]:gsub("%s+", ""))
+for i, em in ipairs(animEmotes) do
+	createEmoteToggle(pages.Emotes, em[1], i + 1, em[2], "anim_" .. em[1]:gsub("%s+", ""))
 end
 
 createSection(pages.Personal, "🛡  Survival", 10)
@@ -2515,17 +2433,81 @@ end)
 
 
 
-createSection(pages.Personal, "🎯  Aim Lock", 100)
+createSection(pages.Personal, "📐  Appearance", 20)
+
+currentScale = 1.0
+
+function applyScale(val)
+	currentScale = val / 100
+	local char = player.Character
+	if not char then return end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hum then return end
+
+	local function setScale()
+		
+		local bd = hum:FindFirstChild("BodyDepthScale")
+		local bh = hum:FindFirstChild("BodyHeightScale")
+		local bw = hum:FindFirstChild("BodyWidthScale")
+		local hs = hum:FindFirstChild("HeadScale")
+		if bd then bd.Value = currentScale end
+		if bh then bh.Value = currentScale end
+		if bw then bw.Value = currentScale end
+		if hs then hs.Value = currentScale end
+
+		
+		local bt = hum:FindFirstChild("BodyTypeScale")
+		if bt then bt.Value = math.clamp(currentScale, 0, 1) end
+
+		
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if hrp and not bd then  
+			for _, part in ipairs(char:GetDescendants()) do
+				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+					pcall(function()
+						part.Size = part.Size * currentScale
+					end)
+				end
+			end
+		end
+
+		
+		pcall(function()
+			if char.ScaleTo then
+				char:ScaleTo(currentScale)
+			end
+		end)
+	end
+
+	setScale()
+	
+	task.delay(0.3, setScale)
+	task.delay(1.0, setScale)
+end
 
 
-aimStatusLabel = Instance.new("TextLabel", pages.Personal)
+player.CharacterAdded:Connect(function(char)
+	task.wait(0.5)
+	applyScale(currentScale * 100)
+end)
+
+createNumberInput(pages.Personal, "📐  Character Size", 100, 21, function(val)
+	applyScale(val)
+end)
+
+
+
+createSection(pages.Aim, "🎯  Aim Lock", 0)
+
+
+aimStatusLabel = Instance.new("TextLabel", pages.Aim)
 aimStatusLabel.Size  = UDim2.new(1, 0, 0, 18)
 aimStatusLabel.BackgroundTransparency = 1
 aimStatusLabel.TextColor3 = currentTheme.SubText
 aimStatusLabel.Font  = Enum.Font.Gotham
 aimStatusLabel.TextSize = 11
 aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-aimStatusLabel.LayoutOrder = 100
+aimStatusLabel.LayoutOrder = 1
 function updateAimStatus()
 	aimStatusLabel.Text = "  Key: " .. aimKey
 		.. "   Mode: " .. aimMode
@@ -2534,35 +2516,35 @@ end
 updateAimStatus()
 
 
-createToggle(pages.Personal, "🎯  Aim Lock ON / OFF", 101, function(state)
+createToggle(pages.Aim, "🎯  Aim Lock ON / OFF", 2, function(state)
 	aimEnabled = state
 	if state then startAim() else stopAim() end
 end, "aimLock")
 
 
-createSlider(pages.Personal, "🎚  Smooth (aim speed)", 1, 30, 8, 102, function(val)
+createSlider(pages.Aim, "🎚  Smooth (aim speed)", 1, 30, 8, 3, function(val)
 	aimSmooth = val / 100
 	updateAimStatus()
 end)
 
 
-createNumberInput(pages.Personal, "🔵  FOV (radius pixels)", 250, 103, function(val)
+createNumberInput(pages.Aim, "🔵  FOV (radius pixels)", 250, 4, function(val)
 	aimFOV = val
 end)
 
-createSlider(pages.Personal, "🎯  Prediction (lead)", 0, 50, 15, 104, function(val)
+createSlider(pages.Aim, "🎯  Prediction (lead)", 0, 50, 15, 5, function(val)
 	aimPrediction = val / 100
 end)
 
 
-createBtn(pages.Personal, "🔄  Mode: " .. aimMode, currentTheme.Button, 105, function(btn)
+createBtn(pages.Aim, "🔄  Mode: " .. aimMode, currentTheme.Button, 6, function(btn)
 	aimMode = (aimMode == "hold") and "toggle" or "hold"
 	updateAimStatus()
 	showNotification("🎯  Mode: " .. aimMode, 2)
 end)
 
 methodNames = {"1 - Direct Cam", "2 - Scriptable Cam", "3 - HRP Orient"}
-createBtn(pages.Personal, "🔧  Method: " .. methodNames[aimMethod], currentTheme.Button, 106, function()
+createBtn(pages.Aim, "🔧  Method: " .. methodNames[aimMethod], currentTheme.Button, 7, function()
 	aimMethod = (aimMethod % 3) + 1
 	showNotification("🎯  Method: " .. methodNames[aimMethod], 2)
 end)
@@ -2648,81 +2630,17 @@ end
 MOUSE_LABELS = {}
 for _, m in ipairs(MOUSE_KEYS) do table.insert(MOUSE_LABELS, m.label) end
 
-mkDropdown(pages.Personal, "🖱  Mouse", MOUSE_LABELS, 1, 107, function(lbl)
+mkDropdown(pages.Aim, "🖱  Mouse", MOUSE_LABELS, 1, 8, function(lbl)
 	for _, m in ipairs(MOUSE_KEYS) do
 		if m.label == lbl then aimKey = m.id; break end
 	end
 	updateAimStatus()
 end)
 
-mkDropdown(pages.Personal, "⌨  Keyboard", KEYBOARD_KEYS, 1, 108, function(key)
+mkDropdown(pages.Aim, "⌨  Keyboard", KEYBOARD_KEYS, 1, 9, function(key)
 	aimKey = key
 	updateAimStatus()
 end)
-
-createSection(pages.Personal, "📐  Appearance", 108)
-
-currentScale = 1.0
-
-function applyScale(val)
-	currentScale = val / 100
-	local char = player.Character
-	if not char then return end
-	local hum = char:FindFirstChildOfClass("Humanoid")
-	if not hum then return end
-
-	local function setScale()
-		
-		local bd = hum:FindFirstChild("BodyDepthScale")
-		local bh = hum:FindFirstChild("BodyHeightScale")
-		local bw = hum:FindFirstChild("BodyWidthScale")
-		local hs = hum:FindFirstChild("HeadScale")
-		if bd then bd.Value = currentScale end
-		if bh then bh.Value = currentScale end
-		if bw then bw.Value = currentScale end
-		if hs then hs.Value = currentScale end
-
-		
-		local bt = hum:FindFirstChild("BodyTypeScale")
-		if bt then bt.Value = math.clamp(currentScale, 0, 1) end
-
-		
-		local hrp = char:FindFirstChild("HumanoidRootPart")
-		if hrp and not bd then  
-			for _, part in ipairs(char:GetDescendants()) do
-				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-					pcall(function()
-						part.Size = part.Size * currentScale
-					end)
-				end
-			end
-		end
-
-		
-		pcall(function()
-			if char.ScaleTo then
-				char:ScaleTo(currentScale)
-			end
-		end)
-	end
-
-	setScale()
-	
-	task.delay(0.3, setScale)
-	task.delay(1.0, setScale)
-end
-
-
-player.CharacterAdded:Connect(function(char)
-	task.wait(0.5)
-	applyScale(currentScale * 100)
-end)
-
-createNumberInput(pages.Personal, "📐  Character Size", 100, 109, function(val)
-	applyScale(val)
-end)
-
-
 
 
 createSection(pages.World, "☀  Environment", 0)
@@ -2868,17 +2786,6 @@ createToggle(pages.World, "🌧  Rain", 7, function(state)
 	ps2.LightInfluence = 1
 
 	
-	local snd = Instance.new("Sound", rain)
-	snd.SoundId = "rbxassetid://9117963093"
-	snd.Volume = 0.25; snd.Looped = true
-	TweenService:Create(snd, TweenInfo.new(1.5), { Volume = 0.25 }):Play()
-	snd:Play()
-
-	
-	local thunder = Instance.new("Sound", rain)
-	thunder.SoundId = "rbxassetid://9117963093"
-	thunder.Volume = 0; thunder.Looped = true; thunder:Play()
-
 	RunService:BindToRenderStep("AdminRain", 1, function()
 		local c = player.Character
 		if c and c:FindFirstChild("HumanoidRootPart") then
@@ -2981,10 +2888,6 @@ createToggle(pages.World, "❄  Snow", 8, function(state)
 		ps3.LightEmission = 0.4
 
 		
-		local snd = Instance.new("Sound", snow)
-		snd.SoundId = "rbxassetid://5800330726"
-		snd.Volume = 0.15; snd.Looped = true; snd:Play()
-
 		RunService:BindToRenderStep("AdminSnow", 1, function()
 			local c = player.Character
 			if c and c:FindFirstChild("HumanoidRootPart") then
@@ -3085,6 +2988,7 @@ function applyTheme(t)
 	subtitle.TextColor3 = t.SubText
 	closeBtn.BackgroundColor3 = t.Danger
 	lockBtn.BackgroundColor3 = interfaceLocked and t.Success or t.Button
+	glassOverlay.BackgroundColor3 = t.BG
 	tabBar.BackgroundColor3 = t.Tab
 	for name, btn in pairs(tabBtns) do
 		btn.BackgroundColor3 = (name == activeTab) and t.TabActive or t.Tab
@@ -3125,25 +3029,7 @@ createBtn(pages.Settings, "🟢  Green",  currentTheme.Button, 11, function() ap
 createBtn(pages.Settings, "🔵  Blue",   currentTheme.Button, 12, function() applyTheme(Themes.Blue) autoSave() end)
 createBtn(pages.Settings, "🌐  Matrix", currentTheme.Button, 13, function() applyTheme(Themes.Matrix) autoSave() end)
 
-createSection(pages.Settings, "📐  Menu & Lock", 50)
-createToggle(pages.Settings, "🔒  Lock Interface", 51, function(state)
-	interfaceLocked = state
-	lockBtn.Text = state and "🔒" or "🔓"
-	lockBtn.BackgroundColor3 = state and currentTheme.Success or currentTheme.Button
-	showNotification(state and "🔒 Interface locked" or "🔓 Interface unlocked", 1.5)
-	autoSave()
-end, "lockInterface")
-createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 52, function(val)
-	savedOpacity = val
-	main.BackgroundTransparency = 1 - (val / 100)
-	autoSave()
-end)
-createBtn(pages.Settings, "↩  Reset Size",  currentTheme.Button, 53, function() applyMenuSize(380, 500) autoSave() end)
-createBtn(pages.Settings, "🏠  Recenter Menu", currentTheme.Button, 54, function()
-	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
-end)
-
-createSection(pages.Settings, "🎆  Menu Effects", 60)
+createSection(pages.Settings, "🎆  Menu Effects", 50)
 
 local menuFx = {snow={}, rain={}, fire={}, rocket={}, steve={}, matrixRain={}}
 local menuFxGui = nil
@@ -3158,8 +3044,9 @@ local function ensureFxGui()
 		menuFxGui = Instance.new("Frame")
 		menuFxGui.Size = UDim2.new(1, 0, 1, 0)
 		menuFxGui.BackgroundTransparency = 1
-		menuFxGui.ZIndex = 0
-		menuFxGui.Parent = gui
+		menuFxGui.ZIndex = 1
+		menuFxGui.Position = UDim2.new(0, 0, 0, 0)
+		menuFxGui.Parent = main
 	end
 	return menuFxGui
 end
@@ -3180,7 +3067,7 @@ local function spawnSnowFlake()
 	s.BackgroundColor3 = Color3.new(1, 1, 1)
 	s.BorderSizePixel = 0
 	s.BackgroundTransparency = 0.2 + math.random() * 0.3
-	s.ZIndex = 0
+	s.ZIndex = 2
 	Instance.new("UICorner", s).CornerRadius = UDim.new(1, 0)
 	s.Parent = fx
 	table.insert(menuFx.snow, s)
@@ -3208,7 +3095,7 @@ local function spawnRainDrop()
 	r.TextSize = math.random(14, 28)
 	r.TextColor3 = Color3.fromRGB(160, 200, 255)
 	r.Font = Enum.Font.Gotham
-	r.ZIndex = 0
+	r.ZIndex = 2
 	r.Parent = fx
 	table.insert(menuFx.rain, r)
 	local dur = math.random(2, 5)
@@ -3233,7 +3120,7 @@ local function spawnFire()
 	f.BackgroundColor3 = Color3.fromRGB(math.random(200,255), math.random(40,120), 0)
 	f.BorderSizePixel = 0
 	f.BackgroundTransparency = 0.2 + math.random() * 0.3
-	f.ZIndex = 0
+	f.ZIndex = 2
 	Instance.new("UICorner", f).CornerRadius = UDim.new(1, 0)
 	f.Parent = fx
 	table.insert(menuFx.fire, f)
@@ -3261,7 +3148,7 @@ local function spawnRocket()
 	r.TextSize = 20
 	r.TextColor3 = Color3.fromRGB(255, math.random(100,200), 0)
 	r.Font = Enum.Font.Gotham
-	r.ZIndex = 0
+	r.ZIndex = 2
 	r.Parent = fx
 	table.insert(menuFx.rocket, r)
 	local dur = math.random(2, 4)
@@ -3284,7 +3171,7 @@ local function spawnSteveHead()
 	s.BackgroundColor3 = Color3.fromRGB(180, 140, 100)
 	s.BorderSizePixel = 1
 	s.BorderColor3 = Color3.fromRGB(100, 70, 40)
-	s.ZIndex = 0
+	s.ZIndex = 2
 	s.Parent = fx
 	table.insert(menuFx.steve, s)
 	local dur = math.random(4, 8)
@@ -3311,7 +3198,7 @@ local function spawnMatrixRain()
 	r.TextSize = math.random(12, 20)
 	r.TextColor3 = Color3.fromRGB(0, 255, 65)
 	r.Font = Enum.Font.Code
-	r.ZIndex = 0
+	r.ZIndex = 2
 	r.Parent = fx
 	table.insert(menuFx.matrixRain, r)
 	local dur = math.random(2, 6)
@@ -3356,10 +3243,10 @@ local function enableBlackBg()
 	blackBgFrame = Instance.new("Frame")
 	blackBgFrame.Size = UDim2.new(1, 0, 1, 0)
 	blackBgFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-	blackBgFrame.BackgroundTransparency = 0.8
+	blackBgFrame.BackgroundTransparency = 0.65
 	blackBgFrame.BorderSizePixel = 0
-	blackBgFrame.ZIndex = 0
-	blackBgFrame.Parent = gui
+	blackBgFrame.ZIndex = 1
+	blackBgFrame.Parent = main
 end
 
 local function disableBlackBg()
@@ -3501,13 +3388,31 @@ createToggle(pages.Settings, "🖼  Menu Border Glow", 69, function(state)
 	autoSave()
 end, "menuBorderGlow")
 
-createSection(pages.Settings, "👁  Camera", 80)
-createSlider(pages.Settings, "👁  FOV", 30, 120, 70, 81, function(val)
+createSection(pages.Settings, "📐  Menu & Lock", 80)
+createToggle(pages.Settings, "🔒  Lock Interface", 81, function(state)
+	interfaceLocked = state
+	lockBtn.Text = state and "🔒" or "🔓"
+	lockBtn.BackgroundColor3 = state and currentTheme.Success or currentTheme.Button
+	showNotification(state and "🔒 Interface locked" or "🔓 Interface unlocked", 1.5)
+	autoSave()
+end, "lockInterface")
+createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 82, function(val)
+	savedOpacity = val
+	main.BackgroundTransparency = 1 - (val / 100)
+	autoSave()
+end)
+createBtn(pages.Settings, "↩  Reset Size",  currentTheme.Button, 83, function() applyMenuSize(380, 500) autoSave() end)
+createBtn(pages.Settings, "🏠  Recenter Menu", currentTheme.Button, 84, function()
+	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
+end)
+
+createSection(pages.Settings, "👁  Camera", 90)
+createSlider(pages.Settings, "👁  FOV", 30, 120, 70, 91, function(val)
 	local cam = workspace.CurrentCamera
 	if cam then cam.FieldOfView = val end
 end)
 
-createSection(pages.Settings, "💾  Configuration", 90)
+createSection(pages.Settings, "💾  Configuration", 100)
 
 local CONFIG_FILE = "AdminMenu_config.json"
 local autoSaveTimer = nil
@@ -3664,9 +3569,9 @@ function loadConfig()
 	end
 end
 
-createBtn(pages.Settings, "💾  Save Config",  currentTheme.Success, 91, saveConfig)
-createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  92, loadConfig)
-createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  93, function()
+createBtn(pages.Settings, "💾  Save Config",  currentTheme.Success, 101, saveConfig)
+createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  102, loadConfig)
+createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  103, function()
 	applyTheme(Themes.Dark)
 	applyMenuSize(380, 500)
 	keyLayout = "QWERTY"
@@ -3764,25 +3669,27 @@ showNotification("👉𝐁 Press <b>[B]</b> to open the menu", 5)
 
 
 function openMenu()
-	playSound(SND_OPEN, 0.5)
 	gui.Enabled = true
 	main.Size = UDim2.new(0, menuW, 0, 0)
-	main.BackgroundTransparency = 0.3
-	TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	main.BackgroundTransparency = 0.4
+	main.Position = UDim2.new(0.5, -190, 0.5, -130)
+	TweenService:Create(main, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Size = UDim2.new(0, menuW, 0, menuH),
+		Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2),
 		BackgroundTransparency = 0
 	}):Play()
 end
 
 function closeMenu()
-	playSound(SND_CLOSE, 0.5)
-	TweenService:Create(main, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+	TweenService:Create(main, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		Size = UDim2.new(0, menuW, 0, 0),
-		BackgroundTransparency = 0.3
+		Position = UDim2.new(0.5, -190, 0.5, -130),
+		BackgroundTransparency = 0.35
 	}):Play()
 	task.wait(0.15)
 	gui.Enabled = false
 	main.Size = UDim2.new(0, menuW, 0, menuH)
+	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
 	main.BackgroundTransparency = 0
 end
 
@@ -3846,13 +3753,6 @@ function spawnExplosionFX(pos)
 	end
 
 	
-	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-	if hrp then
-		local boom = Instance.new("Sound", hrp)
-		boom.SoundId = "rbxassetid://84792688181059"
-		boom.Volume = 1.5; boom.RollOffMaxDistance = 300
-		boom:Play(); Debris:AddItem(boom, 3)
-	end
 end
 
 function startNuke()
@@ -3872,17 +3772,6 @@ function startNuke()
 	lv.Attachment0 = att
 	lv.VectorVelocity = Vector3.new(0, 150, 0)
 	lv.MaxForce = math.huge
-
-	
-	local snd = Instance.new("Sound", hrp)
-	snd.Name = "NukeSound"
-	snd.SoundId = "rbxassetid://84792688181059"
-	snd.Volume = 1.2; snd.Looped = true; snd:Play()
-
-	local sndBoost = Instance.new("Sound", hrp)
-	sndBoost.Name = "NukeBoost"
-	sndBoost.SoundId = "rbxassetid://84792688181059"
-	sndBoost.Volume = 0.7; sndBoost.Looped = true; sndBoost:Play()
 
 	
 	nukeConn = RunService.Heartbeat:Connect(function()
@@ -3915,8 +3804,6 @@ function stopNuke()
 	if hrp then
 		local bv  = hrp:FindFirstChild("NukeBV");  if bv  then bv:Destroy()  end
 		local att = hrp:FindFirstChild("NukeAtt"); if att then att:Destroy() end
-		local snd = hrp:FindFirstChild("NukeSound"); if snd then snd:Destroy() end
-		local sndB = hrp:FindFirstChild("NukeBoost"); if sndB then sndB:Destroy() end
 	end
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	if hum then hum:ChangeState(Enum.HumanoidStateType.Freefall) end
@@ -3930,21 +3817,15 @@ function stopNuke()
 end
 
 
-createSection(pages.Personal, "💥  Chaos & Fun", 200)
-createToggle(pages.Personal, "🚀  NUKE MODE  (propulsion + explosion)", 201, function(state)
+createSection(pages.Personal, "💥  Chaos & Fun", 30)
+createToggle(pages.Personal, "🚀  NUKE MODE  (propulsion + explosion)", 31, function(state)
 	nukeEnabled = state
 	if state then startNuke() else stopNuke() end
 end, "nukeMode")
-createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 202, function()
+createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 32, function()
 	local char = player.Character
 	local hrp  = char and char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
-
-	
-	local boom1 = Instance.new("Sound", hrp)
-	boom1.SoundId = "rbxassetid://84792688181059"; boom1.Volume = 1.5
-	boom1.RollOffMaxDistance = 300; boom1:Play()
-	Debris:AddItem(boom1, 4)
 
 	spawnExplosionFX(hrp.Position)
 
@@ -3956,7 +3837,7 @@ createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 202, fu
 		end)
 	end
 end)
-createBtn(pages.Personal, "🔄  Reset Character", currentTheme.Button, 203, function()
+createBtn(pages.Personal, "🔄  Reset Character", currentTheme.Button, 33, function()
 	if player.Character then
 		local hum = player.Character:FindFirstChildOfClass("Humanoid")
 		if hum then hum.Health = 0 end
@@ -4549,63 +4430,65 @@ function createColorDropdown(parent, label, order, defaultColor, onChange)
 end
 
 
-createSection(pages.ESP, "⚡  Shortcuts", -1)
-createBtn(pages.ESP, "⚡  Enable All", currentTheme.Accent, 0, function()
+createSection(pages.ESP, "⚡  Shortcuts", 0)
+createBtn(pages.ESP, "⚡  Enable All", currentTheme.Accent, 1, function()
 	for k in pairs(espState) do espState[k] = true end
 	refreshAllESP()
 end)
-createBtn(pages.ESP, "❌  Disable All", currentTheme.Danger, 1, function()
+createBtn(pages.ESP, "❌  Disable All", currentTheme.Danger, 2, function()
 	for k in pairs(espState) do espState[k] = false end
 	for _, p in ipairs(Players:GetPlayers()) do clearESPFor(p) end
 end)
-createToggle(pages.ESP, "📦  Boxes", 2, function(s) toggleESP("boxes", s) end, "espBoxes")
-createToggle(pages.ESP, "🏷  Names + Team Tag", 3, function(s) toggleESP("names", s) end, "espNames")
-createToggle(pages.ESP, "❤  Health (text)", 4, function(s) toggleESP("health", s) end, "espHealth")
-createToggle(pages.ESP, "📊  Health Bar", 5, function(s) toggleESP("healthBar", s) end, "espHealthBar")
-createToggle(pages.ESP, "📏  Distance", 6, function(s) toggleESP("distance", s) end, "espDistance")
 
-createSection(pages.ESP, "🎨  Advanced Visual", 6)
-createToggle(pages.ESP, "🔴  Head Dots", 7, function(s) toggleESP("headDots", s) end, "espHeadDots")
-createToggle(pages.ESP, "💀  Skeleton", 8, function(s) toggleESP("skeletons", s) end, "espSkeleton")
-createToggle(pages.ESP, "🔆  Chams (Highlight)", 9, function(s) toggleESP("chams", s) end, "espChams")
-createToggle(pages.ESP, "🎯  Tracers", 10, function(s) toggleESP("tracers", s) end, "espTracers")
-createToggle(pages.ESP, "🔫  Snaplines", 11, function(s) toggleESP("snaplines", s) end, "espSnaplines")
+createSection(pages.ESP, "📦  Player ESP", 10)
+createToggle(pages.ESP, "📦  Boxes", 11, function(s) toggleESP("boxes", s) end, "espBoxes")
+createToggle(pages.ESP, "🏷  Names + Team Tag", 12, function(s) toggleESP("names", s) end, "espNames")
+createToggle(pages.ESP, "❤  Health (text)", 13, function(s) toggleESP("health", s) end, "espHealth")
+createToggle(pages.ESP, "📊  Health Bar", 14, function(s) toggleESP("healthBar", s) end, "espHealthBar")
+createToggle(pages.ESP, "📏  Distance", 15, function(s) toggleESP("distance", s) end, "espDistance")
 
-createSection(pages.ESP, "🎨  Colors", 19)
-createColorDropdown(pages.ESP, "🔴  Enemy Color", 20,
+createSection(pages.ESP, "🎨  Visual Effects", 20)
+createToggle(pages.ESP, "🔴  Head Dots", 21, function(s) toggleESP("headDots", s) end, "espHeadDots")
+createToggle(pages.ESP, "💀  Skeleton", 22, function(s) toggleESP("skeletons", s) end, "espSkeleton")
+createToggle(pages.ESP, "🔆  Chams (Highlight)", 23, function(s) toggleESP("chams", s) end, "espChams")
+createToggle(pages.ESP, "🎯  Tracers", 24, function(s) toggleESP("tracers", s) end, "espTracers")
+createToggle(pages.ESP, "🔫  Snaplines", 25, function(s) toggleESP("snaplines", s) end, "espSnaplines")
+
+createSection(pages.ESP, "🎨  Colors", 30)
+createColorDropdown(pages.ESP, "🔴  Enemy Color", 31,
 	Color3.fromRGB(255,60,60),
 	function(c) ESP_COLOR_ENEMY = c; refreshAllESP() end
 )
-createColorDropdown(pages.ESP, "🔵  Ally Color", 21,
+createColorDropdown(pages.ESP, "🔵  Ally Color", 32,
 	Color3.fromRGB(80,160,255),
 	function(c) ESP_COLOR_ALLY = c; refreshAllESP() end
 )
 
-createSection(pages.ESP, "🤖  Bots / NPC", 22)
-createToggle(pages.ESP, "🤖  ESP Bots & NPC", 23, function(s)
+createSection(pages.ESP, "🤖  Bots / NPC", 40)
+createToggle(pages.ESP, "🤖  ESP Bots & NPC", 41, function(s)
 	espState.bots = s
 	if s then refreshBotESP() else clearAllBotESP() end
 end, "espBots")
-createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 24, function()
+createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 42, function()
 	if espState.bots then refreshBotESP()
 	else showNotification("⚠  Active ESP Bots d'abord", 2) end
 end)
-createColorDropdown(pages.ESP, "🟡  Bot Color", 25,
+createColorDropdown(pages.ESP, "🟡  Bot Color", 43,
 	Color3.fromRGB(255,200,0),
 	function(c) ESP_COLOR_BOT = c; if espState.bots then refreshBotESP() end end
 )
 
-createSection(pages.ESP, "📏  Distance Max", 26)
-createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 27, function(val)
+createSection(pages.ESP, "📏  Distance Max", 50)
+createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 51, function(val)
 	ESP_MAX_DIST_PLAYER = val
 	refreshAllESP()
 end)
-createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 28, function(val)
+createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 52, function(val)
 	ESP_MAX_DIST_BOT = val
 	if espState.bots then refreshBotESP() end
 end)
 
-createSection(pages.Other, "👑  Credits", 0)
+createSection(pages.Other, "👑  Credits", 60)
 
 credits = {
 	{"👑  Owner","bkz"},
@@ -4618,7 +4501,7 @@ for i, entry in ipairs(credits) do
 	row.Size = UDim2.new(1, 0, 0, 44)
 	row.BackgroundColor3 = currentTheme.Panel
 	row.BorderSizePixel = 0
-	row.LayoutOrder = i
+	row.LayoutOrder = 60 + i
 	Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
 
 	local pad = Instance.new("UIPadding", row)
@@ -4656,12 +4539,12 @@ onThemeChanged(function(t)
 	end
 end)
 
-createSection(pages.Other, "ℹ  Informations", 98)
+createSection(pages.Other, "ℹ  Informations", 70)
 verFrame = Instance.new("Frame", pages.Other)
 verFrame.Size = UDim2.new(1, 0, 0, 90)
 verFrame.BackgroundColor3 = currentTheme.Panel
 verFrame.BorderSizePixel = 0
-verFrame.LayoutOrder = 99
+verFrame.LayoutOrder = 71
 Instance.new("UICorner", verFrame).CornerRadius = UDim.new(0, 10)
 verPad = Instance.new("UIPadding", verFrame)
 verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
@@ -4669,7 +4552,7 @@ verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
 verLabel = Instance.new("TextLabel", verFrame)
 verLabel.Size = UDim2.new(1, -12, 0, 16)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v5.5"
+verLabel.Text = "🌐 bkz HUB  v5.6"
 verLabel.TextColor3 = currentTheme.Accent
 verLabel.Font = Enum.Font.GothamBold
 verLabel.TextSize = 14
@@ -4814,10 +4697,11 @@ function stopFreecam()
 	end
 end
 
-createToggle(pages.Other, "📷  Freecam (Right Click)", 50, function(state)
+createSection(pages.Other, "📷  Freecam", 50)
+createToggle(pages.Other, "📷  Freecam (Right Click)", 51, function(state)
 	if state then startFreecam() else stopFreecam() end
 end, "freecamEnabled")
-createBtn(pages.Other, "⌨  Keys: " .. keyLayout, currentTheme.Button, 51, function(btn)
+createBtn(pages.Other, "⌨  Keys: " .. keyLayout, currentTheme.Button, 52, function(btn)
 	local layouts = {"QWERTY", "AZERTY"}
 	for i, l in ipairs(layouts) do
 		if l == keyLayout then
