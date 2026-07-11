@@ -2254,6 +2254,13 @@ botList      = {}
 botListTimer = 0
 aimSmooth    = 0.08
 aimFOV       = 250
+aimDistance    = 0
+aimShowCircle  = false
+aimCircleGui   = nil
+aimTargetPlayers  = true
+aimTargetBots     = true
+aimTargetVehicles = false
+aimTargetObjects  = false
 
 
 MOUSE_KEYS = {
@@ -2284,6 +2291,60 @@ KEYBOARD_KEYS = {
 	"Minus","Equals","LeftBracket","RightBracket","BackSlash",
 	"Semicolon","Quote","Comma","Period","Slash","Backquote",
 }
+
+
+function createFOVCircle()
+	if aimCircleGui and aimCircleGui.Parent then aimCircleGui:Destroy() end
+	local sg = Instance.new("ScreenGui")
+	sg.Name = "AimFOVCircle"
+	sg.DisplayOrder = 1000
+	sg.ResetOnSpawn = false
+	sg.IgnoreGuiInset = true
+	sg.Parent = playerGui
+	aimCircleGui = sg
+
+	local frame = Instance.new("Frame", sg)
+	frame.Name = "Circle"
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	frame.BackgroundTransparency = 1
+	frame.BorderSizePixel = 0
+	local size = aimFOV * 2
+	frame.Size = UDim2.new(0, size, 0, size)
+
+	local corner = Instance.new("UICorner", frame)
+	corner.CornerRadius = UDim.new(1, 0)
+
+	local stroke = Instance.new("UIStroke", frame)
+	stroke.Color = ESP_COLOR_SELF
+	stroke.Thickness = 1.5
+	stroke.Transparency = 0.3
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+end
+
+
+function destroyFOVCircle()
+	if aimCircleGui then
+		pcall(function() aimCircleGui:Destroy() end)
+		aimCircleGui = nil
+	end
+end
+
+
+function updateFOVCircle()
+	if not aimShowCircle or not aimEnabled then
+		destroyFOVCircle()
+		return
+	end
+	if not aimCircleGui or not aimCircleGui.Parent then
+		createFOVCircle()
+	end
+	local circle = aimCircleGui and aimCircleGui:FindFirstChild("Circle")
+	if circle then
+		local size = aimFOV * 2
+		circle.Size = UDim2.new(0, size, 0, size)
+	end
+end
 
 
 function isAimInput(input, began)
@@ -2319,31 +2380,37 @@ function getTarget()
 	local cx, cy = vp.X / 2, vp.Y / 2
 	local targetPartName = aimTargetPart or "Head"
 	local targetPartNames = {"Head", "UpperTorso", "Torso", "HumanoidRootPart"}
+	local myPos = myHRP.Position
 
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= player and p.Character then
-			local myTeam     = player.Team
-			local theirTeam  = p.Team
-			if not (myTeam and theirTeam and myTeam == theirTeam) then
-				local hum  = p.Character:FindFirstChildOfClass("Humanoid")
-				if hum and hum.Health > 0 then
-					local targetPart = nil
-					if aimTargetPart and p.Character:FindFirstChild(aimTargetPart) then
-						targetPart = p.Character:FindFirstChild(aimTargetPart)
-					else
-						for _, pn in ipairs(targetPartNames) do
-							local part = p.Character:FindFirstChild(pn)
-							if part then targetPart = part; break end
+	if aimTargetPlayers then
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= player and p.Character then
+				local myTeam     = player.Team
+				local theirTeam  = p.Team
+				if not (myTeam and theirTeam and myTeam == theirTeam) then
+					local hum  = p.Character:FindFirstChildOfClass("Humanoid")
+					if hum and hum.Health > 0 then
+						local targetPart = nil
+						if aimTargetPart and p.Character:FindFirstChild(aimTargetPart) then
+							targetPart = p.Character:FindFirstChild(aimTargetPart)
+						else
+							for _, pn in ipairs(targetPartNames) do
+								local part = p.Character:FindFirstChild(pn)
+								if part then targetPart = part; break end
+							end
 						end
-					end
-					if targetPart then
-						local sp, onScreen = cam:WorldToViewportPoint(targetPart.Position)
-						if onScreen and sp.Z > 0 then
-							local dx = sp.X - cx
-							local dy = sp.Y - cy
-							local fovDist = math.sqrt(dx*dx + dy*dy)
-							if fovDist < aimFOV and fovDist < bestScore then
-								bestScore = fovDist; best = p
+						if targetPart then
+							if aimDistance > 0 and (targetPart.Position - myPos).Magnitude > aimDistance then
+							else
+								local sp, onScreen = cam:WorldToViewportPoint(targetPart.Position)
+								if onScreen and sp.Z > 0 then
+									local dx = sp.X - cx
+									local dy = sp.Y - cy
+									local fovDist = math.sqrt(dx*dx + dy*dy)
+									if fovDist < aimFOV and fovDist < bestScore then
+										bestScore = fovDist; best = p
+									end
+								end
 							end
 						end
 					end
@@ -2352,20 +2419,79 @@ function getTarget()
 		end
 	end
 
-	for _, model in ipairs(botList) do
-		if model and model.Parent then
-			local hum = model:FindFirstChildOfClass("Humanoid")
-			if hum and hum.Health > 0 then
-				local targetPart = model:FindFirstChild(aimTargetPart or "Head")
-				if not targetPart then targetPart = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart") end
-				if targetPart then
-					local sp, onScreen = cam:WorldToViewportPoint(targetPart.Position)
-					if onScreen and sp.Z > 0 then
-						local dx = sp.X - cx
-						local dy = sp.Y - cy
-						local fovDist = math.sqrt(dx*dx + dy*dy)
-						if fovDist < aimFOV and fovDist < bestScore then
-							bestScore = fovDist; best = model
+	if aimTargetBots then
+		for _, model in ipairs(botList) do
+			if model and model.Parent then
+				local hum = model:FindFirstChildOfClass("Humanoid")
+				if hum and hum.Health > 0 then
+					local targetPart = model:FindFirstChild(aimTargetPart or "Head")
+					if not targetPart then targetPart = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart") end
+					if targetPart then
+						if aimDistance > 0 and (targetPart.Position - myPos).Magnitude > aimDistance then
+						else
+							local sp, onScreen = cam:WorldToViewportPoint(targetPart.Position)
+							if onScreen and sp.Z > 0 then
+								local dx = sp.X - cx
+								local dy = sp.Y - cy
+								local fovDist = math.sqrt(dx*dx + dy*dy)
+								if fovDist < aimFOV and fovDist < bestScore then
+									bestScore = fovDist; best = model
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	if aimTargetVehicles then
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("VehicleSeat") or obj:IsA("TankSeat") or obj:IsA("Seat") then
+				local inChar = false
+				for _, p in ipairs(Players:GetPlayers()) do
+					if p.Character and (obj:IsDescendantOf(p.Character) or obj:IsDescendantOf(p)) then
+						inChar = true; break
+					end
+				end
+				if not inChar and obj:IsA("BasePart") then
+					if aimDistance > 0 and (obj.Position - myPos).Magnitude > aimDistance then
+					else
+						local sp, onScreen = cam:WorldToViewportPoint(obj.Position)
+						if onScreen and sp.Z > 0 then
+							local dx = sp.X - cx
+							local dy = sp.Y - cy
+							local fovDist = math.sqrt(dx*dx + dy*dy)
+							if fovDist < aimFOV and fovDist < bestScore then
+								bestScore = fovDist; best = obj
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	if aimTargetObjects then
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("Seat") and not obj:IsA("VehicleSeat") and not obj:IsA("TankSeat") then
+				local inChar = false
+				for _, p in ipairs(Players:GetPlayers()) do
+					if p.Character and (obj:IsDescendantOf(p.Character) or obj:IsDescendantOf(p)) then
+						inChar = true; break
+					end
+				end
+				if not inChar and obj:IsA("BasePart") then
+					if aimDistance > 0 and (obj.Position - myPos).Magnitude > aimDistance then
+					else
+						local sp, onScreen = cam:WorldToViewportPoint(obj.Position)
+						if onScreen and sp.Z > 0 then
+							local dx = sp.X - cx
+							local dy = sp.Y - cy
+							local fovDist = math.sqrt(dx*dx + dy*dy)
+							if fovDist < aimFOV and fovDist < bestScore then
+								bestScore = fovDist; best = obj
+							end
 						end
 					end
 				end
@@ -2435,6 +2561,7 @@ end
 function startAim()
 	if aimConn then return end
 	aimConn = RunService.RenderStepped:Connect(function()
+		updateFOVCircle()
 		if not aimActive then return end
 		botListTimer = botListTimer + 1
 		if botListTimer >= 120 then
@@ -2461,6 +2588,7 @@ end
 function stopAim()
 	if aimConn then aimConn:Disconnect(); aimConn = nil end
 	aimActive = false
+	destroyFOVCircle()
 end
 
 
@@ -2701,6 +2829,34 @@ local aimPartItems = {"Head", "UpperTorso", "Torso", "HumanoidRootPart"}
 mkDropdown(pages.Aim, "🎯  Target Part", aimPartItems, 1, 10, function(selected)
 	aimTargetPart = selected
 	showNotification("🎯  Target: " .. selected, 2)
+end)
+
+
+createSection(pages.Aim, "🎯  Target Types", 15)
+createToggle(pages.Aim, "👤  Players", 16, function(state)
+	aimTargetPlayers = state
+end, "aimTargetPlayers")
+createToggle(pages.Aim, "🤖  Bots / AI", 17, function(state)
+	aimTargetBots = state
+end, "aimTargetBots")
+createToggle(pages.Aim, "🚗  Vehicles", 18, function(state)
+	aimTargetVehicles = state
+end, "aimTargetVehicles")
+createToggle(pages.Aim, "📦  Objects", 19, function(state)
+	aimTargetObjects = state
+end, "aimTargetObjects")
+
+
+createSection(pages.Aim, "🎯  Visuals", 20)
+createToggle(pages.Aim, "⭕  Show FOV Circle", 21, function(state)
+	aimShowCircle = state
+	if state then updateFOVCircle() else destroyFOVCircle() end
+end, "aimShowCircle")
+
+
+createSection(pages.Aim, "📏  Aim Distance", 25)
+createSlider(pages.Aim, "📏  Max Distance (0 = infinite)", 0, 500, 0, 26, function(val)
+	aimDistance = val
 end)
 
 
@@ -3290,18 +3446,26 @@ local function spawnMatrixRain()
 end
 
 local menuFxLoops = {}
+local menuFxFlags = {}
 
 local function startFxLoop(name, fn, interval)
-	if menuFxLoops[name] then pcall(function() task.cancel(menuFxLoops[name]) end) end
+	if menuFxLoops[name] then
+		menuFxFlags[name] = false
+		pcall(function() task.cancel(menuFxLoops[name]) end)
+		menuFxLoops[name] = nil
+	end
+	menuFxFlags[name] = true
 	menuFxLoops[name] = task.spawn(function()
-		while menuFxLoops[name] do
-			fn()
+		while menuFxFlags[name] do
+			pcall(fn)
 			task.wait(interval)
 		end
+		menuFxLoops[name] = nil
 	end)
 end
 
 local function stopFxLoop(name)
+	menuFxFlags[name] = false
 	if menuFxLoops[name] then
 		pcall(function() task.cancel(menuFxLoops[name]) end)
 		menuFxLoops[name] = nil
@@ -3309,10 +3473,12 @@ local function stopFxLoop(name)
 end
 
 local function stopFxLoops()
-	for k, v in pairs(menuFxLoops) do
-		pcall(function() task.cancel(v) end)
+	for k, _ in pairs(menuFxLoops) do
+		menuFxFlags[k] = false
+		pcall(function() task.cancel(menuFxLoops[k]) end)
 	end
 	menuFxLoops = {}
+	menuFxFlags = {}
 end
 
 local function enableBlackBg()
@@ -3580,6 +3746,18 @@ function getConfig()
 		walkSpeed = savedWalkSpeed,
 		jumpPower = savedJumpPower,
 		bgAnim    = bgAnimEnabled,
+		aimDistance    = aimDistance,
+		aimShowCircle = aimShowCircle,
+		aimTargetPlayers  = aimTargetPlayers,
+		aimTargetBots     = aimTargetBots,
+		aimTargetVehicles = aimTargetVehicles,
+		aimTargetObjects  = aimTargetObjects,
+		espColors = {
+			enemy = ESP_COLOR_ENEMY,
+			ally  = ESP_COLOR_ALLY,
+			bot   = ESP_COLOR_BOT,
+			self  = ESP_COLOR_SELF,
+		},
 		toggles   = toggles,
 	}
 end
@@ -3601,6 +3779,18 @@ function applyConfig(cfg)
 	if cfg.bgAnim ~= nil then
 		bgAnimEnabled = cfg.bgAnim
 		if bgAnimEnabled then enableBgAnim() end
+	end
+	if cfg.aimDistance    then aimDistance    = cfg.aimDistance    end
+	if cfg.aimShowCircle ~= nil then aimShowCircle = cfg.aimShowCircle end
+	if cfg.aimTargetPlayers  ~= nil then aimTargetPlayers  = cfg.aimTargetPlayers  end
+	if cfg.aimTargetBots     ~= nil then aimTargetBots     = cfg.aimTargetBots     end
+	if cfg.aimTargetVehicles ~= nil then aimTargetVehicles = cfg.aimTargetVehicles end
+	if cfg.aimTargetObjects  ~= nil then aimTargetObjects  = cfg.aimTargetObjects  end
+	if cfg.espColors then
+		if cfg.espColors.enemy then ESP_COLOR_ENEMY = cfg.espColors.enemy end
+		if cfg.espColors.ally  then ESP_COLOR_ALLY  = cfg.espColors.ally  end
+		if cfg.espColors.bot   then ESP_COLOR_BOT   = cfg.espColors.bot   end
+		if cfg.espColors.self  then ESP_COLOR_SELF  = cfg.espColors.self  end
 	end
 	if cfg.toggles then
 		for k, v in pairs(cfg.toggles) do
@@ -3660,6 +3850,12 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  103, funct
 	savedOpacity = 100
 	main.BackgroundTransparency = 0
 	if bgAnimEnabled then disableBgAnim() end
+	aimDistance = 0; aimShowCircle = false; destroyFOVCircle()
+	aimTargetPlayers = true; aimTargetBots = true; aimTargetVehicles = false; aimTargetObjects = false
+	ESP_COLOR_ENEMY = Color3.fromRGB(255, 40, 50)
+	ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
+	ESP_COLOR_BOT   = Color3.fromRGB(255, 200, 0)
+	ESP_COLOR_SELF  = Color3.fromRGB(80, 160, 255)
 	applyMovement(player.Character)
 	updateAimStatus()
 	showNotification("↩  Config reset", 2)
@@ -3670,6 +3866,7 @@ end)
 
 local toastGui = nil
 local toastContainer = nil
+local activeToasts = {}
 
 showNotification = function(message, duration)
 	duration = duration or 4
@@ -3679,23 +3876,22 @@ showNotification = function(message, duration)
 		toastGui.Name = "AdminToast"
 		toastGui.ResetOnSpawn = false
 		toastGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		toastGui.DisplayOrder = 1001
 		toastContainer = Instance.new("Frame", toastGui)
-		toastContainer.Size = UDim2.new(0, 280, 1, 0)
-		toastContainer.Position = UDim2.new(1, -16, 0, 0)
+		toastContainer.Name = "ToastContainer"
+		toastContainer.Size = UDim2.new(0, 280, 1, -20)
+		toastContainer.Position = UDim2.new(1, -290, 0, 10)
 		toastContainer.BackgroundTransparency = 1
 		toastContainer.BorderSizePixel = 0
-		local layout = Instance.new("UIListLayout", toastContainer)
-		layout.Padding = UDim.new(0, 6)
-		layout.SortOrder = Enum.SortOrder.LayoutOrder
-		layout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-		toastContainer.AutomaticSize = Enum.AutomaticSize.Y
 	end
 
 	local toast = Instance.new("Frame", toastContainer)
-	toast.Size = UDim2.new(1, 0, 0, 54)
+	toast.Size = UDim2.new(1, 0, 0, 48)
 	toast.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 	toast.BorderSizePixel = 0
-	toast.LayoutOrder = tick()
+	toast.AnchorPoint = Vector2.new(0, 1)
+	toast.Position = UDim2.new(0, 0, 1, 0)
+	toast.ZIndex = 10
 	Instance.new("UICorner", toast).CornerRadius = UDim.new(0, 12)
 
 	local toastStroke = Instance.new("UIStroke", toast)
@@ -3704,7 +3900,7 @@ showNotification = function(message, duration)
 	toastStroke.Transparency = 0.3
 
 	local icon = Instance.new("Frame", toast)
-	icon.Size = UDim2.new(0, 4, 1, -16)
+	icon.Size = UDim2.new(0, 4, 1, -14)
 	icon.Position = UDim2.new(0, 8, 0.5, 0)
 	icon.AnchorPoint = Vector2.new(0, 0.5)
 	icon.BackgroundColor3 = Color3.fromRGB(100, 80, 255)
@@ -3718,32 +3914,52 @@ showNotification = function(message, duration)
 	toastLabel.BackgroundTransparency = 1
 	toastLabel.TextColor3 = Color3.fromRGB(220, 220, 240)
 	toastLabel.Font = Enum.Font.GothamSemibold
-	toastLabel.TextSize = 13
+	toastLabel.TextSize = 12
 	toastLabel.TextXAlignment = Enum.TextXAlignment.Left
 	toastLabel.TextWrapped = true
 	toastLabel.RichText = true
-
-	toast.Position = UDim2.new(1, 10, 0, 0)
-	TweenService:Create(toast, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.new(0, 0, 0, 0)
-	}):Play()
 
 	local progress = Instance.new("Frame", toast)
 	progress.Size = UDim2.new(1, 0, 0, 3)
 	progress.Position = UDim2.new(0, 0, 1, -3)
 	progress.BackgroundColor3 = Color3.fromRGB(100, 80, 255)
 	progress.BorderSizePixel = 0
+	progress.ZIndex = 11
 	Instance.new("UICorner", progress).CornerRadius = UDim.new(0, 12)
+
+	table.insert(activeToasts, toast)
+
+	toast.Position = UDim2.new(0, 0, 1, 54)
+	TweenService:Create(toast, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0, 0, 1, 0)
+	}):Play()
 
 	TweenService:Create(progress, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
 		Size = UDim2.new(0, 0, 0, 3)
 	}):Play()
 
+	local totalH = 0
+	for i, t in ipairs(activeToasts) do
+		local targetY = 0
+		for j = i, #activeToasts do
+			targetY = targetY - 54
+		end
+		TweenService:Create(t, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = UDim2.new(0, 0, 1, targetY)
+		}):Play()
+	end
+
 	task.delay(duration, function()
-		TweenService:Create(toast, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		TweenService:Create(toast, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 			Position = UDim2.new(1, 10, 0, 0)
 		}):Play()
-		task.wait(0.35)
+		task.wait(0.3)
+		for i, t in ipairs(activeToasts) do
+			if t == toast then
+				table.remove(activeToasts, i)
+				break
+			end
+		end
 		toast:Destroy()
 	end)
 end
@@ -3932,21 +4148,30 @@ end)
 
 
 espState = {
-	boxes     = false,
-	names     = false,
-	health    = false,
-	distance  = false,
-	skeletons = false,
-	chams     = false,
-	healthBar = false,
-	bots      = false,
+	playerBoxes     = false,
+	playerNames     = false,
+	playerHealth    = false,
+	playerDistance   = false,
+	playerSkeletons = false,
+	playerChams     = false,
+	playerHealthBar = false,
+	botBoxes     = false,
+	botNames     = false,
+	botHealth    = false,
+	botDistance   = false,
+	botSkeletons = false,
+	botChams     = false,
+	botHealthBar = false,
+	selfESP       = false,
 }
-espObjects    = {}
-espBotObjects = {}
+espObjects      = {}
+espBotObjects   = {}
+espSelfObjects  = {}
 
 ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
 ESP_COLOR_ENEMY = Color3.fromRGB(255, 40, 50)
 ESP_COLOR_BOT   = Color3.fromRGB(255, 200, 0)
+ESP_COLOR_SELF  = Color3.fromRGB(80, 160, 255)
 
 
 ESP_MAX_DIST_PLAYER = 0
@@ -4018,37 +4243,73 @@ function buildESPBot(model)
 	if espBotObjects[model] then return end
 	local hum = model:FindFirstChildOfClass("Humanoid")
 	local hrp = model:FindFirstChild("HumanoidRootPart")
-	local head = model:FindFirstChild("Head")
 	if not hrp then return end
 
 	local color = ESP_COLOR_BOT
 	local objs  = {}
 
-	
-	local old = model:FindFirstChild("ESP_BotHL")
-	if old then old:Destroy() end
-	local hl = Instance.new("Highlight", model)
-	hl.Name = "ESP_BotHL"
-	hl.FillColor = color
-	hl.OutlineColor = color
-	hl.FillTransparency = 0.7
-	hl.OutlineTransparency = 0
-	hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-	table.insert(objs, hl)
+	if espState.botChams then
+		local old = model:FindFirstChild("ESP_BotHL")
+		if old then old:Destroy() end
+		local hl = Instance.new("Highlight", model)
+		hl.Name = "ESP_BotHL"
+		hl.FillColor = color
+		hl.OutlineColor = color
+		hl.FillTransparency = 0.7
+		hl.OutlineTransparency = 0
+		hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		table.insert(objs, hl)
+	end
 
-	
-	local bb = mkBB(hrp, "ESP_BotName", 120, 18, 3.4)
-	local lbl = mkLbl(bb, "[BOT] " .. model.Name, 10, color)
-	table.insert(objs, bb)
+	if espState.botBoxes then
+		local bb = mkBB(hrp, "ESP_BotBox", 70, 100, 0)
+		bb.StudsOffset = Vector3.new(0, 0.3, 0)
+		bb.AlwaysOnTop = true
+		local bg = Instance.new("Frame", bb)
+		bg.Size = UDim2.new(1,0,1,0)
+		bg.BackgroundColor3 = color
+		bg.BackgroundTransparency = 0.9
+		bg.BorderSizePixel = 0
+		Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 4)
+		local outline = Instance.new("UIStroke", bg)
+		outline.Color = color
+		outline.Thickness = 1.5
+		outline.Transparency = 0.15
+		table.insert(objs, bb)
+	end
 
-	
-	if hum then
-		buildHealthBar(hrp, hum, "ESP_BotBar", objs, "bots")
+	if espState.botNames then
+		local bb = mkBB(hrp, "ESP_BotName", 120, 18, 3.4)
+		mkLbl(bb, "[BOT] " .. model.Name, 10, color)
+		table.insert(objs, bb)
+	end
+
+	if espState.botHealth and hum then
+		local bb  = mkBB(hrp, "ESP_BotHP", 90, 13, 2.7)
+		local lbl = mkLbl(bb, math.floor(hum.Health) .. " hp", 9,
+			Color3.fromRGB(80 + math.floor(175*(1 - hum.Health/math.max(hum.MaxHealth,1))),
+			200 - math.floor(150*(1 - hum.Health/math.max(hum.MaxHealth,1))), 50))
+		hum.HealthChanged:Connect(function(h)
+			if not espState.botHealth then return end
+			local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
+			lbl.Text       = math.floor(h) .. " hp"
+			lbl.TextColor3 = Color3.fromRGB(80+math.floor(175*(1-pct)), 200-math.floor(150*(1-pct)), 50)
+		end)
+		table.insert(objs, bb)
+	end
+
+	if espState.botHealthBar and hum then
+		buildHealthBar(hrp, hum, "ESP_BotBar", objs, "botHealthBar")
+	end
+
+	if espState.botDistance then
+		local bb = mkBB(hrp, "ESP_BotDist", 70, 12, 2.1)
+		mkLbl(bb, "?m", 9, Color3.fromRGB(180,180,255))
+		table.insert(objs, bb)
 	end
 
 	espBotObjects[model] = objs
 
-	
 	model.AncestryChanged:Connect(function()
 		if not model.Parent then
 			for _, obj in ipairs(espBotObjects[model] or {}) do
@@ -4062,7 +4323,8 @@ end
 
 function refreshBotESP()
 	clearAllBotESP()
-	if not espState.bots then return end
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
+	if not anyBot then return end
 	for _, model in ipairs(workspace:GetDescendants()) do
 		if isBot(model) then
 			pcall(function() buildESPBot(model) end)
@@ -4114,7 +4376,7 @@ function buildESPFor(p)
 	local objs   = {}
 
 	
-	if espState.chams then
+	if espState.playerChams then
 		local old = char:FindFirstChild("ESP_Highlight")
 		if old then old:Destroy() end
 		local hl = Instance.new("Highlight", char)
@@ -4137,7 +4399,7 @@ function buildESPFor(p)
 	end
 
 	
-	if espState.boxes then
+	if espState.playerBoxes then
 		local bb = mkBB(hrp, "ESP_Box", 70, 100, 0)
 		bb.StudsOffset = Vector3.new(0, 0.3, 0)
 		bb.AlwaysOnTop = true
@@ -4184,7 +4446,7 @@ function buildESPFor(p)
 	end
 
 	
-	if espState.names then
+	if espState.playerNames then
 		local bb  = mkBB(hrp, "ESP_Name", 120, 18, 3.4)
 		local lbl = mkLbl(bb, (isAlly and "[A] " or "[E] ") .. p.Name, 10, color)
 		lbl.Text = (isAlly and "[A] " or "[E] ") .. p.Name
@@ -4192,13 +4454,13 @@ function buildESPFor(p)
 	end
 
 	
-	if espState.health and hum then
+	if espState.playerHealth and hum then
 		local bb  = mkBB(hrp, "ESP_HP", 90, 13, 2.7)
 		local lbl = mkLbl(bb, math.floor(hum.Health) .. " hp", 9,
 			Color3.fromRGB(80 + math.floor(175*(1 - hum.Health/math.max(hum.MaxHealth,1))),
 			200 - math.floor(150*(1 - hum.Health/math.max(hum.MaxHealth,1))), 50))
 		hum.HealthChanged:Connect(function(h)
-			if not espState.health then return end
+			if not espState.playerHealth then return end
 			local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
 			lbl.Text       = math.floor(h) .. " hp"
 			lbl.TextColor3 = Color3.fromRGB(80+math.floor(175*(1-pct)), 200-math.floor(150*(1-pct)), 50)
@@ -4207,19 +4469,19 @@ function buildESPFor(p)
 	end
 
 	
-	if espState.healthBar and hum then
-		buildHealthBar(hrp, hum, "ESP_Bar", objs, "healthBar")
+	if espState.playerHealthBar and hum then
+		buildHealthBar(hrp, hum, "ESP_Bar", objs, "playerHealthBar")
 	end
 
 	
-	if espState.distance then
+	if espState.playerDistance then
 		local bb = mkBB(hrp, "ESP_Dist", 70, 12, 2.1)
 		mkLbl(bb, "?m", 9, Color3.fromRGB(180,180,255))
 		table.insert(objs, bb)
 	end
 
 	
-	if espState.skeletons then
+	if espState.playerSkeletons then
 		local isR15 = char:FindFirstChild("UpperTorso") ~= nil
 
 		local function makeBeam(part0, part1, attName)
@@ -4339,6 +4601,10 @@ function updateDistances()
 				for _, obj in ipairs(objs) do
 					if obj:IsA("BillboardGui") then
 						obj.Enabled = visible
+						if obj.Name == "ESP_BotDist" then
+							local lbl = obj:FindFirstChildOfClass("TextLabel")
+							if lbl then lbl.Text = dist .. "m" end
+						end
 					elseif obj:IsA("Highlight") then
 						obj.Enabled = visible
 					end
@@ -4353,14 +4619,66 @@ function refreshAllESP()
 	for _, p in ipairs(Players:GetPlayers()) do
 		buildESPFor(p)
 	end
-	if espState.bots then refreshBotESP() end
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
+	if anyBot then refreshBotESP() end
+	buildSelfESP()
 end
 
 
 
 function toggleESP(key, state)
 	espState[key] = state
+	if key == "selfESP" then
+		buildSelfESP()
+	end
 	refreshAllESP()
+end
+
+
+function clearSelfESP()
+	for _, obj in ipairs(espSelfObjects) do
+		pcall(function() if obj and obj.Parent then obj:Destroy() end end)
+	end
+	espSelfObjects = {}
+end
+
+
+function buildSelfESP()
+	clearSelfESP()
+	if not espState.selfESP then return end
+	local char = player.Character
+	if not char then return end
+	local hum  = char:FindFirstChildOfClass("Humanoid")
+	local hrp  = char:FindFirstChild("HumanoidRootPart")
+	if not hrp or not hum then return end
+
+	local color = ESP_COLOR_SELF
+	local objs  = {}
+
+	local bb = mkBB(hrp, "ESP_SelfName", 140, 18, -2.5)
+	mkLbl(bb, player.Name .. " (You)", 10, color)
+	table.insert(objs, bb)
+
+	local hpBB = mkBB(hrp, "ESP_SelfHP", 90, 13, -3.2)
+	local hpLbl = mkLbl(hpBB, math.floor(hum.Health) .. " hp", 9, color)
+	hum.HealthChanged:Connect(function(h)
+		if not espState.selfESP then return end
+		local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
+		hpLbl.Text       = math.floor(h) .. " hp"
+		hpLbl.TextColor3 = Color3.fromRGB(80+math.floor(175*(1-pct)), 200-math.floor(150*(1-pct)), 50)
+	end)
+	table.insert(objs, hpBB)
+
+	local hl = Instance.new("Highlight", char)
+	hl.Name = "ESP_SelfHL"
+	hl.FillColor = color
+	hl.OutlineColor = color
+	hl.FillTransparency = 0.7
+	hl.OutlineTransparency = 0.3
+	hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	table.insert(objs, hl)
+
+	espSelfObjects = objs
 end
 
 
@@ -4475,48 +4793,64 @@ end
 
 
 createSection(pages.ESP, "📦  Player ESP", 0)
-createToggle(pages.ESP, "📦  Boxes", 1, function(s) toggleESP("boxes", s) end, "espBoxes")
-createToggle(pages.ESP, "🏷  Names + Team Tag", 2, function(s) toggleESP("names", s) end, "espNames")
-createToggle(pages.ESP, "❤  Health (text)", 3, function(s) toggleESP("health", s) end, "espHealth")
-createToggle(pages.ESP, "📊  Health Bar", 4, function(s) toggleESP("healthBar", s) end, "espHealthBar")
-createToggle(pages.ESP, "📏  Distance", 5, function(s) toggleESP("distance", s) end, "espDistance")
+createToggle(pages.ESP, "📦  Boxes", 1, function(s) toggleESP("playerBoxes", s) end, "espPlayerBoxes")
+createToggle(pages.ESP, "🏷  Names + Team Tag", 2, function(s) toggleESP("playerNames", s) end, "espPlayerNames")
+createToggle(pages.ESP, "❤  Health (text)", 3, function(s) toggleESP("playerHealth", s) end, "espPlayerHealth")
+createToggle(pages.ESP, "📊  Health Bar", 4, function(s) toggleESP("playerHealthBar", s) end, "espPlayerHealthBar")
+createToggle(pages.ESP, "📏  Distance", 5, function(s) toggleESP("playerDistance", s) end, "espPlayerDistance")
 
-createSection(pages.ESP, "🎨  Visuals", 10)
-createToggle(pages.ESP, "💀  Skeleton", 11, function(s) toggleESP("skeletons", s) end, "espSkeleton")
-createToggle(pages.ESP, "🔆  Chams (Highlight)", 12, function(s) toggleESP("chams", s) end, "espChams")
+createSection(pages.ESP, "🎨  Player Visuals", 10)
+createToggle(pages.ESP, "💀  Skeleton", 11, function(s) toggleESP("playerSkeletons", s) end, "espPlayerSkeletons")
+createToggle(pages.ESP, "🔆  Chams (Highlight)", 12, function(s) toggleESP("playerChams", s) end, "espPlayerChams")
 
-createSection(pages.ESP, "🎨  Colors", 20)
-createColorDropdown(pages.ESP, "🔴  Enemy Color", 21,
+createSection(pages.ESP, "🤖  Bot/NPC ESP", 30)
+createToggle(pages.ESP, "📦  Bot Boxes", 31, function(s) toggleESP("botBoxes", s) end, "espBotBoxes")
+createToggle(pages.ESP, "🏷  Bot Names", 32, function(s) toggleESP("botNames", s) end, "espBotNames")
+createToggle(pages.ESP, "❤  Bot Health (text)", 33, function(s) toggleESP("botHealth", s) end, "espBotHealth")
+createToggle(pages.ESP, "📊  Bot Health Bar", 34, function(s) toggleESP("botHealthBar", s) end, "espBotHealthBar")
+createToggle(pages.ESP, "📏  Bot Distance", 35, function(s) toggleESP("botDistance", s) end, "espBotDistance")
+
+createSection(pages.ESP, "🎨  Bot Visuals", 40)
+createToggle(pages.ESP, "💀  Bot Skeleton", 41, function(s) toggleESP("botSkeletons", s) end, "espBotSkeletons")
+createToggle(pages.ESP, "🔆  Bot Chams", 42, function(s) toggleESP("botChams", s) end, "espBotChams")
+
+createSection(pages.ESP, "👻  Self ESP", 50)
+createToggle(pages.ESP, "👻  Show Self ESP", 51, function(s) toggleESP("selfESP", s) end, "espSelf")
+
+createSection(pages.ESP, "🎨  Colors", 60)
+createColorDropdown(pages.ESP, "🔴  Enemy Color", 61,
 	Color3.fromRGB(255,60,60),
 	function(c) ESP_COLOR_ENEMY = c; refreshAllESP() end
 )
-createColorDropdown(pages.ESP, "🔵  Ally Color", 22,
+createColorDropdown(pages.ESP, "🔵  Ally Color", 62,
 	Color3.fromRGB(80,160,255),
 	function(c) ESP_COLOR_ALLY = c; refreshAllESP() end
 )
-createColorDropdown(pages.ESP, "🟡  Bot Color", 23,
+createColorDropdown(pages.ESP, "🟡  Bot Color", 63,
 	Color3.fromRGB(255,200,0),
-	function(c) ESP_COLOR_BOT = c; if espState.bots then refreshBotESP() end end
+	function(c) ESP_COLOR_BOT = c; local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar; if anyBot then refreshBotESP() end end
+)
+createColorDropdown(pages.ESP, "🔷  Self Color", 64,
+	Color3.fromRGB(80,160,255),
+	function(c) ESP_COLOR_SELF = c; buildSelfESP() end
 )
 
-createSection(pages.ESP, "🤖  Bots / NPC", 30)
-createToggle(pages.ESP, "🤖  ESP Bots & NPC", 31, function(s)
-	espState.bots = s
-	if s then refreshBotESP() else clearAllBotESP() end
-end, "espBots")
-createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 32, function()
-	if espState.bots then refreshBotESP()
-	else showNotification("⚠  Active ESP Bots d'abord", 2) end
-end)
-
-createSection(pages.ESP, "📏  Distance Max", 40)
-createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 41, function(val)
+createSection(pages.ESP, "📏  Distance Max", 70)
+createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 71, function(val)
 	ESP_MAX_DIST_PLAYER = val
 	refreshAllESP()
 end)
-createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 42, function(val)
+createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 72, function(val)
 	ESP_MAX_DIST_BOT = val
-	if espState.bots then refreshBotESP() end
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
+	if anyBot then refreshBotESP() end
+end)
+
+createSection(pages.ESP, "🤖  Bots / NPC", 80)
+createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 81, function()
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
+	if anyBot then refreshBotESP()
+	else showNotification("⚠  Active un toggle Bot ESP d'abord", 2) end
 end)
 
 createSection(pages.Other, "👑  Credits", 60)
@@ -4752,10 +5086,17 @@ function startESP()
 	end)
 	Players.PlayerRemoving:Connect(function(p) clearESPFor(p) end)
 
+	player.CharacterAdded:Connect(function()
+		task.wait(1)
+		if espState.selfESP then buildSelfESP() end
+	end)
+
 	
 	RunService:BindToRenderStep("ESP_Update", Enum.RenderPriority.Last.Value, function()
-		if espState.distance or espState.healthBar or espState.health or espState.skeletons or espState.boxes or espState.chams or espState.names then
-			if ESP_MAX_DIST_PLAYER > 0 or ESP_MAX_DIST_BOT > 0 or espState.distance then
+		local anyPlayer = espState.playerDistance or espState.playerHealthBar or espState.playerHealth or espState.playerSkeletons or espState.playerBoxes or espState.playerChams or espState.playerNames
+		local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
+		if anyPlayer or anyBot or espState.selfESP then
+			if ESP_MAX_DIST_PLAYER > 0 or ESP_MAX_DIST_BOT > 0 or espState.playerDistance or espState.botDistance then
 				updateDistances()
 			end
 		end
@@ -4765,13 +5106,15 @@ function startESP()
 	task.spawn(function()
 		while true do
 			task.wait(5)
-			if espState.bots then refreshBotESP() end
+			local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
+			if anyBot then refreshBotESP() end
 		end
 	end)
 
 	
 	workspace.DescendantAdded:Connect(function(obj)
-		if espState.bots and obj:IsA("Model") then
+		local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
+		if anyBot and obj:IsA("Model") then
 			task.wait(0.5)
 			if isBot(obj) then
 				pcall(function() buildESPBot(obj) end)

@@ -6,7 +6,7 @@
 
 **v5.7** • Build 2026.07
 
-> 🔥 Bypass • ESP HD • True Skeleton ESP • Aimbot boosted • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects
+> 🔥 Bypass • ESP HD per Category • True Skeleton ESP • Aimbot + FOV Circle • Target Types • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects
 
 </div>
 
@@ -111,7 +111,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ### 🎯 Aim
 
-> 🎯 Full-featured aimbot with boosted performance and customizable settings.
+> 🎯 Full-featured aimbot with FOV circle, target type selection, and distance filtering.
 
 <details>
 <summary><b>📌 Features</b></summary>
@@ -127,7 +127,22 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 | **🖱 Mouse** | Select trigger key: Mouse1 / Mouse2 / Mouse3 |
 | **⌨ Keyboard** | Select trigger key from full keyboard layout (A-Z, 0-9, F1-F12, etc.) |
 | **🎯 Target Part** | Select target body part: Head, UpperTorso, Torso, HumanoidRootPart |
-| **Status Display** | Live status showing key, mode, and smooth percentage |
+
+### 🎯 Target Types (New in v5.7)
+
+| Target | Description |
+|:---|:---|
+| **Players** | Toggle — aim at other players (default: ON) |
+| **Bots/AI** | Toggle — aim at bots and NPCs (default: ON) |
+| **Vehicles** | Toggle — aim at VehicleSeat / TankSeat in vehicles |
+| **Objects** | Toggle — aim at Seats and VehicleSeats not in character models |
+
+### 📏 Aim Distance & Visuals (New in v5.7)
+
+| Feature | Description |
+|:---|:---|
+| **Aim Distance** | Max distance to target (0 = infinite) — ignores targets beyond this range |
+| **FOV Circle** | Visual circle overlay showing your FOV radius — renders on screen when aim is enabled |
 
 ### What's boosted in v5.7
 
@@ -136,8 +151,8 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 - **Smooth factor clamped** (0.01–0.95) to prevent overshooting
 - **Target validation** — checks if the target part still exists every frame
 - **Fallback chain** — if the selected part is missing, falls back to Head → Torso → HRP
-
-Works automatically on **both players and bots/NPCs**.
+- **Distance filtering** — skip targets beyond max distance
+- **FOV Circle visual** — see your aim radius in real-time
 
 </details>
 
@@ -145,27 +160,32 @@ Works automatically on **both players and bots/NPCs**.
 
 ### 👁 ESP
 
-> 📍 Full ESP suite for players, bots, and NPCs with customizable visuals.
+> 📍 Full ESP suite with per-category control — Players, Bots/NPC, and Self — each with independent toggles.
 
 <details>
 <summary><b>📌 Sections</b></summary>
 
 | Section | Features |
 |:---|:---|
-| **📦 Player ESP** | Boxes (improved styling!), Names + Team Tag, Health (text), Health Bar, Distance |
-| **🎨 Visuals** | Skeleton (real Beams connecting joints!), Chams (Highlight) |
-| **🎨 Colors** | Enemy Color, Ally Color, **Bot Color** (9 color presets each) |
-| **🤖 Bots / NPC** | ESP Bots & NPC toggle, Scan Bots Now |
+| **📦 Player ESP** | Boxes, Names + Team Tag, Health (text), Health Bar, Distance |
+| **🎨 Player Visuals** | Skeleton (real Beams connecting joints!), Chams (Highlight) |
+| **🤖 Bot/NPC ESP** | Boxes, Names, Health (text), Health Bar, Distance |
+| **🎨 Bot Visuals** | Skeleton, Chams |
+| **👻 Self ESP** | Show your own name, health, and distance |
+| **🎨 Colors** | Enemy Color, Ally Color, Bot Color, Self Color (4 dropdowns with 9 presets each) |
 | **📏 Distance Max** | Max distance for players (0 = infinite), Max distance for bots (0 = infinite) |
+| **🤖 Bots / NPC** | Scan Bots Now |
 
 ### ESP Improvements in v5.7
 
 | Feature | Before | After |
 |:---|:---|:---|
+| **Player/Bot ESP** | Shared toggles for all | **Independent toggles** per category — enable Boxes for players only, Skeleton for bots only, etc. |
+| **Self ESP** | Not available | **New!** See your own name, health bar, and distance |
+| **Self Color** | Not available | **New!** Custom color for your own ESP |
 | **Boxes** | Flat frame with white edge | Rounded corners + accent-colored corners (18px) + UIStroke outline |
 | **Skeleton** | Dots at each joint | **Real Beams** connecting all body parts (like some pro ESPs) |
 | **Removed** | Head Dots, Tracers, Snaplines | Cleaner, more focused ESP |
-| **Bot Color** | Separate section | Now in the **Colors** section with Enemy and Ally |
 
 </details>
 
@@ -310,9 +330,9 @@ Works automatically on **both players and bots/NPCs**.
 
 | Action | Description |
 |:---|:---|
-| **💾 Save Config** | Manually save all toggles, theme, FOV, keybinds, fly speed, walk speed, jump power, opacity, and all menu effect states |
+| **💾 Save Config** | Manually save all toggles, theme, FOV, keybinds, fly speed, walk speed, jump power, opacity, menu effects, ESP settings (player/bot/self toggles, colors, distances), aim settings (target types, distance, FOV circle, smooth, prediction) |
 | **📂 Load Config** | Manually load saved configuration |
-| **🗑 Reset Config** | Reset everything to defaults (Dark theme, 380×500 size, 100% opacity, QWERTY, Mouse2, hold mode, 70 FOV) |
+| **🗑 Reset Config** | Reset everything to defaults (Dark theme, 380×500 size, 100% opacity, QWERTY, Mouse2, hold mode, 70 FOV, aim distance 0, FOV circle OFF, all target types reset) |
 | **🔄 Auto-Save** | Automatically saves on every change (1-second debounce) |
 | **🔄 Auto-Load** | Automatically loads config 0.5s after injection if a saved file exists |
 
@@ -325,9 +345,17 @@ Works automatically on **both players and bots/NPCs**.
 - ✅ FOV value
 - ✅ Menu opacity
 - ✅ Key layout (QWERTY/AZERTY)
-- ✅ Aim key, mode, fly speed, walk speed, jump power
+- ✅ Aim key, mode, smooth, FOV, method, target part, prediction
+- ✅ Aim target types (Players, Bots, Vehicles, Objects)
+- ✅ Aim distance, FOV circle toggle
+- ✅ Fly speed, walk speed, jump power
 - ✅ Background animation state
 - ✅ All toggle states (God Mode, Fly, Noclip, ESP types, Menu Effects, etc.)
+- ✅ ESP player toggles (boxes, names, health, healthBar, distance, skeletons, chams)
+- ✅ ESP bot toggles (boxes, names, health, healthBar, distance, skeletons, chams)
+- ✅ ESP self toggle
+- ✅ ESP colors (enemy, ally, bot, self)
+- ✅ ESP max distances (player, bot)
 
 ---
 
