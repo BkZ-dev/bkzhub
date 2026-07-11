@@ -3746,6 +3746,7 @@ function getConfig()
 		walkSpeed = savedWalkSpeed,
 		jumpPower = savedJumpPower,
 		bgAnim    = bgAnimEnabled,
+		freecamSpeed = freecamSpeed,
 		aimDistance    = aimDistance,
 		aimShowCircle = aimShowCircle,
 		aimTargetPlayers  = aimTargetPlayers,
@@ -3780,6 +3781,7 @@ function applyConfig(cfg)
 		bgAnimEnabled = cfg.bgAnim
 		if bgAnimEnabled then enableBgAnim() end
 	end
+	if cfg.freecamSpeed then freecamSpeed = cfg.freecamSpeed end
 	if cfg.aimDistance    then aimDistance    = cfg.aimDistance    end
 	if cfg.aimShowCircle ~= nil then aimShowCircle = cfg.aimShowCircle end
 	if cfg.aimTargetPlayers  ~= nil then aimTargetPlayers  = cfg.aimTargetPlayers  end
@@ -3852,6 +3854,7 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  103, funct
 	if bgAnimEnabled then disableBgAnim() end
 	aimDistance = 0; aimShowCircle = false; destroyFOVCircle()
 	aimTargetPlayers = true; aimTargetBots = true; aimTargetVehicles = false; aimTargetObjects = false
+	freecamSpeed = 50
 	ESP_COLOR_ENEMY = Color3.fromRGB(255, 40, 50)
 	ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
 	ESP_COLOR_BOT   = Color3.fromRGB(255, 200, 0)
@@ -4155,6 +4158,7 @@ espState = {
 	playerSkeletons = false,
 	playerChams     = false,
 	playerHealthBar = false,
+	playerSnaplines = false,
 	botBoxes     = false,
 	botNames     = false,
 	botHealth    = false,
@@ -4162,6 +4166,7 @@ espState = {
 	botSkeletons = false,
 	botChams     = false,
 	botHealthBar = false,
+	botSnaplines = false,
 	selfESP       = false,
 }
 espObjects      = {}
@@ -4308,6 +4313,28 @@ function buildESPBot(model)
 		table.insert(objs, bb)
 	end
 
+	if espState.botSnaplines then
+		local attTop = Instance.new("Attachment", hrp)
+		attTop.Name = "ESP_BotSnapTop"
+		attTop.Position = Vector3.new(0, -0.5, 0)
+		local attBot = Instance.new("Attachment", hrp)
+		attBot.Name = "ESP_BotSnapBot"
+		attBot.Position = Vector3.new(0, -6, 0)
+		local beam = Instance.new("Beam", model)
+		beam.Attachment0 = attTop
+		beam.Attachment1 = attBot
+		beam.FaceCamera = false
+		beam.Width0 = 1.5
+		beam.Width1 = 0.3
+		beam.Color = ColorSequence.new(color)
+		beam.Transparency = NumberSequence.new(0.3)
+		beam.LightEmission = 1
+		beam.LightInfluence = 0
+		table.insert(objs, attTop)
+		table.insert(objs, attBot)
+		table.insert(objs, beam)
+	end
+
 	espBotObjects[model] = objs
 
 	model.AncestryChanged:Connect(function()
@@ -4323,7 +4350,7 @@ end
 
 function refreshBotESP()
 	clearAllBotESP()
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines
 	if not anyBot then return end
 	for _, model in ipairs(workspace:GetDescendants()) do
 		if isBot(model) then
@@ -4561,6 +4588,28 @@ function buildESPFor(p)
 		table.insert(objs, hl2)
 	end
 
+	if espState.playerSnaplines then
+		local attTop = Instance.new("Attachment", hrp)
+		attTop.Name = "ESP_SnapTop"
+		attTop.Position = Vector3.new(0, -0.5, 0)
+		local attBot = Instance.new("Attachment", hrp)
+		attBot.Name = "ESP_SnapBot"
+		attBot.Position = Vector3.new(0, -6, 0)
+		local beam = Instance.new("Beam", char)
+		beam.Attachment0 = attTop
+		beam.Attachment1 = attBot
+		beam.FaceCamera = false
+		beam.Width0 = 1.5
+		beam.Width1 = 0.3
+		beam.Color = ColorSequence.new(color)
+		beam.Transparency = NumberSequence.new(0.3)
+		beam.LightEmission = 1
+		beam.LightInfluence = 0
+		table.insert(objs, attTop)
+		table.insert(objs, attBot)
+		table.insert(objs, beam)
+	end
+
 	espObjects[p] = objs
 end
 
@@ -4793,62 +4842,76 @@ end
 
 
 createSection(pages.ESP, "📦  Player ESP", 0)
-createToggle(pages.ESP, "📦  Boxes", 1, function(s) toggleESP("playerBoxes", s) end, "espPlayerBoxes")
-createToggle(pages.ESP, "🏷  Names + Team Tag", 2, function(s) toggleESP("playerNames", s) end, "espPlayerNames")
-createToggle(pages.ESP, "❤  Health (text)", 3, function(s) toggleESP("playerHealth", s) end, "espPlayerHealth")
-createToggle(pages.ESP, "📊  Health Bar", 4, function(s) toggleESP("playerHealthBar", s) end, "espPlayerHealthBar")
-createToggle(pages.ESP, "📏  Distance", 5, function(s) toggleESP("playerDistance", s) end, "espPlayerDistance")
+createToggle(pages.ESP, "✅  TOUT Joueurs", 1, function(s)
+	toggleESP("playerBoxes", s); toggleESP("playerNames", s)
+	toggleESP("playerHealth", s); toggleESP("playerHealthBar", s)
+	toggleESP("playerDistance", s); toggleESP("playerSkeletons", s)
+	toggleESP("playerChams", s); toggleESP("playerSnaplines", s)
+end, nil)
+createToggle(pages.ESP, "📦  Boxes", 10, function(s) toggleESP("playerBoxes", s) end, "espPlayerBoxes")
+createToggle(pages.ESP, "🏷  Names + Team Tag", 11, function(s) toggleESP("playerNames", s) end, "espPlayerNames")
+createToggle(pages.ESP, "❤  Health (text)", 12, function(s) toggleESP("playerHealth", s) end, "espPlayerHealth")
+createToggle(pages.ESP, "📊  Health Bar", 13, function(s) toggleESP("playerHealthBar", s) end, "espPlayerHealthBar")
+createToggle(pages.ESP, "📏  Distance", 14, function(s) toggleESP("playerDistance", s) end, "espPlayerDistance")
 
-createSection(pages.ESP, "🎨  Player Visuals", 10)
-createToggle(pages.ESP, "💀  Skeleton", 11, function(s) toggleESP("playerSkeletons", s) end, "espPlayerSkeletons")
-createToggle(pages.ESP, "🔆  Chams (Highlight)", 12, function(s) toggleESP("playerChams", s) end, "espPlayerChams")
+createSection(pages.ESP, "🎨  Player Visuals", 20)
+createToggle(pages.ESP, "💀  Skeleton", 21, function(s) toggleESP("playerSkeletons", s) end, "espPlayerSkeletons")
+createToggle(pages.ESP, "🔆  Chams (Highlight)", 22, function(s) toggleESP("playerChams", s) end, "espPlayerChams")
+createToggle(pages.ESP, "📐  Snaplines", 23, function(s) toggleESP("playerSnaplines", s) end, "espPlayerSnaplines")
 
 createSection(pages.ESP, "🤖  Bot/NPC ESP", 30)
-createToggle(pages.ESP, "📦  Bot Boxes", 31, function(s) toggleESP("botBoxes", s) end, "espBotBoxes")
-createToggle(pages.ESP, "🏷  Bot Names", 32, function(s) toggleESP("botNames", s) end, "espBotNames")
-createToggle(pages.ESP, "❤  Bot Health (text)", 33, function(s) toggleESP("botHealth", s) end, "espBotHealth")
-createToggle(pages.ESP, "📊  Bot Health Bar", 34, function(s) toggleESP("botHealthBar", s) end, "espBotHealthBar")
-createToggle(pages.ESP, "📏  Bot Distance", 35, function(s) toggleESP("botDistance", s) end, "espBotDistance")
+createToggle(pages.ESP, "✅  TOUT Bots", 31, function(s)
+	toggleESP("botBoxes", s); toggleESP("botNames", s)
+	toggleESP("botHealth", s); toggleESP("botHealthBar", s)
+	toggleESP("botDistance", s); toggleESP("botSkeletons", s)
+	toggleESP("botChams", s); toggleESP("botSnaplines", s)
+end, nil)
+createToggle(pages.ESP, "📦  Bot Boxes", 40, function(s) toggleESP("botBoxes", s) end, "espBotBoxes")
+createToggle(pages.ESP, "🏷  Bot Names", 41, function(s) toggleESP("botNames", s) end, "espBotNames")
+createToggle(pages.ESP, "❤  Bot Health (text)", 42, function(s) toggleESP("botHealth", s) end, "espBotHealth")
+createToggle(pages.ESP, "📊  Bot Health Bar", 43, function(s) toggleESP("botHealthBar", s) end, "espBotHealthBar")
+createToggle(pages.ESP, "📏  Bot Distance", 44, function(s) toggleESP("botDistance", s) end, "espBotDistance")
 
-createSection(pages.ESP, "🎨  Bot Visuals", 40)
-createToggle(pages.ESP, "💀  Bot Skeleton", 41, function(s) toggleESP("botSkeletons", s) end, "espBotSkeletons")
-createToggle(pages.ESP, "🔆  Bot Chams", 42, function(s) toggleESP("botChams", s) end, "espBotChams")
+createSection(pages.ESP, "🎨  Bot Visuals", 50)
+createToggle(pages.ESP, "💀  Bot Skeleton", 51, function(s) toggleESP("botSkeletons", s) end, "espBotSkeletons")
+createToggle(pages.ESP, "🔆  Bot Chams", 52, function(s) toggleESP("botChams", s) end, "espBotChams")
+createToggle(pages.ESP, "📐  Bot Snaplines", 53, function(s) toggleESP("botSnaplines", s) end, "espBotSnaplines")
 
-createSection(pages.ESP, "👻  Self ESP", 50)
-createToggle(pages.ESP, "👻  Show Self ESP", 51, function(s) toggleESP("selfESP", s) end, "espSelf")
+createSection(pages.ESP, "👻  Self ESP", 60)
+createToggle(pages.ESP, "👻  Show Self ESP", 61, function(s) toggleESP("selfESP", s) end, "espSelf")
 
-createSection(pages.ESP, "🎨  Colors", 60)
-createColorDropdown(pages.ESP, "🔴  Enemy Color", 61,
+createSection(pages.ESP, "🎨  Colors", 70)
+createColorDropdown(pages.ESP, "🔴  Enemy Color", 71,
 	Color3.fromRGB(255,60,60),
 	function(c) ESP_COLOR_ENEMY = c; refreshAllESP() end
 )
-createColorDropdown(pages.ESP, "🔵  Ally Color", 62,
+createColorDropdown(pages.ESP, "🔵  Ally Color", 72,
 	Color3.fromRGB(80,160,255),
 	function(c) ESP_COLOR_ALLY = c; refreshAllESP() end
 )
-createColorDropdown(pages.ESP, "🟡  Bot Color", 63,
+createColorDropdown(pages.ESP, "🟡  Bot Color", 73,
 	Color3.fromRGB(255,200,0),
-	function(c) ESP_COLOR_BOT = c; local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar; if anyBot then refreshBotESP() end end
+	function(c) ESP_COLOR_BOT = c; local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines; if anyBot then refreshBotESP() end end
 )
-createColorDropdown(pages.ESP, "🔷  Self Color", 64,
+createColorDropdown(pages.ESP, "🔷  Self Color", 74,
 	Color3.fromRGB(80,160,255),
 	function(c) ESP_COLOR_SELF = c; buildSelfESP() end
 )
 
-createSection(pages.ESP, "📏  Distance Max", 70)
-createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 71, function(val)
+createSection(pages.ESP, "📏  Distance Max", 80)
+createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 81, function(val)
 	ESP_MAX_DIST_PLAYER = val
 	refreshAllESP()
 end)
-createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 72, function(val)
+createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 82, function(val)
 	ESP_MAX_DIST_BOT = val
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines
 	if anyBot then refreshBotESP() end
 end)
 
-createSection(pages.ESP, "🤖  Bots / NPC", 80)
-createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 81, function()
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
+createSection(pages.ESP, "🤖  Bots / NPC", 90)
+createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 91, function()
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines
 	if anyBot then refreshBotESP()
 	else showNotification("⚠  Active un toggle Bot ESP d'abord", 2) end
 end)
@@ -4960,6 +5023,9 @@ freecamActive = false
 freecamMoveConn, freecamRotateConn, freecamScrollConn = nil
 freecamKeyBeginConn, freecamKeyEndConn = nil
 freecamCamPos, freecamCamRot, freecamZoom = CFrame.new(), Vector2.new(), 50
+freecamSpeed = 50
+freecamFrozenParts = {}
+freecamAnchorConn = nil
 keyLayout = "QWERTY"
 keyMaps = {
 	QWERTY = {[Enum.KeyCode.W]="W",[Enum.KeyCode.A]="A",[Enum.KeyCode.S]="S",[Enum.KeyCode.D]="D",[Enum.KeyCode.Space]="Space",[Enum.KeyCode.LeftShift]="LShift"},
@@ -4972,15 +5038,32 @@ function startFreecam()
 	freecamCamPos = cam.CFrame.Position
 	freecamCamRot = Vector2.new(cam.CFrame:ToEulerAnglesYXZ())
 	freecamZoom = 50
+	freecamFrozenParts = {}
 
 	local char = player.Character
 	if char then
 		local hum = char:FindFirstChildOfClass("Humanoid")
-		if hum then hum.PlatformStand = true end
+		if hum then
+			hum.PlatformStand = true
+			hum.WalkSpeed = 0
+			hum.JumpPower = 0
+			hum.JumpHeight = 0
+		end
+		for _, part in ipairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				freecamFrozenParts[part] = {
+					Anchored = part.Anchored,
+					Velocity = part.Velocity,
+					RotVelocity = part.RotVelocity,
+				}
+				part.Anchored = true
+				part.Velocity = Vector3.new(0,0,0)
+				part.RotVelocity = Vector3.new(0,0,0)
+			end
+		end
 	end
 	cam.CameraType = Enum.CameraType.Scriptable
 
-	local moveSpeed = 50
 	local keys = {W=false, A=false, S=false, D=false, Space=false, LShift=false}
 	local mousePressed = false
 	local lastMousePos = Vector2.new()
@@ -4997,7 +5080,7 @@ function startFreecam()
 		if keys.D then vel = vel + right end
 		if keys.Space then vel = vel + up end
 		if keys.LShift then vel = vel - up end
-		local spd = (keys.LShift or keys.Space) and moveSpeed * 0.5 or moveSpeed
+		local spd = (keys.LShift or keys.Space) and freecamSpeed * 0.5 or freecamSpeed
 		if vel.Magnitude > 0 then
 			vel = vel.Unit * spd * dt
 			freecamCamPos = freecamCamPos + vel
@@ -5047,6 +5130,48 @@ function startFreecam()
 	end)
 end
 
+function unfreezeCharacter()
+	for part, data in pairs(freecamFrozenParts) do
+		pcall(function()
+			part.Anchored = data.Anchored
+			part.Velocity = data.Velocity
+			part.RotVelocity = data.RotVelocity
+		end)
+	end
+	freecamFrozenParts = {}
+	local char = player.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.PlatformStand = false
+			hum.WalkSpeed = savedWalkSpeed or 16
+			hum.JumpPower = savedJumpPower or 50
+		end
+	end
+end
+
+function tpToFreecam()
+	local char = player.Character
+	if not char then return end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+	hrp.CFrame = CFrame.new(freecamCamPos + Vector3.new(0, 3, 0))
+	for part, data in pairs(freecamFrozenParts) do
+		pcall(function()
+			part.Anchored = data.Anchored
+			part.Velocity = data.Velocity
+			part.RotVelocity = data.RotVelocity
+		end)
+	end
+	freecamFrozenParts = {}
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.PlatformStand = false
+		hum.WalkSpeed = savedWalkSpeed or 16
+		hum.JumpPower = savedJumpPower or 50
+	end
+end
+
 function stopFreecam()
 	freecamActive = false
 	if freecamMoveConn then freecamMoveConn:Disconnect(); freecamMoveConn = nil end
@@ -5055,18 +5180,25 @@ function stopFreecam()
 	if freecamKeyBeginConn then freecamKeyBeginConn:Disconnect(); freecamKeyBeginConn = nil end
 	if freecamKeyEndConn then freecamKeyEndConn:Disconnect(); freecamKeyEndConn = nil end
 	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-	local char = player.Character
-	if char then
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		if hum then hum.PlatformStand = false end
-	end
+	unfreezeCharacter()
 end
 
 createSection(pages.Other, "📷  Freecam", 50)
 createToggle(pages.Other, "📷  Freecam (Right Click)", 51, function(state)
 	if state then startFreecam() else stopFreecam() end
 end, "freecamEnabled")
-createBtn(pages.Other, "⌨  Keys: " .. keyLayout, currentTheme.Button, 52, function(btn)
+createSlider(pages.Other, "⚡  Speed Freecam", 10, 500, 50, 52, function(val)
+	freecamSpeed = val
+end)
+createBtn(pages.Other, "📍  TP Joueur → Freecam", currentTheme.Accent, 53, function()
+	if freecamActive then
+		tpToFreecam()
+		showNotification("📍  Téléporté à la freecam", 2)
+	else
+		showNotification("⚠  Active la freecam d'abord", 2)
+	end
+end)
+createBtn(pages.Other, "⌨  Keys: " .. keyLayout, currentTheme.Button, 54, function(btn)
 	local layouts = {"QWERTY", "AZERTY"}
 	for i, l in ipairs(layouts) do
 		if l == keyLayout then

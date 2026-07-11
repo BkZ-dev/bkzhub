@@ -160,17 +160,17 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ### 👁 ESP
 
-> 📍 Full ESP suite with per-category control — Players, Bots/NPC, and Self — each with independent toggles.
+> 📍 Full ESP suite with per-category control — Players, Bots/NPC, and Self — each with independent toggles and master enable.
 
 <details>
 <summary><b>📌 Sections</b></summary>
 
 | Section | Features |
 |:---|:---|
-| **📦 Player ESP** | Boxes, Names + Team Tag, Health (text), Health Bar, Distance |
-| **🎨 Player Visuals** | Skeleton (real Beams connecting joints!), Chams (Highlight) |
-| **🤖 Bot/NPC ESP** | Boxes, Names, Health (text), Health Bar, Distance |
-| **🎨 Bot Visuals** | Skeleton, Chams |
+| **📦 Player ESP** | ✅ TOUT Joueurs (master), Boxes, Names + Team Tag, Health (text), Health Bar, Distance |
+| **🎨 Player Visuals** | Skeleton (real Beams connecting joints!), Chams (Highlight), **Snaplines** (Beam below character) |
+| **🤖 Bot/NPC ESP** | ✅ TOUT Bots (master), Boxes, Names, Health (text), Health Bar, Distance |
+| **🎨 Bot Visuals** | Skeleton, Chams, **Snaplines** |
 | **👻 Self ESP** | Show your own name, health, and distance |
 | **🎨 Colors** | Enemy Color, Ally Color, Bot Color, Self Color (4 dropdowns with 9 presets each) |
 | **📏 Distance Max** | Max distance for players (0 = infinite), Max distance for bots (0 = infinite) |
@@ -180,12 +180,13 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 | Feature | Before | After |
 |:---|:---|:---|
+| **Master Toggles** | Not available | **✅ TOUT Joueurs / ✅ TOUT Bots** — enable/disable all toggles at once |
+| **Snaplines** | Not available | **New!** Beam lines from character downward, for both players and bots |
 | **Player/Bot ESP** | Shared toggles for all | **Independent toggles** per category — enable Boxes for players only, Skeleton for bots only, etc. |
 | **Self ESP** | Not available | **New!** See your own name, health bar, and distance |
 | **Self Color** | Not available | **New!** Custom color for your own ESP |
 | **Boxes** | Flat frame with white edge | Rounded corners + accent-colored corners (18px) + UIStroke outline |
 | **Skeleton** | Dots at each joint | **Real Beams** connecting all body parts (like some pro ESPs) |
-| **Removed** | Head Dots, Tracers, Snaplines | Cleaner, more focused ESP |
 
 </details>
 
@@ -249,13 +250,22 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ### ℹ Other
 
-> 📷 Freecam, credits, and version information.
+> 📷 Freecam with speed control, character freeze, teleport, credits, and version information.
 
 | Section | Features |
 |:---|:---|
-| **📷 Freecam** | Toggle Freecam (Right Click to rotate, Scroll to zoom), QWERTY/AZERTY key layout switch |
+| **📷 Freecam** | Toggle Freecam (Right Click to rotate, Scroll to zoom), **Speed slider** (10–500), **TP Joueur → Freecam**, QWERTY/AZERTY key layout switch |
 | **👑 Credits** | Owner & contributors |
 | **ℹ Informations** | Version, controls reminder, feature highlights |
+
+### FreeCam Improvements in v5.7
+
+| Feature | Before | After |
+|:---|:---|:---|
+| **Character Freeze** | Only PlatformStand | **Full freeze** — all parts anchored, velocity zeroed, WalkSpeed/JumpPower set to 0 |
+| **Speed Control** | Fixed at 50 | **Adjustable** via slider (10–500) |
+| **TP to Freecam** | Not available | **New!** Teleport your character to the freecam camera position |
+| **Unfreeze** | Only PlatformStand reset | **Full unfreeze** — restores all part anchors, velocities, WalkSpeed, JumpPower |
 
 ---
 
@@ -332,7 +342,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 |:---|:---|
 | **💾 Save Config** | Manually save all toggles, theme, FOV, keybinds, fly speed, walk speed, jump power, opacity, menu effects, ESP settings (player/bot/self toggles, colors, distances), aim settings (target types, distance, FOV circle, smooth, prediction) |
 | **📂 Load Config** | Manually load saved configuration |
-| **🗑 Reset Config** | Reset everything to defaults (Dark theme, 380×500 size, 100% opacity, QWERTY, Mouse2, hold mode, 70 FOV, aim distance 0, FOV circle OFF, all target types reset) |
+| **🗑 Reset Config** | Reset everything to defaults (Dark theme, 380×500 size, 100% opacity, QWERTY, Mouse2, hold mode, 70 FOV, aim distance 0, FOV circle OFF, freecam speed 50, all target types reset) |
 | **🔄 Auto-Save** | Automatically saves on every change (1-second debounce) |
 | **🔄 Auto-Load** | Automatically loads config 0.5s after injection if a saved file exists |
 
@@ -349,6 +359,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 - ✅ Aim target types (Players, Bots, Vehicles, Objects)
 - ✅ Aim distance, FOV circle toggle
 - ✅ Fly speed, walk speed, jump power
+- ✅ Freecam speed
 - ✅ Background animation state
 - ✅ All toggle states (God Mode, Fly, Noclip, ESP types, Menu Effects, etc.)
 - ✅ ESP player toggles (boxes, names, health, healthBar, distance, skeletons, chams)
