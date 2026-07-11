@@ -241,8 +241,11 @@ currentTheme = Themes.Dark
 
 
 themeListeners = {}
+themeListenerNextId = 0
 function onThemeChanged(fn)
-	table.insert(themeListeners, fn)
+	themeListenerNextId = themeListenerNextId + 1
+	themeListeners[themeListenerNextId] = fn
+	return themeListenerNextId
 end
 
 vcAntiBan = false
@@ -346,7 +349,18 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
 gui.ResetOnSpawn = false
 
+local hoverSound
 function playHover()
+	pcall(function()
+		if not hoverSound then
+			hoverSound = Instance.new("Sound")
+			hoverSound.SoundId = "rbxassetid://9044532086"
+			hoverSound.Volume = 0.15
+			hoverSound.PlaybackSpeed = 1.5
+			hoverSound.Parent = workspace
+		end
+		hoverSound:Play()
+	end)
 end
 
 
@@ -701,7 +715,7 @@ function createToggle(parent, text, order, func, configKey)
 		state = not state
 		if configKey then toggleStates[configKey] = state end
 		TweenService:Create(track, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			BackgroundColor3 = state and currentTheme.Accent or Color3.fromRGB(60,60,80)
+			BackgroundColor3 = state and currentTheme.Accent or currentTheme.Button
 		}):Play()
 		TweenService:Create(knob, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 			Position = state and UDim2.new(1,-21,0.5,-9) or UDim2.new(0,3,0.5,-9),
@@ -715,7 +729,7 @@ function createToggle(parent, text, order, func, configKey)
 	if configKey then
 		toggleApply[configKey] = function(newState)
 			state = newState
-			track.BackgroundColor3 = state and currentTheme.Accent or Color3.fromRGB(60,60,80)
+			track.BackgroundColor3 = state and currentTheme.Accent or currentTheme.Button
 			knob.Position = state and UDim2.new(1,-21,0.5,-9) or UDim2.new(0,3,0.5,-9)
 			func(state)
 		end
@@ -752,7 +766,7 @@ function createSlider(parent, text, min, max, default, order, func)
 	local inputBox = Instance.new("TextBox", frame)
 	inputBox.Size = UDim2.new(0, 56, 0, 20)
 	inputBox.Position = UDim2.new(1, -68, 0, 5)
-	inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+	inputBox.BackgroundColor3 = currentTheme.Panel
 	inputBox.BorderSizePixel = 0
 	inputBox.TextColor3 = currentTheme.Accent
 	inputBox.Font = Enum.Font.GothamBold
@@ -765,7 +779,7 @@ function createSlider(parent, text, min, max, default, order, func)
 	local track = Instance.new("Frame", frame)
 	track.Size = UDim2.new(1, -24, 0, 6)
 	track.Position = UDim2.new(0, 12, 0, 42)
-	track.BackgroundColor3 = Color3.fromRGB(55,55,75)
+	track.BackgroundColor3 = currentTheme.Button
 	track.BorderSizePixel = 0
 	Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
@@ -828,7 +842,6 @@ function createSlider(parent, text, min, max, default, order, func)
 	end)
 	UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then draggingSlider = false end end)
 	UIS.InputChanged:Connect(function(i) if draggingSlider and i.UserInputType == Enum.UserInputType.MouseMovement then updateSlider(i) end end)
-	hitbox.MouseButton1Down:Connect(function(x,y) updateSlider({Position = Vector3.new(x,y,0)}) end)
 
 	onThemeChanged(function(t)
 		frame.BackgroundColor3 = t.Button
@@ -861,7 +874,7 @@ function createNumberInput(parent, text, default, order, func)
 	local box = Instance.new("TextBox", frame)
 	box.Size = UDim2.new(0, 72, 0, 26)
 	box.Position = UDim2.new(1, -82, 0.5, -13)
-	box.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+	box.BackgroundColor3 = currentTheme.Panel
 	box.BorderSizePixel = 0
 	box.TextColor3 = currentTheme.Accent
 	box.Font = Enum.Font.GothamBold
@@ -1172,6 +1185,16 @@ function selectPlayer(p)
 	searchBox.TextColor3 = currentTheme.Text
 	TweenService:Create(ddList, TweenInfo.new(0.15), {Size = UDim2.new(1,0,0,0)}):Play()
 	task.wait(0.15); ddList.Visible = false
+
+	infoName.Text = "👤  " .. p.Name .. "  (ID: " .. p.UserId .. ")"
+	local teamName = p.Team and p.Team.Name or "None"
+	infoStats.Text = "🏷  " .. p.Name .. (p.DisplayName ~= p.Name and " (" .. p.DisplayName .. ")" or "") .. "   🚩 Team: " .. teamName
+	local hum = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		infoHP.Text = "❤  HP: " .. math.floor(hum.Health) .. " / " .. math.max(hum.MaxHealth,1)
+	else
+		infoHP.Text = "❤  HP: N/A"
+	end
 end
 
 
@@ -1297,26 +1320,14 @@ infoHP.TextSize = 10
 infoHP.TextXAlignment = Enum.TextXAlignment.Left
 
 
-_origSelectPlayer = selectPlayer
-selectPlayer = function(p)
-	_origSelectPlayer(p)
-	infoName.Text = "👤  " .. p.Name .. "  (ID: " .. p.UserId .. ")"
-	local teamName = p.Team and p.Team.Name or "None"
-	infoStats.Text = "🏷  " .. p.Name .. (p.DisplayName ~= p.Name and " (" .. p.DisplayName .. ")" or "") .. "   🚩 Team: " .. teamName
-	local hum = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
-	if hum then
-		infoHP.Text = "❤  HP: " .. math.floor(hum.Health) .. " / " .. math.floor(hum.MaxHealth)
-	else
-		infoHP.Text = "❤  HP: N/A"
-	end
-end
 
 
 RunService.Heartbeat:Connect(function()
+	if not targetPlayer then return end
 	if targetPlayer and targetPlayer.Character then
 		local hum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
 		if hum then
-			infoHP.Text = "❤  HP: " .. math.floor(hum.Health) .. " / " .. math.floor(hum.MaxHealth)
+			infoHP.Text = "❤  HP: " .. math.floor(hum.Health) .. " / " .. math.max(hum.MaxHealth,1)
 		end
 	end
 end)
@@ -1920,6 +1931,14 @@ end
 function disableAntiGrab()
 	antiGrabEnabled = false
 	if antiGrabConn then antiGrabConn:Disconnect(); antiGrabConn = nil end
+	pcall(function()
+		local char = player.Character
+		if char then
+			for _, t in ipairs(char:GetChildren()) do
+				if t:IsA("Tool") then pcall(function() t.Parent = player.Backpack end) end
+			end
+		end
+	end)
 end
 
 createToggle(pages.Personal, "🔒  Anti-Tool Grab", 14, function(state)
@@ -2568,15 +2587,19 @@ createSlider(pages.Aim, "🎯  Prediction (lead)", 0, 50, 15, 5, function(val)
 end)
 
 
-createBtn(pages.Aim, "🔄  Mode: " .. aimMode, currentTheme.Button, 6, function(btn)
+local aimModeBtn = nil
+aimModeBtn = createBtn(pages.Aim, "🔄  Mode: " .. aimMode, currentTheme.Button, 6, function(btn)
 	aimMode = (aimMode == "hold") and "toggle" or "hold"
+	aimModeBtn.Text = "🔄  Mode: " .. aimMode
 	updateAimStatus()
 	showNotification("🎯  Mode: " .. aimMode, 2)
 end)
 
 methodNames = {"1 - Direct Cam", "2 - Scriptable Cam", "3 - HRP Orient"}
-createBtn(pages.Aim, "🔧  Method: " .. methodNames[aimMethod], currentTheme.Button, 7, function()
+local aimMethodBtn = nil
+aimMethodBtn = createBtn(pages.Aim, "🔧  Method: " .. methodNames[aimMethod], currentTheme.Button, 7, function()
 	aimMethod = (aimMethod % 3) + 1
+	aimMethodBtn.Text = "🔧  Method: " .. methodNames[aimMethod]
 	showNotification("🎯  Method: " .. methodNames[aimMethod], 2)
 end)
 
@@ -3047,7 +3070,7 @@ function applyTheme(t)
 		page.ScrollBarImageColor3 = t.Accent
 	end
 	
-	for _, cb in ipairs(themeListeners) do
+	for _, cb in pairs(themeListeners) do
 		pcall(cb, t)
 	end
 end
@@ -3645,30 +3668,41 @@ end)
 
 
 
+local toastGui = nil
+local toastContainer = nil
+
 showNotification = function(message, duration)
 	duration = duration or 4
 
-	
-	local toastGui = Instance.new("ScreenGui", playerGui)
-	toastGui.Name = "AdminToast"
-	toastGui.ResetOnSpawn = false
-	toastGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	if not toastGui or not toastGui.Parent then
+		toastGui = Instance.new("ScreenGui", playerGui)
+		toastGui.Name = "AdminToast"
+		toastGui.ResetOnSpawn = false
+		toastGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		toastContainer = Instance.new("Frame", toastGui)
+		toastContainer.Size = UDim2.new(0, 280, 1, 0)
+		toastContainer.Position = UDim2.new(1, -16, 0, 0)
+		toastContainer.BackgroundTransparency = 1
+		toastContainer.BorderSizePixel = 0
+		local layout = Instance.new("UIListLayout", toastContainer)
+		layout.Padding = UDim.new(0, 6)
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+		toastContainer.AutomaticSize = Enum.AutomaticSize.Y
+	end
 
-	local toast = Instance.new("Frame", toastGui)
-	toast.Size = UDim2.new(0, 280, 0, 54)
-	toast.Position = UDim2.new(1, 10, 1, -80)
+	local toast = Instance.new("Frame", toastContainer)
+	toast.Size = UDim2.new(1, 0, 0, 54)
 	toast.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 	toast.BorderSizePixel = 0
-	toast.AnchorPoint = Vector2.new(1, 1)
+	toast.LayoutOrder = tick()
 	Instance.new("UICorner", toast).CornerRadius = UDim.new(0, 12)
 
-	
 	local toastStroke = Instance.new("UIStroke", toast)
 	toastStroke.Color = Color3.fromRGB(100, 80, 255)
 	toastStroke.Thickness = 1.5
 	toastStroke.Transparency = 0.3
 
-	
 	local icon = Instance.new("Frame", toast)
 	icon.Size = UDim2.new(0, 4, 1, -16)
 	icon.Position = UDim2.new(0, 8, 0.5, 0)
@@ -3677,7 +3711,6 @@ showNotification = function(message, duration)
 	icon.BorderSizePixel = 0
 	Instance.new("UICorner", icon).CornerRadius = UDim.new(1, 0)
 
-	
 	local toastLabel = Instance.new("TextLabel", toast)
 	toastLabel.Text = message
 	toastLabel.Size = UDim2.new(1, -26, 1, 0)
@@ -3690,31 +3723,28 @@ showNotification = function(message, duration)
 	toastLabel.TextWrapped = true
 	toastLabel.RichText = true
 
-	
+	toast.Position = UDim2.new(1, 10, 0, 0)
 	TweenService:Create(toast, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.new(1, -16, 1, -80)
+		Position = UDim2.new(0, 0, 0, 0)
 	}):Play()
 
-	
 	local progress = Instance.new("Frame", toast)
 	progress.Size = UDim2.new(1, 0, 0, 3)
 	progress.Position = UDim2.new(0, 0, 1, -3)
 	progress.BackgroundColor3 = Color3.fromRGB(100, 80, 255)
 	progress.BorderSizePixel = 0
-	local progressCorner = Instance.new("UICorner", progress)
-	progressCorner.CornerRadius = UDim.new(0, 12)
+	Instance.new("UICorner", progress).CornerRadius = UDim.new(0, 12)
 
 	TweenService:Create(progress, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
 		Size = UDim2.new(0, 0, 0, 3)
 	}):Play()
 
-	
 	task.delay(duration, function()
 		TweenService:Create(toast, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-			Position = UDim2.new(1, 10, 1, -80)
+			Position = UDim2.new(1, 10, 0, 0)
 		}):Play()
 		task.wait(0.35)
-		toastGui:Destroy()
+		toast:Destroy()
 	end)
 end
 
@@ -3957,6 +3987,33 @@ function isBot(model)
 end
 
 
+function buildHealthBar(hrp, hum, bbName, objs, guardKey)
+	local bb = mkBB(hrp, bbName, 5, 54, 0)
+	bb.StudsOffset = Vector3.new(-1.3, 0, 0)
+	local bg = Instance.new("Frame", bb)
+	bg.Size                  = UDim2.new(1,0,1,0)
+	bg.BackgroundColor3      = Color3.fromRGB(20,20,20)
+	bg.BackgroundTransparency = 0.15
+	bg.BorderSizePixel       = 0
+	Instance.new("UICorner", bg).CornerRadius = UDim.new(1,0)
+	local fill = Instance.new("Frame", bg)
+	fill.AnchorPoint = Vector2.new(0,1)
+	fill.Position    = UDim2.new(0,0,1,0)
+	local p0 = math.clamp(hum.Health / math.max(hum.MaxHealth,1), 0, 1)
+	fill.Size             = UDim2.new(1,0,p0,0)
+	fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-p0)), math.floor(220*p0+35), 40)
+	fill.BorderSizePixel  = 0
+	Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
+	hum.HealthChanged:Connect(function(h)
+		if guardKey and not espState[guardKey] then return end
+		local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
+		fill.Size             = UDim2.new(1,0,pct,0)
+		fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-pct)), math.floor(220*pct+35), 40)
+	end)
+	table.insert(objs, bb)
+end
+
+
 function buildESPBot(model)
 	if espBotObjects[model] then return end
 	local hum = model:FindFirstChildOfClass("Humanoid")
@@ -3986,29 +4043,7 @@ function buildESPBot(model)
 
 	
 	if hum then
-		local bb2 = mkBB(hrp, "ESP_BotBar", 5, 54, 0)
-		bb2.StudsOffset = Vector3.new(-1.3, 0, 0)
-		local bg = Instance.new("Frame", bb2)
-		bg.Size = UDim2.new(1,0,1,0)
-		bg.BackgroundColor3 = Color3.fromRGB(20,20,20)
-		bg.BackgroundTransparency = 0.15
-		bg.BorderSizePixel = 0
-		Instance.new("UICorner", bg).CornerRadius = UDim.new(1,0)
-		local fill = Instance.new("Frame", bg)
-		fill.AnchorPoint = Vector2.new(0,1)
-		fill.Position = UDim2.new(0,0,1,0)
-		local p0 = math.clamp(hum.Health / math.max(hum.MaxHealth,1), 0, 1)
-		fill.Size = UDim2.new(1,0,p0,0)
-		fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-p0)), math.floor(220*p0+35), 40)
-		fill.BorderSizePixel = 0
-		Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
-		hum.HealthChanged:Connect(function(h)
-			if not espState.bots then return end
-			local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
-			fill.Size = UDim2.new(1,0,pct,0)
-			fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-pct)), math.floor(220*pct+35), 40)
-		end)
-		table.insert(objs, bb2)
+		buildHealthBar(hrp, hum, "ESP_BotBar", objs, "bots")
 	end
 
 	espBotObjects[model] = objs
@@ -4173,29 +4208,7 @@ function buildESPFor(p)
 
 	
 	if espState.healthBar and hum then
-		local bb = mkBB(hrp, "ESP_Bar", 5, 54, 0)
-		bb.StudsOffset = Vector3.new(-1.3, 0, 0)
-		local bg = Instance.new("Frame", bb)
-		bg.Size                  = UDim2.new(1,0,1,0)
-		bg.BackgroundColor3      = Color3.fromRGB(20,20,20)
-		bg.BackgroundTransparency = 0.15
-		bg.BorderSizePixel       = 0
-		Instance.new("UICorner", bg).CornerRadius = UDim.new(1,0)
-		local fill = Instance.new("Frame", bg)
-		fill.AnchorPoint = Vector2.new(0,1)
-		fill.Position    = UDim2.new(0,0,1,0)
-		local p0 = math.clamp(hum.Health / math.max(hum.MaxHealth,1), 0, 1)
-		fill.Size             = UDim2.new(1,0,p0,0)
-		fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-p0)), math.floor(220*p0+35), 40)
-		fill.BorderSizePixel  = 0
-		Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
-		hum.HealthChanged:Connect(function(h)
-			if not espState.healthBar then return end
-			local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
-			fill.Size             = UDim2.new(1,0,pct,0)
-			fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-pct)), math.floor(220*pct+35), 40)
-		end)
-		table.insert(objs, bb)
+		buildHealthBar(hrp, hum, "ESP_Bar", objs, "healthBar")
 	end
 
 	
@@ -4741,8 +4754,10 @@ function startESP()
 
 	
 	RunService:BindToRenderStep("ESP_Update", Enum.RenderPriority.Last.Value, function()
-		if espState.distance or ESP_MAX_DIST_PLAYER > 0 or ESP_MAX_DIST_BOT > 0 then
-			updateDistances()
+		if espState.distance or espState.healthBar or espState.health or espState.skeletons or espState.boxes or espState.chams or espState.names then
+			if ESP_MAX_DIST_PLAYER > 0 or ESP_MAX_DIST_BOT > 0 or espState.distance then
+				updateDistances()
+			end
 		end
 	end)
 
