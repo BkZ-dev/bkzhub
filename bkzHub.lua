@@ -1719,6 +1719,7 @@ createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(st
 end, "noclip")
 
 local emoteTracks = {}
+emoteSpeed = 1.0
 
 local function createEmoteToggle(parent, name, order, animId, configKey)
 	createToggle(parent, name, order, function(state)
@@ -1733,6 +1734,7 @@ local function createEmoteToggle(parent, name, order, animId, configKey)
 			anim.AnimationId = "rbxassetid://" .. tostring(animId)
 			local track = animator:LoadAnimation(anim)
 			track.Looped = true
+			track:AdjustSpeed(emoteSpeed)
 			track:Play()
 			emoteTracks[configKey] = track
 		else
@@ -1745,7 +1747,32 @@ local function createEmoteToggle(parent, name, order, animId, configKey)
 	end, configKey)
 end
 
+function stopAllEmotes()
+	for k, track in pairs(emoteTracks) do
+		pcall(function() track:Stop(); track:Destroy() end)
+	end
+	emoteTracks = {}
+	for k, v in pairs(toggleStates) do
+		if k:match("^anim_") and v then
+			toggleStates[k] = false
+			if toggleApply[k] then toggleApply[k](false) end
+		end
+	end
+end
+
 createSection(pages.Emotes, "🎬  Animator Packs", 1)
+
+createBtn(pages.Emotes, "⏹  Stop All Emotes", currentTheme.Danger, 2, function()
+	stopAllEmotes()
+	showNotification("⏹  Toutes les emotes arrêtées", 2)
+end)
+
+createSlider(pages.Emotes, "⚡  Speed Animation", 10, 300, 100, 3, function(val)
+	emoteSpeed = val / 100
+	for _, track in pairs(emoteTracks) do
+		pcall(function() track:AdjustSpeed(emoteSpeed) end)
+	end
+end)
 
 local animEmotes = {
 	{"Wave", 18455766909},
@@ -3742,6 +3769,10 @@ function getConfig()
 		keyLayout = keyLayout,
 		aimKey    = aimKey,
 		aimMode   = aimMode,
+		aimMethod = aimMethod,
+		aimSmooth = aimSmooth,
+		aimPrediction = aimPrediction,
+		aimTargetPart = aimTargetPart,
 		flySpeed  = flySpeed,
 		walkSpeed = savedWalkSpeed,
 		jumpPower = savedJumpPower,
@@ -3759,6 +3790,16 @@ function getConfig()
 			bot   = ESP_COLOR_BOT,
 			self  = ESP_COLOR_SELF,
 		},
+		espMaxDist = {
+			player = ESP_MAX_DIST_PLAYER,
+			bot    = ESP_MAX_DIST_BOT,
+		},
+		espStyle = {
+			fillTransparency = ESP_FILL_TRANSPARENCY,
+			boxStyle = ESP_BOX_STYLE,
+			skeletonWidth = ESP_SKELETON_WIDTH,
+		},
+		emoteSpeed = emoteSpeed,
 		toggles   = toggles,
 	}
 end
@@ -3774,6 +3815,10 @@ function applyConfig(cfg)
 	if cfg.keyLayout then keyLayout = cfg.keyLayout end
 	if cfg.aimKey   then aimKey   = cfg.aimKey   end
 	if cfg.aimMode  then aimMode  = cfg.aimMode  end
+	if cfg.aimMethod then aimMethod = cfg.aimMethod end
+	if cfg.aimSmooth then aimSmooth = cfg.aimSmooth end
+	if cfg.aimPrediction then aimPrediction = cfg.aimPrediction end
+	if cfg.aimTargetPart then aimTargetPart = cfg.aimTargetPart end
 	if cfg.flySpeed then flySpeed = cfg.flySpeed end
 	if cfg.walkSpeed then savedWalkSpeed = cfg.walkSpeed; applyMovement(player.Character) end
 	if cfg.jumpPower then savedJumpPower = cfg.jumpPower; applyMovement(player.Character) end
@@ -3794,6 +3839,16 @@ function applyConfig(cfg)
 		if cfg.espColors.bot   then ESP_COLOR_BOT   = cfg.espColors.bot   end
 		if cfg.espColors.self  then ESP_COLOR_SELF  = cfg.espColors.self  end
 	end
+	if cfg.espMaxDist then
+		if cfg.espMaxDist.player then ESP_MAX_DIST_PLAYER = cfg.espMaxDist.player end
+		if cfg.espMaxDist.bot    then ESP_MAX_DIST_BOT    = cfg.espMaxDist.bot    end
+	end
+	if cfg.espStyle then
+		if cfg.espStyle.fillTransparency then ESP_FILL_TRANSPARENCY = cfg.espStyle.fillTransparency end
+		if cfg.espStyle.boxStyle then ESP_BOX_STYLE = cfg.espStyle.boxStyle end
+		if cfg.espStyle.skeletonWidth then ESP_SKELETON_WIDTH = cfg.espStyle.skeletonWidth end
+	end
+	if cfg.emoteSpeed then emoteSpeed = cfg.emoteSpeed end
 	if cfg.toggles then
 		for k, v in pairs(cfg.toggles) do
 			toggleStates[k] = v
@@ -3848,6 +3903,7 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  103, funct
 	local cam = workspace.CurrentCamera
 	if cam then cam.FieldOfView = 70 end
 	aimKey = "Mouse2"; aimMode = "hold"; flySpeed = 40
+	aimMethod = 1; aimSmooth = 0.08; aimPrediction = 0.15; aimTargetPart = "Head"
 	savedWalkSpeed = 16; savedJumpPower = 50
 	savedOpacity = 100
 	main.BackgroundTransparency = 0
@@ -3859,6 +3915,11 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  103, funct
 	ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
 	ESP_COLOR_BOT   = Color3.fromRGB(255, 200, 0)
 	ESP_COLOR_SELF  = Color3.fromRGB(80, 160, 255)
+	ESP_MAX_DIST_PLAYER = 0; ESP_MAX_DIST_BOT = 0
+	ESP_FILL_TRANSPARENCY = 0.85; ESP_BOX_STYLE = "corners"
+	ESP_SKELETON_WIDTH = 0.15; ESP_HEAD_DOT = false
+	emoteSpeed = 1.0
+	stopAllEmotes()
 	applyMovement(player.Character)
 	updateAimStatus()
 	showNotification("↩  Config reset", 2)
@@ -4159,6 +4220,7 @@ espState = {
 	playerChams     = false,
 	playerHealthBar = false,
 	playerSnaplines = false,
+	playerHeadDot   = false,
 	botBoxes     = false,
 	botNames     = false,
 	botHealth    = false,
@@ -4167,6 +4229,7 @@ espState = {
 	botChams     = false,
 	botHealthBar = false,
 	botSnaplines = false,
+	botHeadDot   = false,
 	selfESP       = false,
 }
 espObjects      = {}
@@ -4178,9 +4241,13 @@ ESP_COLOR_ENEMY = Color3.fromRGB(255, 40, 50)
 ESP_COLOR_BOT   = Color3.fromRGB(255, 200, 0)
 ESP_COLOR_SELF  = Color3.fromRGB(80, 160, 255)
 
-
 ESP_MAX_DIST_PLAYER = 0
 ESP_MAX_DIST_BOT    = 0
+
+ESP_FILL_TRANSPARENCY = 0.85
+ESP_BOX_STYLE = "corners"
+ESP_SKELETON_WIDTH = 0.15
+ESP_HEAD_DOT = false
 
 
 function clearESPFor(p)
@@ -4273,14 +4340,34 @@ function buildESPBot(model)
 		local bg = Instance.new("Frame", bb)
 		bg.Size = UDim2.new(1,0,1,0)
 		bg.BackgroundColor3 = color
-		bg.BackgroundTransparency = 0.9
+		bg.BackgroundTransparency = ESP_FILL_TRANSPARENCY
 		bg.BorderSizePixel = 0
 		Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 4)
 		local outline = Instance.new("UIStroke", bg)
 		outline.Color = color
 		outline.Thickness = 1.5
 		outline.Transparency = 0.15
+		if ESP_BOX_STYLE ~= "corners" then
+			outline.Thickness = 2
+		end
 		table.insert(objs, bb)
+	end
+
+	if espState.botHeadDot then
+		local head = model:FindFirstChild("Head")
+		if head then
+			local bb = mkBB(head, "ESP_BotHeadDot", 6, 6, 0)
+			local dot = Instance.new("Frame", bb)
+			dot.Size = UDim2.new(1,0,1,0)
+			dot.BackgroundColor3 = color
+			dot.BorderSizePixel = 0
+			Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
+			local glow = Instance.new("UIStroke", dot)
+			glow.Color = color
+			glow.Thickness = 1
+			glow.Transparency = 0.3
+			table.insert(objs, bb)
+		end
 	end
 
 	if espState.botNames then
@@ -4434,7 +4521,7 @@ function buildESPFor(p)
 		local bg = Instance.new("Frame", bb)
 		bg.Size = UDim2.new(1,0,1,0)
 		bg.BackgroundColor3 = color
-		bg.BackgroundTransparency = 0.9
+		bg.BackgroundTransparency = ESP_FILL_TRANSPARENCY
 		bg.BorderSizePixel = 0
 		Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 4)
 
@@ -4443,32 +4530,50 @@ function buildESPFor(p)
 		outline.Thickness = 1.5
 		outline.Transparency = 0.15
 
-		local CORNER = 18
-		local THICK  = 3.5
-		local corners = {
-			{x=0, y=0, w=CORNER, h=THICK},
-			{x=0, y=0, w=THICK,  h=CORNER},
-			{x=1, y=0, ox=-CORNER, w=CORNER, h=THICK},
-			{x=1, y=0, ox=-THICK,  w=THICK,  h=CORNER},
-			{x=0, y=1, oy=-THICK,  w=CORNER, h=THICK},
-			{x=0, y=1, oy=-CORNER, w=THICK,  h=CORNER},
-			{x=1, y=1, ox=-CORNER, oy=-THICK,  w=CORNER, h=THICK},
-			{x=1, y=1, ox=-THICK,  oy=-CORNER, w=THICK,  h=CORNER},
-		}
-		for _, c in ipairs(corners) do
-			local f = Instance.new("Frame", bb)
-			f.BorderSizePixel = 0
-			f.BackgroundColor3 = color
-			f.AnchorPoint = Vector2.new(c.x or 0, c.y or 0)
-			f.Position = UDim2.new(c.x or 0, c.ox or 0, c.y or 0, c.oy or 0)
-			f.Size = UDim2.new(0, c.w, 0, c.h)
-			Instance.new("UICorner", f).CornerRadius = UDim.new(0, 2)
-			local sh = Instance.new("UIStroke", f)
-			sh.Color = Color3.new(0,0,0)
-			sh.Thickness = 1.5
-			sh.Transparency = 0.4
+		if ESP_BOX_STYLE == "corners" then
+			local CORNER = 18
+			local THICK  = 3.5
+			local corners = {
+				{x=0, y=0, w=CORNER, h=THICK},
+				{x=0, y=0, w=THICK,  h=CORNER},
+				{x=1, y=0, ox=-CORNER, w=CORNER, h=THICK},
+				{x=1, y=0, ox=-THICK,  w=THICK,  h=CORNER},
+				{x=0, y=1, oy=-THICK,  w=CORNER, h=THICK},
+				{x=0, y=1, oy=-CORNER, w=THICK,  h=CORNER},
+				{x=1, y=1, ox=-CORNER, oy=-THICK,  w=CORNER, h=THICK},
+				{x=1, y=1, ox=-THICK,  oy=-CORNER, w=THICK,  h=CORNER},
+			}
+			for _, c in ipairs(corners) do
+				local f = Instance.new("Frame", bb)
+				f.BorderSizePixel = 0
+				f.BackgroundColor3 = color
+				f.AnchorPoint = Vector2.new(c.x or 0, c.y or 0)
+				f.Position = UDim2.new(c.x or 0, c.ox or 0, c.y or 0, c.oy or 0)
+				f.Size = UDim2.new(0, c.w, 0, c.h)
+				Instance.new("UICorner", f).CornerRadius = UDim.new(0, 2)
+				local sh = Instance.new("UIStroke", f)
+				sh.Color = Color3.new(0,0,0)
+				sh.Thickness = 1.5
+				sh.Transparency = 0.4
+			end
+		else
+			outline.Thickness = 2
 		end
 
+		table.insert(objs, bb)
+	end
+
+	if espState.playerHeadDot and head then
+		local bb = mkBB(head, "ESP_HeadDot", 6, 6, 0)
+		local dot = Instance.new("Frame", bb)
+		dot.Size = UDim2.new(1,0,1,0)
+		dot.BackgroundColor3 = color
+		dot.BorderSizePixel = 0
+		Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
+		local glow = Instance.new("UIStroke", dot)
+		glow.Color = color
+		glow.Thickness = 1
+		glow.Transparency = 0.3
 		table.insert(objs, bb)
 	end
 
@@ -4520,8 +4625,8 @@ function buildESPFor(p)
 			beam.Attachment0 = a0
 			beam.Attachment1 = a1
 			beam.FaceCamera = true
-			beam.Width0 = 0.15
-			beam.Width1 = 0.15
+			beam.Width0 = ESP_SKELETON_WIDTH
+			beam.Width1 = ESP_SKELETON_WIDTH
 			beam.Color = ColorSequence.new(color)
 			beam.Transparency = NumberSequence.new(0.1)
 			beam.LightEmission = 1
@@ -4847,17 +4952,35 @@ createToggle(pages.ESP, "✅  TOUT Joueurs", 1, function(s)
 	toggleESP("playerHealth", s); toggleESP("playerHealthBar", s)
 	toggleESP("playerDistance", s); toggleESP("playerSkeletons", s)
 	toggleESP("playerChams", s); toggleESP("playerSnaplines", s)
+	toggleESP("playerHeadDot", s)
 end, nil)
 createToggle(pages.ESP, "📦  Boxes", 10, function(s) toggleESP("playerBoxes", s) end, "espPlayerBoxes")
 createToggle(pages.ESP, "🏷  Names + Team Tag", 11, function(s) toggleESP("playerNames", s) end, "espPlayerNames")
 createToggle(pages.ESP, "❤  Health (text)", 12, function(s) toggleESP("playerHealth", s) end, "espPlayerHealth")
 createToggle(pages.ESP, "📊  Health Bar", 13, function(s) toggleESP("playerHealthBar", s) end, "espPlayerHealthBar")
 createToggle(pages.ESP, "📏  Distance", 14, function(s) toggleESP("playerDistance", s) end, "espPlayerDistance")
+createToggle(pages.ESP, "⚫  Head Dot", 15, function(s) toggleESP("playerHeadDot", s) end, "espPlayerHeadDot")
 
 createSection(pages.ESP, "🎨  Player Visuals", 20)
 createToggle(pages.ESP, "💀  Skeleton", 21, function(s) toggleESP("playerSkeletons", s) end, "espPlayerSkeletons")
 createToggle(pages.ESP, "🔆  Chams (Highlight)", 22, function(s) toggleESP("playerChams", s) end, "espPlayerChams")
 createToggle(pages.ESP, "📐  Snaplines", 23, function(s) toggleESP("playerSnaplines", s) end, "espPlayerSnaplines")
+
+createSection(pages.ESP, "🎨  Style", 25)
+createSlider(pages.ESP, "🔲  Fill Transparency", 0, 100, 85, 26, function(val)
+	ESP_FILL_TRANSPARENCY = val / 100
+	refreshAllESP()
+end)
+local boxStyleBtn = nil
+boxStyleBtn = createBtn(pages.ESP, "📦  Box Style: " .. ESP_BOX_STYLE, currentTheme.Button, 27, function(btn)
+	ESP_BOX_STYLE = (ESP_BOX_STYLE == "corners") and "full" or "corners"
+	btn.Text = "📦  Box Style: " .. ESP_BOX_STYLE
+	refreshAllESP()
+end)
+createSlider(pages.ESP, "💀  Skeleton Thickness", 5, 50, 15, 28, function(val)
+	ESP_SKELETON_WIDTH = val / 100
+	refreshAllESP()
+end)
 
 createSection(pages.ESP, "🤖  Bot/NPC ESP", 30)
 createToggle(pages.ESP, "✅  TOUT Bots", 31, function(s)
@@ -4865,12 +4988,14 @@ createToggle(pages.ESP, "✅  TOUT Bots", 31, function(s)
 	toggleESP("botHealth", s); toggleESP("botHealthBar", s)
 	toggleESP("botDistance", s); toggleESP("botSkeletons", s)
 	toggleESP("botChams", s); toggleESP("botSnaplines", s)
+	toggleESP("botHeadDot", s)
 end, nil)
 createToggle(pages.ESP, "📦  Bot Boxes", 40, function(s) toggleESP("botBoxes", s) end, "espBotBoxes")
 createToggle(pages.ESP, "🏷  Bot Names", 41, function(s) toggleESP("botNames", s) end, "espBotNames")
 createToggle(pages.ESP, "❤  Bot Health (text)", 42, function(s) toggleESP("botHealth", s) end, "espBotHealth")
 createToggle(pages.ESP, "📊  Bot Health Bar", 43, function(s) toggleESP("botHealthBar", s) end, "espBotHealthBar")
 createToggle(pages.ESP, "📏  Bot Distance", 44, function(s) toggleESP("botDistance", s) end, "espBotDistance")
+createToggle(pages.ESP, "⚫  Bot Head Dot", 45, function(s) toggleESP("botHeadDot", s) end, "espBotHeadDot")
 
 createSection(pages.ESP, "🎨  Bot Visuals", 50)
 createToggle(pages.ESP, "💀  Bot Skeleton", 51, function(s) toggleESP("botSkeletons", s) end, "espBotSkeletons")
@@ -4891,7 +5016,7 @@ createColorDropdown(pages.ESP, "🔵  Ally Color", 72,
 )
 createColorDropdown(pages.ESP, "🟡  Bot Color", 73,
 	Color3.fromRGB(255,200,0),
-	function(c) ESP_COLOR_BOT = c; local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines; if anyBot then refreshBotESP() end end
+	function(c) ESP_COLOR_BOT = c; local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot; if anyBot then refreshBotESP() end end
 )
 createColorDropdown(pages.ESP, "🔷  Self Color", 74,
 	Color3.fromRGB(80,160,255),
@@ -4905,13 +5030,13 @@ createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 81, function(v
 end)
 createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 82, function(val)
 	ESP_MAX_DIST_BOT = val
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
 	if anyBot then refreshBotESP() end
 end)
 
 createSection(pages.ESP, "🤖  Bots / NPC", 90)
 createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 91, function()
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
 	if anyBot then refreshBotESP()
 	else showNotification("⚠  Active un toggle Bot ESP d'abord", 2) end
 end)

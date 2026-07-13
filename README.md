@@ -160,16 +160,17 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ### 👁 ESP
 
-> 📍 Full ESP suite with per-category control — Players, Bots/NPC, and Self — each with independent toggles and master enable.
+> 📍 Full ESP suite with per-category control — Players, Bots/NPC, and Self — each with independent toggles, master enable, and style customization.
 
 <details>
 <summary><b>📌 Sections</b></summary>
 
 | Section | Features |
 |:---|:---|
-| **📦 Player ESP** | ✅ TOUT Joueurs (master), Boxes, Names + Team Tag, Health (text), Health Bar, Distance |
+| **📦 Player ESP** | ✅ TOUT Joueurs (master), Boxes, Names + Team Tag, Health (text), Health Bar, Distance, **Head Dot** |
 | **🎨 Player Visuals** | Skeleton (real Beams connecting joints!), Chams (Highlight), **Snaplines** (Beam below character) |
-| **🤖 Bot/NPC ESP** | ✅ TOUT Bots (master), Boxes, Names, Health (text), Health Bar, Distance |
+| **🎨 Style** | **Fill Transparency** slider, **Box Style** (corners/full), **Skeleton Thickness** slider |
+| **🤖 Bot/NPC ESP** | ✅ TOUT Bots (master), Boxes, Names, Health (text), Health Bar, Distance, **Head Dot** |
 | **🎨 Bot Visuals** | Skeleton, Chams, **Snaplines** |
 | **👻 Self ESP** | Show your own name, health, and distance |
 | **🎨 Colors** | Enemy Color, Ally Color, Bot Color, Self Color (4 dropdowns with 9 presets each) |
@@ -181,6 +182,10 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 | Feature | Before | After |
 |:---|:---|:---|
 | **Master Toggles** | Not available | **✅ TOUT Joueurs / ✅ TOUT Bots** — enable/disable all toggles at once |
+| **Head Dot** | Not available | **New!** Glowing dot on head for players and bots |
+| **Fill Transparency** | Fixed at 85% | **Adjustable** slider (0–100%) — control box background opacity |
+| **Box Style** | Corners only | **Toggle** between corners and full box outline |
+| **Skeleton Thickness** | Fixed at 0.15 | **Adjustable** slider (0.05–0.50) — thin or thick skeleton beams |
 | **Snaplines** | Not available | **New!** Beam lines from character downward, for both players and bots |
 | **Player/Bot ESP** | Shared toggles for all | **Independent toggles** per category — enable Boxes for players only, Skeleton for bots only, etc. |
 | **Self ESP** | Not available | **New!** See your own name, health bar, and distance |
@@ -213,17 +218,27 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ### 💃 Emotes
 
-> 🎬 Play animator-created animations on your character. Not Roblox defaults — animations from community creators!
+> 🎬 Play animator-created animations on your character with speed control. Not Roblox defaults — animations from community creators!
 
 <details>
 <summary><b>📌 Features</b></summary>
 
+- **⏹ Stop All Emotes** — instantly stop all playing animations
+- **⚡ Speed Animation** — adjustable animation speed slider (10%–300%)
 - **🎬 Animator Packs** — 12 custom animations from community animators (not Roblox defaults):
   - Wave, Point, Dance, Dance 2, Dance 3, Laugh, Cheer
   - Idle, Walk Style, Run Style, Fall, Sit
 - Each toggle **forces the animation** on your character regardless of rig type (R6 or R15)
 - Animations **loop continuously** and are visible to everyone
-- Toggle off to stop the animation
+- Toggle off to stop individual animation
+
+### Emotes Improvements in v5.7
+
+| Feature | Before | After |
+|:---|:---|:---|
+| **Stop All** | Not available | **New!** One-click to stop all playing emotes |
+| **Speed Control** | Fixed at 100% | **Adjustable** slider (10%–300%) — slow motion or fast forward |
+| **Speed applied instantly** | N/A | Changing speed applies to all currently playing emotes |
 
 </details>
 
@@ -336,13 +351,13 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ## 💾 Configuration
 
-> 💾 Full auto-save and auto-load system with manual controls.
+> 💾 Full auto-save and auto-load system with manual controls. Covers ALL settings across every system.
 
 | Action | Description |
 |:---|:---|
-| **💾 Save Config** | Manually save all toggles, theme, FOV, keybinds, fly speed, walk speed, jump power, opacity, menu effects, ESP settings (player/bot/self toggles, colors, distances), aim settings (target types, distance, FOV circle, smooth, prediction) |
+| **💾 Save Config** | Manually save everything — theme, menu, aimbot (key, mode, smooth, FOV, method, target part, prediction, target types, distance, circle), ESP (all toggles per category, colors, distances, style, fill, skeleton width, head dot), emotes (speed, states), freecam speed |
 | **📂 Load Config** | Manually load saved configuration |
-| **🗑 Reset Config** | Reset everything to defaults (Dark theme, 380×500 size, 100% opacity, QWERTY, Mouse2, hold mode, 70 FOV, aim distance 0, FOV circle OFF, freecam speed 50, all target types reset) |
+| **🗑 Reset Config** | Reset everything to defaults (Dark theme, 380×500, 100% opacity, QWERTY, Mouse2, hold, 70 FOV, all aimbot defaults, ESP defaults, emote speed 100%) |
 | **🔄 Auto-Save** | Automatically saves on every change (1-second debounce) |
 | **🔄 Auto-Load** | Automatically loads config 0.5s after injection if a saved file exists |
 
@@ -355,18 +370,13 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 - ✅ FOV value
 - ✅ Menu opacity
 - ✅ Key layout (QWERTY/AZERTY)
-- ✅ Aim key, mode, smooth, FOV, method, target part, prediction
-- ✅ Aim target types (Players, Bots, Vehicles, Objects)
-- ✅ Aim distance, FOV circle toggle
+- ✅ **Aimbot complete**: key, mode, method, smooth, prediction, target part, FOV, target types (Players/Bots/Vehicles/Objects), distance, FOV circle
+- ✅ **ESP complete**: all player/bot/self toggles, 4 colors, max distances (player/bot), fill transparency, box style (corners/full), skeleton width
 - ✅ Fly speed, walk speed, jump power
 - ✅ Freecam speed
+- ✅ **Emotes**: animation speed, all emote toggle states
 - ✅ Background animation state
 - ✅ All toggle states (God Mode, Fly, Noclip, ESP types, Menu Effects, etc.)
-- ✅ ESP player toggles (boxes, names, health, healthBar, distance, skeletons, chams)
-- ✅ ESP bot toggles (boxes, names, health, healthBar, distance, skeletons, chams)
-- ✅ ESP self toggle
-- ✅ ESP colors (enemy, ally, bot, self)
-- ✅ ESP max distances (player, bot)
 
 ---
 
