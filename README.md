@@ -6,7 +6,7 @@
 
 **v5.7** • Build 2026.07
 
-> 🔥 Bypass • ESP HD per Category • True Skeleton ESP • Aimbot + FOV Circle • Target Types • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects
+> 🔥 Bypass • ESP HD per Category • True Skeleton ESP (fixed!) • Aimbot + FOV Circle • Target Types • Invisible Player ESP • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects
 
 </div>
 
@@ -160,38 +160,35 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ### 👁 ESP
 
-> 📍 Full ESP suite with per-category control — Players, Bots/NPC, and Self — each with independent toggles, master enable, and style customization.
+> 📍 Full ESP suite — Players, Bots/NPC, Self — each with independent toggles, master enable, style customization, and invisible player support.
 
 <details>
 <summary><b>📌 Sections</b></summary>
 
 | Section | Features |
 |:---|:---|
-| **📦 Player ESP** | ✅ TOUT Joueurs (master), Boxes, Names + Team Tag, Health (text), Health Bar, Distance, **Head Dot** |
-| **🎨 Player Visuals** | Skeleton (real Beams connecting joints!), Chams (Highlight), **Snaplines** (Beam below character) |
-| **🎨 Style** | **Fill Transparency** slider, **Box Style** (corners/full), **Skeleton Thickness** slider |
-| **🤖 Bot/NPC ESP** | ✅ TOUT Bots (master), Boxes, Names, Health (text), Health Bar, Distance, **Head Dot** |
-| **🎨 Bot Visuals** | Skeleton, Chams, **Snaplines** |
-| **👻 Self ESP** | Show your own name, health, and distance |
-| **🎨 Colors** | Enemy Color, Ally Color, Bot Color, Self Color (4 dropdowns with 9 presets each) |
-| **📏 Distance Max** | Max distance for players (0 = infinite), Max distance for bots (0 = infinite) |
-| **🤖 Bots / NPC** | Scan Bots Now |
+| **👤 Players** | ✅ TOUT Joueurs (master), Boxes, Names + Team, Health (text), Health Bar, Distance, Head Dot, Skeleton, Chams, Snaplines |
+| **🤖 Bots / NPC** | ✅ TOUT Bots (master), Boxes, Names, Health, Health Bar, Distance, Head Dot, Skeleton, Chams, Snaplines, Scan Bots Now |
+| **👻 Self** | Show Self ESP toggle |
+| **🎨 Couleurs** | Enemy, Ally, Bot, Self (4 dropdowns with 9 presets each) |
+| **⚙ Style** | Fill Transparence slider, Box Style (corners/full), Epaisseur Skeleton slider |
+| **📏 Distance Max** | Joueurs (0 = infini), Bots (0 = infini) |
 
 ### ESP Improvements in v5.7
 
 | Feature | Before | After |
 |:---|:---|:---|
-| **Master Toggles** | Not available | **✅ TOUT Joueurs / ✅ TOUT Bots** — enable/disable all toggles at once |
-| **Head Dot** | Not available | **New!** Glowing dot on head for players and bots |
-| **Fill Transparency** | Fixed at 85% | **Adjustable** slider (0–100%) — control box background opacity |
-| **Box Style** | Corners only | **Toggle** between corners and full box outline |
-| **Skeleton Thickness** | Fixed at 0.15 | **Adjustable** slider (0.05–0.50) — thin or thick skeleton beams |
-| **Snaplines** | Not available | **New!** Beam lines from character downward, for both players and bots |
-| **Player/Bot ESP** | Shared toggles for all | **Independent toggles** per category — enable Boxes for players only, Skeleton for bots only, etc. |
-| **Self ESP** | Not available | **New!** See your own name, health bar, and distance |
-| **Self Color** | Not available | **New!** Custom color for your own ESP |
-| **Boxes** | Flat frame with white edge | Rounded corners + accent-colored corners (18px) + UIStroke outline |
-| **Skeleton** | Dots at each joint | **Real Beams** connecting all body parts (like some pro ESPs) |
+| **Organization** | 9 sections scattered | **6 sections** — Players, Bots, Self, Colors, Style, Distance |
+| **Master Toggles** | Not available | **✅ TOUT Joueurs / ✅ TOUT Bots** — enable/disable all at once |
+| **Head Dot** | Not available | **New!** Glowing dot on head (players + bots) |
+| **Fill Transparency** | Fixed at 85% | **Adjustable** slider (0–100%) |
+| **Box Style** | Corners only | **Toggle** corners / full outline |
+| **Skeleton Thickness** | Fixed at 0.15 | **Adjustable** slider (0.05–0.50) |
+| **Snaplines** | Not available | **New!** Beam lines below characters |
+| **Skeleton** | Dots at joints | **Real Beams** rendered outside character for visibility |
+| **Invisible Players** | Not visible | **New!** Forces invisible players visible via LocalTransparencyModifier |
+| **Self ESP** | Not available | **New!** See your own name, health, distance |
+| **Independent Toggles** | Shared for all | **Per-category** — enable Boxes for players only, Skeleton for bots only, etc. |
 
 </details>
 

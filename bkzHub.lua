@@ -4400,6 +4400,79 @@ function buildESPBot(model)
 		table.insert(objs, bb)
 	end
 
+	if espState.botSkeletons then
+		local isR15 = model:FindFirstChild("UpperTorso") ~= nil
+		local skelFolder = Instance.new("Folder", workspace.Terrain)
+		skelFolder.Name = "ESP_BotSkel_" .. model.Name
+
+		local function makeBeam(part0, part1, attName)
+			local a0 = part0:FindFirstChild(attName) or Instance.new("Attachment", part0)
+			a0.Name = attName
+			local a1 = part1:FindFirstChild(attName) or Instance.new("Attachment", part1)
+			a1.Name = attName
+			local beam = Instance.new("Beam", skelFolder)
+			beam.Attachment0 = a0
+			beam.Attachment1 = a1
+			beam.FaceCamera = true
+			beam.Width0 = ESP_SKELETON_WIDTH
+			beam.Width1 = ESP_SKELETON_WIDTH
+			beam.Color = ColorSequence.new(color)
+			beam.Transparency = NumberSequence.new(0)
+			beam.LightEmission = 1
+			beam.LightInfluence = 0
+			beam.Brightness = 2
+			beam.ZIndex = 100
+			table.insert(objs, beam)
+		end
+
+		local function getPart(name) return model:FindFirstChild(name) end
+
+		if isR15 then
+			local head = getPart("Head")
+			local ut = getPart("UpperTorso")
+			local lt = getPart("LowerTorso")
+			local rua = getPart("RightUpperArm")
+			local rla = getPart("RightLowerArm")
+			local rh = getPart("RightHand")
+			local lua = getPart("LeftUpperArm")
+			local lla = getPart("LeftLowerArm")
+			local lh = getPart("LeftHand")
+			local rul = getPart("RightUpperLeg")
+			local rll = getPart("RightLowerLeg")
+			local rf = getPart("RightFoot")
+			local lul = getPart("LeftUpperLeg")
+			local lll = getPart("LeftLowerLeg")
+			local lf = getPart("LeftFoot")
+			if head and ut then makeBeam(head, ut, "ESP_BotSkel_Att") end
+			if ut and lt then makeBeam(ut, lt, "ESP_BotSkel_Att") end
+			if ut and rua then makeBeam(ut, rua, "ESP_BotSkel_Att") end
+			if rua and rla then makeBeam(rua, rla, "ESP_BotSkel_Att") end
+			if rla and rh then makeBeam(rla, rh, "ESP_BotSkel_Att") end
+			if ut and lua then makeBeam(ut, lua, "ESP_BotSkel_Att") end
+			if lua and lla then makeBeam(lua, lla, "ESP_BotSkel_Att") end
+			if lla and lh then makeBeam(lla, lh, "ESP_BotSkel_Att") end
+			if lt and rul then makeBeam(lt, rul, "ESP_BotSkel_Att") end
+			if rul and rll then makeBeam(rul, rll, "ESP_BotSkel_Att") end
+			if rll and rf then makeBeam(rll, rf, "ESP_BotSkel_Att") end
+			if lt and lul then makeBeam(lt, lul, "ESP_BotSkel_Att") end
+			if lul and lll then makeBeam(lul, lll, "ESP_BotSkel_Att") end
+			if lll and lf then makeBeam(lll, lf, "ESP_BotSkel_Att") end
+		else
+			local head = getPart("Head")
+			local torso = getPart("Torso")
+			local la = getPart("Left Arm")
+			local ra = getPart("Right Arm")
+			local ll = getPart("Left Leg")
+			local rl = getPart("Right Leg")
+			if head and torso then makeBeam(head, torso, "ESP_BotSkel_Att") end
+			if torso and la then makeBeam(torso, la, "ESP_BotSkel_Att") end
+			if torso and ra then makeBeam(torso, ra, "ESP_BotSkel_Att") end
+			if torso and ll then makeBeam(torso, ll, "ESP_BotSkel_Att") end
+			if torso and rl then makeBeam(torso, rl, "ESP_BotSkel_Att") end
+		end
+		table.insert(objs, skelFolder)
+	end
+
 	if espState.botSnaplines then
 		local attTop = Instance.new("Attachment", hrp)
 		attTop.Name = "ESP_BotSnapTop"
@@ -4407,7 +4480,7 @@ function buildESPBot(model)
 		local attBot = Instance.new("Attachment", hrp)
 		attBot.Name = "ESP_BotSnapBot"
 		attBot.Position = Vector3.new(0, -6, 0)
-		local beam = Instance.new("Beam", model)
+		local beam = Instance.new("Beam", workspace.Terrain)
 		beam.Attachment0 = attTop
 		beam.Attachment1 = attBot
 		beam.FaceCamera = false
@@ -4417,6 +4490,8 @@ function buildESPBot(model)
 		beam.Transparency = NumberSequence.new(0.3)
 		beam.LightEmission = 1
 		beam.LightInfluence = 0
+		beam.Brightness = 2
+		beam.ZIndex = 100
 		table.insert(objs, attTop)
 		table.insert(objs, attBot)
 		table.insert(objs, beam)
@@ -4488,6 +4563,12 @@ function buildESPFor(p)
 	local isAlly = (player.Team ~= nil) and (p.Team == player.Team)
 	local color  = isAlly and ESP_COLOR_ALLY or ESP_COLOR_ENEMY
 	local objs   = {}
+
+	for _, part in ipairs(char:GetDescendants()) do
+		if part:IsA("BasePart") and part.Transparency >= 0.9 then
+			part.LocalTransparencyModifier = 0
+		end
+	end
 
 	
 	if espState.playerChams then
@@ -4616,21 +4697,26 @@ function buildESPFor(p)
 	if espState.playerSkeletons then
 		local isR15 = char:FindFirstChild("UpperTorso") ~= nil
 
+		local skelFolder = Instance.new("Folder", workspace.Terrain)
+		skelFolder.Name = "ESP_Skel_" .. p.Name
+
 		local function makeBeam(part0, part1, attName)
 			local a0 = part0:FindFirstChild(attName) or Instance.new("Attachment", part0)
 			a0.Name = attName
 			local a1 = part1:FindFirstChild(attName) or Instance.new("Attachment", part1)
 			a1.Name = attName
-			local beam = Instance.new("Beam", char)
+			local beam = Instance.new("Beam", skelFolder)
 			beam.Attachment0 = a0
 			beam.Attachment1 = a1
 			beam.FaceCamera = true
 			beam.Width0 = ESP_SKELETON_WIDTH
 			beam.Width1 = ESP_SKELETON_WIDTH
 			beam.Color = ColorSequence.new(color)
-			beam.Transparency = NumberSequence.new(0.1)
+			beam.Transparency = NumberSequence.new(0)
 			beam.LightEmission = 1
 			beam.LightInfluence = 0
+			beam.Brightness = 2
+			beam.ZIndex = 100
 			table.insert(objs, beam)
 		end
 
@@ -4684,6 +4770,8 @@ function buildESPFor(p)
 			if torso and rl then makeBeam(torso, rl, "ESP_Skel_Att") end
 		end
 
+		table.insert(objs, skelFolder)
+
 		local hl2 = Instance.new("Highlight", char)
 		hl2.Name = "ESP_SkelHL"
 		hl2.FillTransparency = 1
@@ -4700,7 +4788,7 @@ function buildESPFor(p)
 		local attBot = Instance.new("Attachment", hrp)
 		attBot.Name = "ESP_SnapBot"
 		attBot.Position = Vector3.new(0, -6, 0)
-		local beam = Instance.new("Beam", char)
+		local beam = Instance.new("Beam", workspace.Terrain)
 		beam.Attachment0 = attTop
 		beam.Attachment1 = attBot
 		beam.FaceCamera = false
@@ -4710,6 +4798,8 @@ function buildESPFor(p)
 		beam.Transparency = NumberSequence.new(0.3)
 		beam.LightEmission = 1
 		beam.LightInfluence = 0
+		beam.Brightness = 2
+		beam.ZIndex = 100
 		table.insert(objs, attTop)
 		table.insert(objs, attBot)
 		table.insert(objs, beam)
@@ -4946,7 +5036,7 @@ function createColorDropdown(parent, label, order, defaultColor, onChange)
 end
 
 
-createSection(pages.ESP, "📦  Player ESP", 0)
+createSection(pages.ESP, "👤  Players", 0)
 createToggle(pages.ESP, "✅  TOUT Joueurs", 1, function(s)
 	toggleESP("playerBoxes", s); toggleESP("playerNames", s)
 	toggleESP("playerHealth", s); toggleESP("playerHealthBar", s)
@@ -4955,90 +5045,84 @@ createToggle(pages.ESP, "✅  TOUT Joueurs", 1, function(s)
 	toggleESP("playerHeadDot", s)
 end, nil)
 createToggle(pages.ESP, "📦  Boxes", 10, function(s) toggleESP("playerBoxes", s) end, "espPlayerBoxes")
-createToggle(pages.ESP, "🏷  Names + Team Tag", 11, function(s) toggleESP("playerNames", s) end, "espPlayerNames")
+createToggle(pages.ESP, "🏷  Names + Team", 11, function(s) toggleESP("playerNames", s) end, "espPlayerNames")
 createToggle(pages.ESP, "❤  Health (text)", 12, function(s) toggleESP("playerHealth", s) end, "espPlayerHealth")
 createToggle(pages.ESP, "📊  Health Bar", 13, function(s) toggleESP("playerHealthBar", s) end, "espPlayerHealthBar")
 createToggle(pages.ESP, "📏  Distance", 14, function(s) toggleESP("playerDistance", s) end, "espPlayerDistance")
 createToggle(pages.ESP, "⚫  Head Dot", 15, function(s) toggleESP("playerHeadDot", s) end, "espPlayerHeadDot")
+createToggle(pages.ESP, "💀  Skeleton", 16, function(s) toggleESP("playerSkeletons", s) end, "espPlayerSkeletons")
+createToggle(pages.ESP, "🔆  Chams", 17, function(s) toggleESP("playerChams", s) end, "espPlayerChams")
+createToggle(pages.ESP, "📐  Snaplines", 18, function(s) toggleESP("playerSnaplines", s) end, "espPlayerSnaplines")
 
-createSection(pages.ESP, "🎨  Player Visuals", 20)
-createToggle(pages.ESP, "💀  Skeleton", 21, function(s) toggleESP("playerSkeletons", s) end, "espPlayerSkeletons")
-createToggle(pages.ESP, "🔆  Chams (Highlight)", 22, function(s) toggleESP("playerChams", s) end, "espPlayerChams")
-createToggle(pages.ESP, "📐  Snaplines", 23, function(s) toggleESP("playerSnaplines", s) end, "espPlayerSnaplines")
-
-createSection(pages.ESP, "🎨  Style", 25)
-createSlider(pages.ESP, "🔲  Fill Transparency", 0, 100, 85, 26, function(val)
-	ESP_FILL_TRANSPARENCY = val / 100
-	refreshAllESP()
-end)
-local boxStyleBtn = nil
-boxStyleBtn = createBtn(pages.ESP, "📦  Box Style: " .. ESP_BOX_STYLE, currentTheme.Button, 27, function(btn)
-	ESP_BOX_STYLE = (ESP_BOX_STYLE == "corners") and "full" or "corners"
-	btn.Text = "📦  Box Style: " .. ESP_BOX_STYLE
-	refreshAllESP()
-end)
-createSlider(pages.ESP, "💀  Skeleton Thickness", 5, 50, 15, 28, function(val)
-	ESP_SKELETON_WIDTH = val / 100
-	refreshAllESP()
-end)
-
-createSection(pages.ESP, "🤖  Bot/NPC ESP", 30)
-createToggle(pages.ESP, "✅  TOUT Bots", 31, function(s)
+createSection(pages.ESP, "🤖  Bots / NPC", 20)
+createToggle(pages.ESP, "✅  TOUT Bots", 21, function(s)
 	toggleESP("botBoxes", s); toggleESP("botNames", s)
 	toggleESP("botHealth", s); toggleESP("botHealthBar", s)
 	toggleESP("botDistance", s); toggleESP("botSkeletons", s)
 	toggleESP("botChams", s); toggleESP("botSnaplines", s)
 	toggleESP("botHeadDot", s)
 end, nil)
-createToggle(pages.ESP, "📦  Bot Boxes", 40, function(s) toggleESP("botBoxes", s) end, "espBotBoxes")
-createToggle(pages.ESP, "🏷  Bot Names", 41, function(s) toggleESP("botNames", s) end, "espBotNames")
-createToggle(pages.ESP, "❤  Bot Health (text)", 42, function(s) toggleESP("botHealth", s) end, "espBotHealth")
-createToggle(pages.ESP, "📊  Bot Health Bar", 43, function(s) toggleESP("botHealthBar", s) end, "espBotHealthBar")
-createToggle(pages.ESP, "📏  Bot Distance", 44, function(s) toggleESP("botDistance", s) end, "espBotDistance")
-createToggle(pages.ESP, "⚫  Bot Head Dot", 45, function(s) toggleESP("botHeadDot", s) end, "espBotHeadDot")
+createToggle(pages.ESP, "📦  Bot Boxes", 30, function(s) toggleESP("botBoxes", s) end, "espBotBoxes")
+createToggle(pages.ESP, "🏷  Bot Names", 31, function(s) toggleESP("botNames", s) end, "espBotNames")
+createToggle(pages.ESP, "❤  Bot Health", 32, function(s) toggleESP("botHealth", s) end, "espBotHealth")
+createToggle(pages.ESP, "📊  Bot Health Bar", 33, function(s) toggleESP("botHealthBar", s) end, "espBotHealthBar")
+createToggle(pages.ESP, "📏  Bot Distance", 34, function(s) toggleESP("botDistance", s) end, "espBotDistance")
+createToggle(pages.ESP, "⚫  Bot Head Dot", 35, function(s) toggleESP("botHeadDot", s) end, "espBotHeadDot")
+createToggle(pages.ESP, "💀  Bot Skeleton", 36, function(s) toggleESP("botSkeletons", s) end, "espBotSkeletons")
+createToggle(pages.ESP, "🔆  Bot Chams", 37, function(s) toggleESP("botChams", s) end, "espBotChams")
+createToggle(pages.ESP, "📐  Bot Snaplines", 38, function(s) toggleESP("botSnaplines", s) end, "espBotSnaplines")
+createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 39, function()
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
+	if anyBot then refreshBotESP()
+	else showNotification("⚠  Active un toggle Bot ESP d'abord", 2) end
+end)
 
-createSection(pages.ESP, "🎨  Bot Visuals", 50)
-createToggle(pages.ESP, "💀  Bot Skeleton", 51, function(s) toggleESP("botSkeletons", s) end, "espBotSkeletons")
-createToggle(pages.ESP, "🔆  Bot Chams", 52, function(s) toggleESP("botChams", s) end, "espBotChams")
-createToggle(pages.ESP, "📐  Bot Snaplines", 53, function(s) toggleESP("botSnaplines", s) end, "espBotSnaplines")
+createSection(pages.ESP, "👻  Self", 40)
+createToggle(pages.ESP, "👻  Show Self ESP", 41, function(s) toggleESP("selfESP", s) end, "espSelf")
 
-createSection(pages.ESP, "👻  Self ESP", 60)
-createToggle(pages.ESP, "👻  Show Self ESP", 61, function(s) toggleESP("selfESP", s) end, "espSelf")
-
-createSection(pages.ESP, "🎨  Colors", 70)
-createColorDropdown(pages.ESP, "🔴  Enemy Color", 71,
+createSection(pages.ESP, "🎨  Couleurs", 50)
+createColorDropdown(pages.ESP, "🔴  Enemy", 51,
 	Color3.fromRGB(255,60,60),
 	function(c) ESP_COLOR_ENEMY = c; refreshAllESP() end
 )
-createColorDropdown(pages.ESP, "🔵  Ally Color", 72,
+createColorDropdown(pages.ESP, "🔵  Ally", 52,
 	Color3.fromRGB(80,160,255),
 	function(c) ESP_COLOR_ALLY = c; refreshAllESP() end
 )
-createColorDropdown(pages.ESP, "🟡  Bot Color", 73,
+createColorDropdown(pages.ESP, "🟡  Bot", 53,
 	Color3.fromRGB(255,200,0),
 	function(c) ESP_COLOR_BOT = c; local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot; if anyBot then refreshBotESP() end end
 )
-createColorDropdown(pages.ESP, "🔷  Self Color", 74,
+createColorDropdown(pages.ESP, "🔷  Self", 54,
 	Color3.fromRGB(80,160,255),
 	function(c) ESP_COLOR_SELF = c; buildSelfESP() end
 )
 
-createSection(pages.ESP, "📏  Distance Max", 80)
-createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 81, function(val)
+createSection(pages.ESP, "⚙  Style", 60)
+createSlider(pages.ESP, "🔲  Fill Transparence", 0, 100, 85, 61, function(val)
+	ESP_FILL_TRANSPARENCY = val / 100
+	refreshAllESP()
+end)
+local boxStyleBtn = nil
+boxStyleBtn = createBtn(pages.ESP, "📦  Box Style: " .. ESP_BOX_STYLE, currentTheme.Button, 62, function(btn)
+	ESP_BOX_STYLE = (ESP_BOX_STYLE == "corners") and "full" or "corners"
+	btn.Text = "📦  Box Style: " .. ESP_BOX_STYLE
+	refreshAllESP()
+end)
+createSlider(pages.ESP, "💀  Epaisseur Skeleton", 5, 50, 15, 63, function(val)
+	ESP_SKELETON_WIDTH = val / 100
+	refreshAllESP()
+end)
+
+createSection(pages.ESP, "📏  Distance Max", 70)
+createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 71, function(val)
 	ESP_MAX_DIST_PLAYER = val
 	refreshAllESP()
 end)
-createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 82, function(val)
+createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 72, function(val)
 	ESP_MAX_DIST_BOT = val
 	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
 	if anyBot then refreshBotESP() end
-end)
-
-createSection(pages.ESP, "🤖  Bots / NPC", 90)
-createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 91, function()
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
-	if anyBot then refreshBotESP()
-	else showNotification("⚠  Active un toggle Bot ESP d'abord", 2) end
 end)
 
 createSection(pages.Other, "👑  Credits", 60)
@@ -5350,8 +5434,19 @@ function startESP()
 
 	
 	RunService:BindToRenderStep("ESP_Update", Enum.RenderPriority.Last.Value, function()
-		local anyPlayer = espState.playerDistance or espState.playerHealthBar or espState.playerHealth or espState.playerSkeletons or espState.playerBoxes or espState.playerChams or espState.playerNames
-		local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
+		local anyPlayer = espState.playerDistance or espState.playerHealthBar or espState.playerHealth or espState.playerSkeletons or espState.playerBoxes or espState.playerChams or espState.playerNames or espState.playerHeadDot or espState.playerSnaplines
+		local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
+		if anyPlayer then
+			for _, p in ipairs(Players:GetPlayers()) do
+				if p ~= player and p.Character then
+					for _, part in ipairs(p.Character:GetDescendants()) do
+						if part:IsA("BasePart") and part.Transparency >= 0.9 then
+							part.LocalTransparencyModifier = 0
+						end
+					end
+				end
+			end
+		end
 		if anyPlayer or anyBot or espState.selfESP then
 			if ESP_MAX_DIST_PLAYER > 0 or ESP_MAX_DIST_BOT > 0 or espState.playerDistance or espState.botDistance then
 				updateDistances()
