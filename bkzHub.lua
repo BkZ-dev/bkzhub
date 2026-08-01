@@ -5264,6 +5264,7 @@ function startFreecam()
 					Anchored = part.Anchored,
 					Velocity = part.Velocity,
 					RotVelocity = part.RotVelocity,
+					Transparency = part.Transparency,
 				}
 				part.Anchored = true
 				part.Velocity = Vector3.new(0,0,0)
@@ -5272,10 +5273,12 @@ function startFreecam()
 		end
 	end
 	cam.CameraType = Enum.CameraType.Scriptable
+	cam.FieldOfView = 70
 
-	local keys = {W=false, A=false, S=false, D=false, Space=false, LShift=false}
+	local keys = {W=false, A=false, S=false, D=false, Space=false, LShift=false, Q=false, E=false}
 	local mousePressed = false
 	local lastMousePos = Vector2.new()
+	local freecamMouseSens = 0.0015
 
 	freecamMoveConn = RunService.RenderStepped:Connect(function(dt)
 		if not freecamActive then return end
@@ -5289,7 +5292,10 @@ function startFreecam()
 		if keys.D then vel = vel + right end
 		if keys.Space then vel = vel + up end
 		if keys.LShift then vel = vel - up end
-		local spd = (keys.LShift or keys.Space) and freecamSpeed * 0.5 or freecamSpeed
+		if keys.Q then vel = vel - forward:Cross(up).Unit end
+		if keys.E then vel = vel + forward:Cross(up).Unit end
+		local spd = (keys.LShift or keys.Space) and freecamSpeed * 0.4 or freecamSpeed
+		if keys.Q or keys.E then spd = freecamSpeed * 0.5 end
 		if vel.Magnitude > 0 then
 			vel = vel.Unit * spd * dt
 			freecamCamPos = freecamCamPos + vel
@@ -5303,7 +5309,8 @@ function startFreecam()
 		if not freecamActive or not mousePressed then return end
 		if input.UserInputType == Enum.UserInputType.MouseMovement then
 			local delta = input.Position - lastMousePos
-			freecamCamRot = freecamCamRot + Vector2.new(delta.X, delta.Y) * 0.003
+			freecamCamRot = freecamCamRot + Vector2.new(delta.X, delta.Y) * freecamMouseSens
+			freecamCamRot = Vector2.new(freecamCamRot.X, math.clamp(freecamCamRot.Y, -1.4, 1.4))
 			lastMousePos = input.Position
 		end
 	end)
@@ -5311,7 +5318,7 @@ function startFreecam()
 	freecamScrollConn = UIS.InputChanged:Connect(function(input)
 		if not freecamActive then return end
 		if input.UserInputType == Enum.UserInputType.MouseWheel then
-			freecamZoom = math.clamp(freecamZoom - input.Position.Z * 5, 5, 200)
+			freecamZoom = math.clamp(freecamZoom - input.Position.Z * 3, 1, 200)
 		end
 	end)
 
@@ -5321,6 +5328,8 @@ function startFreecam()
 		if m then local k = m[input.KeyCode]; if k then keys[k] = true end end
 		if input.KeyCode == Enum.KeyCode.Space then keys.Space = true end
 		if input.KeyCode == Enum.KeyCode.LeftShift then keys.LShift = true end
+		if input.KeyCode == Enum.KeyCode.Q then keys.Q = true end
+		if input.KeyCode == Enum.KeyCode.E then keys.E = true end
 		if input.UserInputType == Enum.UserInputType.MouseButton2 then
 			mousePressed = true
 			lastMousePos = input.Position
@@ -5333,6 +5342,8 @@ function startFreecam()
 		if m then local k = m[input.KeyCode]; if k then keys[k] = false end end
 		if input.KeyCode == Enum.KeyCode.Space then keys.Space = false end
 		if input.KeyCode == Enum.KeyCode.LeftShift then keys.LShift = false end
+		if input.KeyCode == Enum.KeyCode.Q then keys.Q = false end
+		if input.KeyCode == Enum.KeyCode.E then keys.E = false end
 		if input.UserInputType == Enum.UserInputType.MouseButton2 then
 			mousePressed = false
 		end

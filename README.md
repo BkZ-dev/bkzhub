@@ -59,7 +59,8 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/anonymedu04/bkzhub/re
 | 🖱 Drag title bar | Move the menu anywhere on screen |
 | ↘ Bottom-right corner drag | Resize the menu (corner-only resize) |
 | `F` + Mouse | Goku Instant Transmission teleport (when enabled) |
-| Right Click + WASD | Freecam navigation (when enabled) |
+| Right Click + WASD + Q/E | Freecam navigation (when enabled) |
+| Scroll Wheel | Freecam zoom (when enabled) |
 | Custom key | Mute / Unmute your microphone (VC Anti-Ban) |
 
 ---
@@ -262,20 +263,40 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ### ℹ Other
 
-> 📷 Freecam with speed control, character freeze, teleport, credits, and version information.
+> 📷 Freecam with full control — noclip camera, character freeze, speed, teleport, credits, version info.
 
 | Section | Features |
 |:---|:---|
-| **📷 Freecam** | Toggle Freecam (Right Click to rotate, Scroll to zoom), **Speed slider** (10–500), **TP Joueur → Freecam**, QWERTY/AZERTY key layout switch |
+| **📷 Freecam** | Toggle Freecam, **Speed slider** (10–500), **TP Joueur → Freecam**, QWERTY/AZERTY key layout |
 | **👑 Credits** | Owner & contributors |
 | **ℹ Informations** | Version, controls reminder, feature highlights |
+
+### FreeCam Controls
+
+| Key / Action | Description |
+|:---|:---|
+| `B` (menu) | Open/Close menu (menu still works in free cam) |
+| Right Click + Drag | Rotate camera view |
+| Scroll Wheel | Zoom in/out |
+| `W` / `A` / `S` / `D` | Move camera forward/left/back/right |
+| `Space` | Move up |
+| `LeftShift` | Move down (also halved speed) |
+| `Q` / `E` | Strafe left/right perpendicular to view |
+| `Z` / `Q` (AZERTY) or `Q` | Strafe left |
+| `E` / `D` (AZERTY) or `E` | Strafe right |
 
 ### FreeCam Improvements in v5.7
 
 | Feature | Before | After |
 |:---|:---|:---|
-| **Character Freeze** | Only PlatformStand | **Full freeze** — all parts anchored, velocity zeroed, WalkSpeed/JumpPower set to 0 |
-| **Speed Control** | Fixed at 50 | **Adjustable** via slider (10–500) |
+| **Character Freeze** | Only PlatformStand | **Full freeze** — all parts anchored, velocity zeroed, WalkSpeed/JumpPower = 0 |
+| **Character Lock** | Character could move | **Fully locked** — character stays exactly where you freeze it, completely immobile |
+| **Noclip Camera** | Could collide | **No clipping** — camera flies through walls, parts, everything |
+| **Speed Control** | Fixed at 50 | **Adjustable** slider (10–500) with shift-slow for precision |
+| **Mouse Sensitivity** | 0.003 (very sensitive) | **Reduced** to 0.0015 — smoother, more controllable rotation |
+| **Pitch Clamp** | Unlimited | **Clamped** (-80° to +80°) — prevents gimbal lock / flipping over |
+| **Strafe Keys** | W/A/S/D only | **Q/E keys** added for perpendicular strafing |
+| **Zoom Speed** | Fast | **Smoother** zoom with wider range (1–200) |
 | **TP to Freecam** | Not available | **New!** Teleport your character to the freecam camera position |
 | **Unfreeze** | Only PlatformStand reset | **Full unfreeze** — restores all part anchors, velocities, WalkSpeed, JumpPower |
 
