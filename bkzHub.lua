@@ -423,7 +423,7 @@ title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v5.7  •  " .. player.Name
+subtitle.Text = "v6.0  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -50, 0, 14)
 subtitle.Position = UDim2.new(0, 15, 0, 33)
 subtitle.BackgroundTransparency = 1
@@ -739,6 +739,7 @@ function createToggle(parent, text, order, func, configKey)
 	onThemeChanged(function(t)
 		frame.BackgroundColor3 = t.Button
 		lbl.TextColor3 = t.Text
+		track.BackgroundColor3 = state and t.Accent or t.Button
 	end)
 
 	return frame, lbl
@@ -1507,6 +1508,112 @@ createBtn(pages.Player, "📡  TP All to Me (Local)", currentTheme.Accent, 15, f
 	showNotification("📡  Local: All TP to you (visual only)", 3)
 end)
 
+function giveTool(tool)
+	pcall(function()
+		local clone = tool:Clone()
+		clone.Parent = player.Backpack
+		local char = player.Character
+		if char then
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			if hum then hum:EquipTool(clone) end
+		end
+	end)
+end
+
+do
+	local toolsFrame = Instance.new("Frame", pages.Player)
+	toolsFrame.Size = UDim2.new(1, 0, 0, 40)
+	toolsFrame.BackgroundColor3 = currentTheme.Button
+	toolsFrame.BorderSizePixel = 0
+	toolsFrame.LayoutOrder = 16
+	Instance.new("UICorner", toolsFrame).CornerRadius = UDim.new(0, 8)
+
+	local toolBtn = Instance.new("TextButton", toolsFrame)
+	toolBtn.Size = UDim2.new(1, 0, 1, 0)
+	toolBtn.BackgroundTransparency = 1
+	toolBtn.Text = "🧰  Give Tools du jeu (Liste)"
+	toolBtn.TextColor3 = currentTheme.Text
+	toolBtn.Font = Enum.Font.GothamSemibold
+	toolBtn.TextSize = 13
+
+	local list = Instance.new("ScrollingFrame", pages.Player)
+	list.Size = UDim2.new(1, 0, 0, 0)
+	list.BackgroundColor3 = currentTheme.Panel
+	list.BorderSizePixel = 0
+	list.LayoutOrder = 17
+	list.Visible = false
+	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	list.ZIndex = 5
+	Instance.new("UIListLayout", list).SortOrder = Enum.SortOrder.LayoutOrder
+
+	local open = false
+	toolBtn.MouseButton1Click:Connect(function()
+		playHover()
+		open = not open
+		if not open then
+			list.Visible = false
+			return
+		end
+		for _, child in ipairs(list:GetChildren()) do
+			if child:IsA("TextButton") then child:Destroy() end
+		end
+		local found = {}
+		local byName = {}
+		local function scan(root)
+			if not root then return end
+			for _, obj in ipairs(root:GetDescendants()) do
+				if obj:IsA("Tool") and not byName[obj.Name] then
+					byName[obj.Name] = obj
+					table.insert(found, obj)
+				end
+			end
+		end
+		scan(workspace)
+		for _, p in ipairs(Players:GetPlayers()) do
+			scan(p.Backpack)
+			if p.Character then scan(p.Character) end
+		end
+		table.sort(found, function(a,b) return a.Name < b.Name end)
+		if #found == 0 then
+			showNotification("⚠  Aucun tool trouvé dans le jeu", 3)
+			open = false
+			list.Visible = false
+			return
+		end
+		list.Size = UDim2.new(1, 0, 0, math.min(#found * 28 + 28, 220))
+		list.Visible = true
+		local header = Instance.new("TextButton", list)
+		header.Size = UDim2.new(1, 0, 0, 28)
+		header.Text = "➕  GIVE ALL  (" .. #found .. " tools)"
+		header.TextColor3 = Color3.new(1,1,1)
+		header.Font = Enum.Font.GothamBold
+		header.TextSize = 12
+		header.BackgroundColor3 = currentTheme.Accent
+		header.LayoutOrder = 0
+		header.MouseButton1Click:Connect(function()
+			for _, t in ipairs(found) do giveTool(t) end
+			showNotification("🧰  Tools donnés !", 3)
+			list.Visible = false
+			open = false
+		end)
+		for i, t in ipairs(found) do
+			local row = Instance.new("TextButton", list)
+			row.Size = UDim2.new(1, 0, 0, 28)
+			row.Text = "    ⚔  " .. t.Name
+			row.TextColor3 = currentTheme.Text
+			row.Font = Enum.Font.Gotham
+			row.TextSize = 12
+			row.TextXAlignment = Enum.TextXAlignment.Left
+			row.BackgroundColor3 = currentTheme.Button
+			row.LayoutOrder = i
+			row.MouseButton1Click:Connect(function()
+				giveTool(t)
+				showNotification("🧰  Tool donné : " .. t.Name, 3)
+			end)
+		end
+	end)
+end
+
 createSection(pages.Player, "🎤  Voice Chat", 16)
 createBtn(pages.Player, "🎤  Activer VC Anti-Ban", currentTheme.Accent, 17, function(btn)
 	activateVCAntiBan()
@@ -1682,33 +1789,20 @@ end)
 
 createSection(pages.Personal, "👁  Collision & Visual", 8)
 
-local noclipPlatform = nil
+local noclipEnabled = false
 
 createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(state)
+	noclipEnabled = state
 	if state then
-		noclipPlatform = Instance.new("Part")
-		noclipPlatform.Name = "NoclipPlatform"
-		noclipPlatform.Anchored = true
-		noclipPlatform.CanCollide = true
-		noclipPlatform.Transparency = 1
-		noclipPlatform.Size = Vector3.new(50, 1, 50)
-		noclipPlatform.Material = Enum.Material.ForceField
-		noclipPlatform.Locked = true
-		noclipPlatform.Parent = workspace
 		RunService:BindToRenderStep("Noclip", Enum.RenderPriority.Character.Value + 1, function()
 			local char = player.Character
 			if not char then return end
-			local hrp = char:FindFirstChild("HumanoidRootPart")
-			if not hrp then return end
 			for _, part in ipairs(char:GetDescendants()) do
-				if part:IsA("BasePart") then part.CanCollide = false end
+				if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end
 			end
-			hrp.CanCollide = false
-			noclipPlatform.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 5, hrp.Position.Z)
 		end)
 	else
 		RunService:UnbindFromRenderStep("Noclip")
-		if noclipPlatform then noclipPlatform:Destroy(); noclipPlatform = nil end
 		local char = player.Character
 		if char then
 			for _, part in ipairs(char:GetDescendants()) do
@@ -2090,6 +2184,7 @@ end, "unlimAmmo")
 
 reloadEnabled = false
 reloadConns   = {}
+reloadLoopConn = nil
 
 function reloadCleanup()
 	for _, c in ipairs(reloadConns) do pcall(function() c:Disconnect() end) end
@@ -2097,32 +2192,15 @@ function reloadCleanup()
 end
 
 function patchReloadTool(tool)
-	
 	for _, v in ipairs(tool:GetDescendants()) do
 		local n = v.Name:lower()
-		if (v:IsA("NumberValue") or v:IsA("IntValue")) and
-			(n:find("reload") or n:find("reloadtime") or n:find("delay") or n:find("cooldown") or n:find("firerate")) then
+		if (v:IsA("NumberValue") or v:IsA("IntValue") or v:IsA("FloatValue")) and
+			(n:find("reload") or n:find("reloadtime") or n:find("cooldown") or n:find("delay")) then
 			pcall(function() v.Value = 0 end)
 			local c = v.Changed:Connect(function()
 				if reloadEnabled then pcall(function() v.Value = 0 end) end
 			end)
 			table.insert(reloadConns, c)
-		end
-	end
-	
-	for _, v in ipairs(tool:GetDescendants()) do
-		if v:IsA("RemoteEvent") and v.Name:lower():find("reload") then
-			pcall(function() v:FireServer() end)
-		end
-	end
-	
-	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-	local animator = hum and hum:FindFirstChildOfClass("Animator")
-	if animator then
-		for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-			pcall(function()
-				if track.Speed < 10 then track:AdjustSpeed(99) end
-			end)
 		end
 	end
 end
@@ -2140,7 +2218,24 @@ end
 createToggle(pages.Personal, "⚡  Instant Reload", 18, function(state)
 	reloadEnabled = state
 	reloadCleanup()
+	if reloadLoopConn then reloadLoopConn:Disconnect(); reloadLoopConn = nil end
 	if not state then return end
+
+	reloadLoopConn = RunService.RenderStepped:Connect(function()
+		if not reloadEnabled then return end
+		local char = player.Character
+		if not char then return end
+		for _, t in ipairs(char:GetChildren()) do
+			if t:IsA("Tool") then
+				for _, v in ipairs(t:GetDescendants()) do
+					if v:IsA("RemoteEvent") and v.Name:lower():find("reload") then
+						pcall(function() v:FireServer() end)
+					end
+				end
+			end
+		end
+	end)
+
 	if player.Character then watchReloadChar(player.Character) end
 	local c = player.CharacterAdded:Connect(function(ch)
 		task.wait(0.2)
@@ -2184,45 +2279,49 @@ createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
 	if not state then return end
 
 	local cam    = workspace.CurrentCamera
-	
+	local lastFireTime = 0
 	local lastYaw, lastPitch = 0, 0
 	local function getCamAngles()
-		local _, y, _ = cam.CFrame:ToEulerAnglesYXZ()
-		local x, _, _ = cam.CFrame:ToEulerAnglesYXZ()
+		local x, y = cam.CFrame:ToEulerAnglesYXZ()
 		return x, y
 	end
-	local initP, initY = getCamAngles()
-	lastPitch, lastYaw = initP, initY
+	lastPitch, lastYaw = getCamAngles()
 
-	
-	
+	local function hookFire(tool)
+		local c = tool.Activated:Connect(function()
+			lastFireTime = os.clock()
+		end)
+		table.insert(recoilConns, c)
+	end
+
 	recoilConn = RunService.RenderStepped:Connect(function()
-		if not recoilEnabled then return end
+		if not recoilEnabled or freecamActive then
+			lastPitch, lastYaw = getCamAngles()
+			return
+		end
+		if os.clock() - lastFireTime > 0.25 then
+			lastPitch, lastYaw = getCamAngles()
+			return
+		end
 		local curP, curY = getCamAngles()
 		local dPitch = curP - lastPitch
-		
-		
-		if dPitch > 0.008 then
-			
-			local pos   = cam.CFrame.Position
-			local look  = cam.CFrame.LookVector
-			
-			local corrected = CFrame.new(pos) * CFrame.Angles(lastPitch, curY, 0)
+		if math.abs(dPitch) > 0.01 then
+			local pos = cam.CFrame.Position
+			local corrected = CFrame.new(pos) * CFrame.Angles(0, curY, 0) * CFrame.Angles(lastPitch, 0, 0)
 			pcall(function() cam.CFrame = corrected end)
+			lastPitch, lastYaw = curP, curY
 		else
-			lastPitch = curP
-			lastYaw   = curY
+			lastPitch, lastYaw = curP, curY
 		end
 	end)
 
-	
 	local char = player.Character
 	if char then
 		for _, t in ipairs(char:GetChildren()) do
-			if t:IsA("Tool") then recoilPatchTool(t) end
+			if t:IsA("Tool") then recoilPatchTool(t); hookFire(t) end
 		end
 		local c = char.ChildAdded:Connect(function(t)
-			if t:IsA("Tool") then task.wait(0.08); recoilPatchTool(t) end
+			if t:IsA("Tool") then task.wait(0.08); recoilPatchTool(t); hookFire(t) end
 		end)
 		table.insert(recoilConns, c)
 	end
@@ -2230,15 +2329,138 @@ createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
 		task.wait(0.2)
 		if not recoilEnabled then return end
 		for _, t in ipairs(ch:GetChildren()) do
-			if t:IsA("Tool") then recoilPatchTool(t) end
+			if t:IsA("Tool") then recoilPatchTool(t); hookFire(t) end
 		end
 		local cc = ch.ChildAdded:Connect(function(t)
-			if t:IsA("Tool") then task.wait(0.08); recoilPatchTool(t) end
+			if t:IsA("Tool") then task.wait(0.08); recoilPatchTool(t); hookFire(t) end
 		end)
 		table.insert(recoilConns, cc)
 	end)
 	table.insert(recoilConns, c2)
 end, "noRecoil")
+
+createSection(pages.Personal, "🧪  Extra", 20)
+
+invisibleEnabled = false
+invisibleConns = {}
+invisibleParts = {}
+
+local function setInvisible(char, on)
+	if not char then return end
+	for _, part in ipairs(char:GetDescendants()) do
+		if part:IsA("BasePart") then
+			if on then
+				if not invisibleParts[part] then invisibleParts[part] = part.Transparency end
+				part.Transparency = 1
+			else
+				if invisibleParts[part] then
+					pcall(function() part.Transparency = invisibleParts[part] end)
+					invisibleParts[part] = nil
+				end
+			end
+		end
+	end
+end
+
+function stopInvisible()
+	invisibleEnabled = false
+	for _, c in ipairs(invisibleConns) do pcall(function() c:Disconnect() end) end
+	invisibleConns = {}
+	setInvisible(player.Character, false)
+end
+
+createToggle(pages.Personal, "👻  Invisible", 21, function(state)
+	if state then
+		invisibleEnabled = true
+		setInvisible(player.Character, true)
+		local c = player.CharacterAdded:Connect(function(ch)
+			task.wait(0.3)
+			if invisibleEnabled then setInvisible(ch, true) end
+		end)
+		table.insert(invisibleConns, c)
+	else
+		stopInvisible()
+	end
+end, "invisible")
+
+rapidFireEnabled = false
+rapidFireInterval = 0.1
+rapidFireConn = nil
+rapidFireTimer = 0
+
+local function getFireRemotes(tool)
+	local list = {}
+	for _, v in ipairs(tool:GetDescendants()) do
+		if v:IsA("RemoteEvent") then
+			local n = v.Name:lower()
+			if n:find("fire") or n:find("shoot") or n:find("hit") or n:find("attack") or n:find("swing") or n:find("click") then
+				table.insert(list, v)
+			end
+		end
+	end
+	return list
+end
+
+createToggle(pages.Personal, "🔥  Rapid Fire (hold click)", 22, function(state)
+	rapidFireEnabled = state
+	rapidFireTimer = 0
+	if state then
+		rapidFireConn = RunService.RenderStepped:Connect(function(dt)
+			if not rapidFireEnabled then return end
+			local held = UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+			if not held then return end
+			local char = player.Character
+			if not char then return end
+			local tool = char:FindFirstChildOfClass("Tool")
+			if not tool then return end
+			rapidFireTimer = rapidFireTimer - dt
+			if rapidFireTimer <= 0 then
+				rapidFireTimer = rapidFireInterval
+				for _, v in ipairs(getFireRemotes(tool)) do
+					pcall(function() v:FireServer() end)
+				end
+			end
+		end)
+	else
+		if rapidFireConn then rapidFireConn:Disconnect(); rapidFireConn = nil end
+	end
+end, "rapidFire")
+
+createSlider(pages.Personal, "⏱  Fire Interval (ms)", 50, 500, 100, 23, function(val)
+	rapidFireInterval = val / 1000
+end)
+
+jerkToolsEnabled = false
+jerkToolsConn = nil
+
+createToggle(pages.Personal, "🌀  Jerk Tools", 24, function(state)
+	jerkToolsEnabled = state
+	if state then
+		jerkToolsConn = RunService.RenderStepped:Connect(function()
+			if not jerkToolsEnabled then return end
+			local char = player.Character
+			if not char then return end
+			for _, tool in ipairs(char:GetChildren()) do
+				if tool:IsA("Tool") then
+					pcall(function()
+						local handle = tool:FindFirstChild("Handle")
+						if not handle then return end
+						local t = os.clock()
+						local pos = handle.Position
+						local rot = CFrame.Angles(
+							math.sin(t * 40) * 0.12,
+							math.sin(t * 40 + 1) * 0.12,
+							math.sin(t * 40 + 2) * 0.12
+						)
+						handle.CFrame = CFrame.new(pos) * rot
+					end)
+				end
+			end
+		end)
+	else
+		if jerkToolsConn then jerkToolsConn:Disconnect(); jerkToolsConn = nil end
+	end
+end, "jerkTools")
 
 
 autoParryEnabled = false
@@ -2908,6 +3130,49 @@ createToggle(pages.World, "🌙  Night Mode", 2, function(state)
 		TweenService:Create(Lighting, TweenInfo.new(1.5), {ClockTime=14, Brightness=2, Ambient=Color3.fromRGB(100,100,100)}):Play()
 	end
 end, "nightMode")
+
+advancedShaderEnabled = false
+local shaderBloom = nil
+local shaderBlur = nil
+local shaderCC2 = nil
+
+local function getFxEffect(name, class)
+	for _, v in ipairs(Lighting:GetChildren()) do
+		if v.Name == name and v:IsA(class) then return v end
+	end
+	local e = Instance.new(class, Lighting)
+	e.Name = name
+	return e
+end
+
+local function applyAdvancedShader(on)
+	if on then
+		shaderBloom = shaderBloom or getFxEffect("AdminBloom", "BloomEffect")
+		shaderBloom.Intensity = 0.9
+		shaderBloom.Threshold = 0.8
+		shaderBloom.Size = 24
+		shaderBloom.Enabled = true
+
+		shaderBlur = shaderBlur or getFxEffect("AdminBlur", "BlurEffect")
+		shaderBlur.Size = 1.2
+		shaderBlur.Enabled = true
+
+		shaderCC2 = shaderCC2 or getFxEffect("AdminShader2", "ColorCorrectionEffect")
+		shaderCC2.Brightness = -0.02
+		shaderCC2.Contrast = 0.12
+		shaderCC2.Saturation = 0.25
+		shaderCC2.TintColor = Color3.fromRGB(250, 235, 215)
+		shaderCC2.Enabled = true
+	else
+		if shaderBloom then shaderBloom.Enabled = false end
+		if shaderBlur then shaderBlur.Enabled = false end
+		if shaderCC2 then shaderCC2.Enabled = false end
+	end
+end
+
+createToggle(pages.World, "💠  Advanced Shader (HD)", 3, function(state)
+	applyAdvancedShader(state)
+end, "advancedShader")
 
 createToggle(pages.World, "🌈  Rainbow Sky", 4, function(state)
 	if state then
@@ -3764,6 +4029,7 @@ function getConfig()
 		end)(),
 		menuW     = menuW,
 		menuH     = menuH,
+		menuPos   = { { main.Position.X.Scale, main.Position.X.Offset }, { main.Position.Y.Scale, main.Position.Y.Offset } },
 		fov       = workspace.CurrentCamera and workspace.CurrentCamera.FieldOfView or 70,
 		opacity   = savedOpacity,
 		keyLayout = keyLayout,
@@ -3800,6 +4066,8 @@ function getConfig()
 			skeletonWidth = ESP_SKELETON_WIDTH,
 		},
 		emoteSpeed = emoteSpeed,
+		rapidFireInterval = rapidFireInterval,
+		autoSaveAll = autoSaveAllEnabled,
 		toggles   = toggles,
 	}
 end
@@ -3807,6 +4075,11 @@ end
 function applyConfig(cfg)
 	if cfg.theme and Themes[cfg.theme] then applyTheme(Themes[cfg.theme]) end
 	if cfg.menuW and cfg.menuH then applyMenuSize(cfg.menuW, cfg.menuH) end
+	if cfg.menuPos and cfg.menuPos[1] and cfg.menuPos[2] then
+		pcall(function()
+			main.Position = UDim2.new(cfg.menuPos[1][1], cfg.menuPos[1][2], cfg.menuPos[2][1], cfg.menuPos[2][2])
+		end)
+	end
 	if cfg.fov then local cam = workspace.CurrentCamera; if cam then cam.FieldOfView = cfg.fov end end
 	if cfg.opacity then
 		savedOpacity = cfg.opacity
@@ -3849,6 +4122,7 @@ function applyConfig(cfg)
 		if cfg.espStyle.skeletonWidth then ESP_SKELETON_WIDTH = cfg.espStyle.skeletonWidth end
 	end
 	if cfg.emoteSpeed then emoteSpeed = cfg.emoteSpeed end
+	if cfg.rapidFireInterval then rapidFireInterval = cfg.rapidFireInterval end
 	if cfg.toggles then
 		for k, v in pairs(cfg.toggles) do
 			toggleStates[k] = v
@@ -3894,6 +4168,22 @@ function loadConfig()
 	end
 end
 
+autoSaveAllEnabled = false
+autoSaveAllLoop = nil
+
+createToggle(pages.Settings, "💾  Auto Save All (every 5s)", 100, function(state)
+	autoSaveAllEnabled = state
+	if autoSaveAllLoop then pcall(function() task.cancel(autoSaveAllLoop) end); autoSaveAllLoop = nil end
+	if state then
+		autoSaveAllLoop = task.spawn(function()
+			while autoSaveAllEnabled do
+				task.wait(5)
+				if autoSaveAllEnabled then saveConfig() end
+			end
+		end)
+	end
+end, "autoSaveAll")
+
 createBtn(pages.Settings, "💾  Save Config",  currentTheme.Success, 101, saveConfig)
 createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  102, loadConfig)
 createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  103, function()
@@ -3919,6 +4209,8 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  103, funct
 	ESP_FILL_TRANSPARENCY = 0.85; ESP_BOX_STYLE = "corners"
 	ESP_SKELETON_WIDTH = 0.15; ESP_HEAD_DOT = false
 	emoteSpeed = 1.0
+	rapidFireInterval = 0.1
+	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
 	stopAllEmotes()
 	applyMovement(player.Character)
 	updateAimStatus()
@@ -4037,10 +4329,8 @@ function openMenu()
 	gui.Enabled = true
 	main.Size = UDim2.new(0, menuW, 0, 0)
 	main.BackgroundTransparency = 0.4
-	main.Position = UDim2.new(0.5, -190, 0.5, -130)
 	TweenService:Create(main, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Size = UDim2.new(0, menuW, 0, menuH),
-		Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2),
 		BackgroundTransparency = 0
 	}):Play()
 end
@@ -4048,14 +4338,13 @@ end
 function closeMenu()
 	TweenService:Create(main, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		Size = UDim2.new(0, menuW, 0, 0),
-		Position = UDim2.new(0.5, -190, 0.5, -130),
 		BackgroundTransparency = 0.35
 	}):Play()
 	task.wait(0.15)
 	gui.Enabled = false
 	main.Size = UDim2.new(0, menuW, 0, menuH)
-	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
 	main.BackgroundTransparency = 0
+	autoSave()
 end
 
 closeBtn.MouseButton1Click:Connect(function()
@@ -5189,7 +5478,7 @@ verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
 verLabel = Instance.new("TextLabel", verFrame)
 verLabel.Size = UDim2.new(1, -12, 0, 16)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v5.7"
+verLabel.Text = "🌐 bkz HUB  v6.0"
 verLabel.TextColor3 = currentTheme.Accent
 verLabel.Font = Enum.Font.GothamBold
 verLabel.TextSize = 14
@@ -5210,7 +5499,7 @@ featLabel = Instance.new("TextLabel", verFrame)
 featLabel.Size = UDim2.new(1, -12, 0, 16)
 featLabel.Position = UDim2.new(0, 0, 0, 58)
 featLabel.BackgroundTransparency = 1
-featLabel.Text = "🔥 Bypass • Force Modes • ESP HD • Freecam"
+featLabel.Text = "🔥 Rapid Fire • Jerk Tools • Invisible • Shader HD"
 featLabel.TextColor3 = currentTheme.SubText
 featLabel.Font = Enum.Font.Gotham
 featLabel.TextSize = 10
@@ -5235,19 +5524,26 @@ freecamCamPos, freecamCamRot, freecamZoom = CFrame.new(), Vector2.new(), 50
 freecamSpeed = 50
 freecamFrozenParts = {}
 freecamAnchorConn = nil
+preFreecamType = nil
+preFreecamSubject = nil
+preFreecamFOV = nil
 keyLayout = "QWERTY"
 keyMaps = {
-	QWERTY = {[Enum.KeyCode.W]="W",[Enum.KeyCode.A]="A",[Enum.KeyCode.S]="S",[Enum.KeyCode.D]="D",[Enum.KeyCode.Space]="Space",[Enum.KeyCode.LeftShift]="LShift"},
-	AZERTY = {[Enum.KeyCode.Z]="W",[Enum.KeyCode.Q]="A",[Enum.KeyCode.S]="S",[Enum.KeyCode.D]="D",[Enum.KeyCode.Space]="Space",[Enum.KeyCode.LeftShift]="LShift"},
+	QWERTY = {[Enum.KeyCode.W]="W",[Enum.KeyCode.A]="A",[Enum.KeyCode.S]="S",[Enum.KeyCode.D]="D",[Enum.KeyCode.Q]="Q",[Enum.KeyCode.E]="E",[Enum.KeyCode.Space]="Space",[Enum.KeyCode.LeftShift]="LShift"},
+	AZERTY = {[Enum.KeyCode.Z]="W",[Enum.KeyCode.Q]="A",[Enum.KeyCode.S]="S",[Enum.KeyCode.D]="D",[Enum.KeyCode.A]="Q",[Enum.KeyCode.E]="E",[Enum.KeyCode.Space]="Space",[Enum.KeyCode.LeftShift]="LShift"},
 }
 
 function startFreecam()
 	local cam = workspace.CurrentCamera
 	freecamActive = true
 	freecamCamPos = cam.CFrame.Position
-	freecamCamRot = Vector2.new(cam.CFrame:ToEulerAnglesYXZ())
+	local yaw, pitch = cam.CFrame:ToEulerAnglesYXZ()
+	freecamCamRot = Vector2.new(yaw, pitch)
 	freecamZoom = 50
 	freecamFrozenParts = {}
+	preFreecamType = cam.CameraType
+	preFreecamSubject = cam.CameraSubject
+	preFreecamFOV = cam.FieldOfView
 
 	local char = player.Character
 	if char then
@@ -5300,7 +5596,7 @@ function startFreecam()
 			vel = vel.Unit * spd * dt
 			freecamCamPos = freecamCamPos + vel
 		end
-		local cf = CFrame.new(freecamCamPos) * CFrame.Angles(0, -freecamCamRot.X, 0) * CFrame.Angles(-freecamCamRot.Y, 0, 0)
+		local cf = CFrame.new(freecamCamPos) * CFrame.Angles(0, freecamCamRot.X, 0) * CFrame.Angles(freecamCamRot.Y, 0, 0)
 		cf = cf + cf.LookVector * freecamZoom
 		cam.CFrame = cf
 	end)
@@ -5309,8 +5605,8 @@ function startFreecam()
 		if not freecamActive or not mousePressed then return end
 		if input.UserInputType == Enum.UserInputType.MouseMovement then
 			local delta = input.Position - lastMousePos
-			freecamCamRot = freecamCamRot + Vector2.new(delta.X, delta.Y) * freecamMouseSens
-			freecamCamRot = Vector2.new(freecamCamRot.X, math.clamp(freecamCamRot.Y, -1.4, 1.4))
+			freecamCamRot = freecamCamRot + Vector2.new(-delta.X, -delta.Y) * freecamMouseSens
+			freecamCamRot = Vector2.new(freecamCamRot.X % (math.pi * 2), math.clamp(freecamCamRot.Y, -1.4, 1.4))
 			lastMousePos = input.Position
 		end
 	end)
@@ -5325,11 +5621,11 @@ function startFreecam()
 	freecamKeyBeginConn = UIS.InputBegan:Connect(function(input, gpe)
 		if gpe or not freecamActive then return end
 		local m = keyMaps[keyLayout]
-		if m then local k = m[input.KeyCode]; if k then keys[k] = true end end
-		if input.KeyCode == Enum.KeyCode.Space then keys.Space = true end
-		if input.KeyCode == Enum.KeyCode.LeftShift then keys.LShift = true end
-		if input.KeyCode == Enum.KeyCode.Q then keys.Q = true end
-		if input.KeyCode == Enum.KeyCode.E then keys.E = true end
+		if m then
+			for kc, kn in pairs(m) do
+				if input.KeyCode == kc then keys[kn] = true end
+			end
+		end
 		if input.UserInputType == Enum.UserInputType.MouseButton2 then
 			mousePressed = true
 			lastMousePos = input.Position
@@ -5339,11 +5635,11 @@ function startFreecam()
 	freecamKeyEndConn = UIS.InputEnded:Connect(function(input, gpe)
 		if gpe or not freecamActive then return end
 		local m = keyMaps[keyLayout]
-		if m then local k = m[input.KeyCode]; if k then keys[k] = false end end
-		if input.KeyCode == Enum.KeyCode.Space then keys.Space = false end
-		if input.KeyCode == Enum.KeyCode.LeftShift then keys.LShift = false end
-		if input.KeyCode == Enum.KeyCode.Q then keys.Q = false end
-		if input.KeyCode == Enum.KeyCode.E then keys.E = false end
+		if m then
+			for kc, kn in pairs(m) do
+				if input.KeyCode == kc then keys[kn] = false end
+			end
+		end
 		if input.UserInputType == Enum.UserInputType.MouseButton2 then
 			mousePressed = false
 		end
@@ -5399,7 +5695,12 @@ function stopFreecam()
 	if freecamScrollConn then freecamScrollConn:Disconnect(); freecamScrollConn = nil end
 	if freecamKeyBeginConn then freecamKeyBeginConn:Disconnect(); freecamKeyBeginConn = nil end
 	if freecamKeyEndConn then freecamKeyEndConn:Disconnect(); freecamKeyEndConn = nil end
-	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+	local cam = workspace.CurrentCamera
+	pcall(function()
+		cam.CameraType = preFreecamType or Enum.CameraType.Custom
+		if preFreecamSubject then cam.CameraSubject = preFreecamSubject end
+		if preFreecamFOV then cam.FieldOfView = preFreecamFOV end
+	end)
 	unfreezeCharacter()
 end
 
@@ -5427,6 +5728,8 @@ createBtn(pages.Other, "⌨  Keys: " .. keyLayout, currentTheme.Button, 54, func
 		end
 	end
 	btn.Text = "⌨  Keys: " .. keyLayout
+	autoSave()
+	showNotification("⌨  Layout: " .. keyLayout, 2)
 end)
 
 

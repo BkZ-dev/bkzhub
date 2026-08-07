@@ -4,9 +4,9 @@
 
 ### The All-in-One Roblox Admin & Utility Hub
 
-**v5.7** • Build 2026.07
+**v6.0** • Build 2026.08
 
-> 🔥 Bypass • ESP HD per Category • True Skeleton ESP (fixed!) • Aimbot + FOV Circle • Target Types • Invisible Player ESP • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects
+> 🔥 Rapid Fire • Jerk Tools • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix • ESP HD per Category • Aimbot + FOV Circle • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects
 
 </div>
 
@@ -100,9 +100,10 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 |:---|:---|
 | **🏃 Movement** | Walk Speed adjustable, Jump Height adjustable, Freeze toggle |
 | **🦅 Fly** | Fly toggle (WASD + Space/Ctrl), adjustable Fly Speed |
-| **👁 Collision & Visual** | Noclip — walk through walls with invisible platform under feet (catches falls) |
+| **👁 Collision & Visual** | Noclip — walk through walls (rewritten in v6: no more platform glitch) |
 | **🛡 Survival** | God Mode (invincible), Anti-Kick Bypass, No Fall Damage, Anti-Tool Grab, Anti-Cheat Bypass, Infinite Jump |
 | **🎯 Combat** | Unlimited Ammo, Instant Reload, No Recoil (camera + tool values), Auto Parry |
+| **🧪 Extra** | **Invisible**, **Rapid Fire** (with interval slider), **Jerk Tools** animation |
 | **📐 Appearance** | Character Size adjustable (scale up/down) |
 | **💥 Chaos & Fun** | NUKE MODE (propulsion + explosion), Explode in Place, Reset Character |
 
@@ -300,6 +301,34 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 | **TP to Freecam** | Not available | **New!** Teleport your character to the freecam camera position |
 | **Unfreeze** | Only PlatformStand reset | **Full unfreeze** — restores all part anchors, velocities, WalkSpeed, JumpPower |
 
+### FreeCam Fixes in v6
+
+| Bug | Fix |
+|:---|:---|
+| **Camera upside down** on activate/deactivate | Corrected yaw/pitch math — capture and reconstruction now use the proper rotation order |
+| **Camera backwards** | Mouse deltas inverted correctly — right mouse = look right, up mouse = look up |
+| **AZERTY keys broken** | Q/E now mapped per layout inside `keyMaps` — AZERTY users get proper strafe keys |
+| **Camera FOV reset to 70** | Previous FOV, camera type and subject are stored and fully restored on exit |
+| **Layout not saved** | Changing QWERTY/AZERTY now auto-saves to config |
+
+---
+
+## 🔥 What's New in v6
+
+| Feature | Description |
+|:---|:---|
+| **👻 Invisible** | Turn your character invisible (transparency) — restored on toggle off or respawn |
+| **🔥 Rapid Fire** | Hold click to spam the equipped tool's fire remotes, with adjustable interval (50–500 ms) |
+| **🌀 Jerk Tools** | Animation that makes the equipped tool jerk/twitch in your hand |
+| **🧰 Give Tools du jeu** | Scan the game (workspace, players, backpacks) for all tools, then give one, several, or ALL to yourself |
+| **💠 Advanced Shader HD** | Bloom + Blur + ColorCorrection stack for a cinematic look |
+| **💾 Auto Save All** | Toggle that re-saves the complete config every 5 seconds |
+| **📌 Menu Position saved** | The menu no longer snaps back to the center when you close/reopen it |
+| **🕶 Noclip fix** | Removed the buggy invisible platform — no more character glitching at launch |
+| **🎯 No Recoil fix** | Camera correction now only triggers right after firing — no more fighting your normal look movement |
+| **⚡ Instant Reload fix** | Removed the broken animation-speed hack; now actively spams reload remotes + zeroes reload values |
+| **🎨 Theme fix** | Toggle switches now recolor correctly when you change theme while toggles are ON |
+
 ---
 
 ## 🎤 VC Anti-Ban
@@ -373,9 +402,10 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 | Action | Description |
 |:---|:---|
-| **💾 Save Config** | Manually save everything — theme, menu, aimbot (key, mode, smooth, FOV, method, target part, prediction, target types, distance, circle), ESP (all toggles per category, colors, distances, style, fill, skeleton width, head dot), emotes (speed, states), freecam speed |
+| **💾 Save Config** | Manually save everything — theme, menu (size + **position**), aimbot (key, mode, smooth, FOV, method, target part, prediction, target types, distance, circle), ESP (all toggles per category, colors, distances, style, fill, skeleton width, head dot), emotes (speed, states), freecam speed, rapid fire interval |
 | **📂 Load Config** | Manually load saved configuration |
-| **🗑 Reset Config** | Reset everything to defaults (Dark theme, 380×500, 100% opacity, QWERTY, Mouse2, hold, 70 FOV, all aimbot defaults, ESP defaults, emote speed 100%) |
+| **🗑 Reset Config** | Reset everything to defaults (Dark theme, 380×500, centered, 100% opacity, QWERTY, Mouse2, hold, 70 FOV, all aimbot defaults, ESP defaults, emote speed 100%) |
+| **💾 Auto Save All** | **New in v6** — toggle that re-saves the full config every 5 seconds automatically |
 | **🔄 Auto-Save** | Automatically saves on every change (1-second debounce) |
 | **🔄 Auto-Load** | Automatically loads config 0.5s after injection if a saved file exists |
 
@@ -384,7 +414,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 ### What gets saved
 
 - ✅ Active theme
-- ✅ Menu size (width × height)
+- ✅ Menu size (width × height) **and position** (v6 — no more reset to center)
 - ✅ FOV value
 - ✅ Menu opacity
 - ✅ Key layout (QWERTY/AZERTY)
@@ -392,9 +422,10 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 - ✅ **ESP complete**: all player/bot/self toggles, 4 colors, max distances (player/bot), fill transparency, box style (corners/full), skeleton width
 - ✅ Fly speed, walk speed, jump power
 - ✅ Freecam speed
+- ✅ Rapid fire interval
 - ✅ **Emotes**: animation speed, all emote toggle states
 - ✅ Background animation state
-- ✅ All toggle states (God Mode, Fly, Noclip, ESP types, Menu Effects, etc.)
+- ✅ All toggle states (God Mode, Fly, Noclip, Invisible, Rapid Fire, Jerk Tools, Advanced Shader, ESP types, Menu Effects, Auto Save All, etc.)
 
 ---
 
