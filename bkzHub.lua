@@ -51,52 +51,139 @@ end
 loadingScreen = Instance.new("ScreenGui", playerGui)
 loadingScreen.Name = "BkzLoader"
 loadingScreen.ResetOnSpawn = false
+loadingScreen.IgnoreGuiInset = true
 loadingScreen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 loadingScreen.DisplayOrder = 2000
 local lsBg = Instance.new("Frame", loadingScreen)
 lsBg.Size = UDim2.new(1, 0, 1, 0)
-lsBg.BackgroundColor3 = Color3.fromRGB(7, 7, 13)
-lsBg.BackgroundTransparency = 0.1
+lsBg.BackgroundColor3 = Color3.fromRGB(6, 6, 12)
+lsBg.BackgroundTransparency = 0
 lsBg.BorderSizePixel = 0
-Instance.new("UIGradient", lsBg).Color = ColorSequence.new(Color3.fromRGB(7, 7, 13), Color3.fromRGB(16, 12, 30))
+Instance.new("UIGradient", lsBg).Color = ColorSequence.new(Color3.fromRGB(6, 6, 12), Color3.fromRGB(20, 13, 38))
+
+local lsCore = Instance.new("Frame", lsBg)
+lsCore.AnchorPoint = Vector2.new(0.5, 0.5)
+lsCore.Position = UDim2.new(0.5, 0, 0.42, 0)
+lsCore.Size = UDim2.new(0, 300, 0, 300)
+lsCore.BackgroundColor3 = Color3.fromRGB(160, 130, 255)
+lsCore.BackgroundTransparency = 0.97
+lsCore.BorderSizePixel = 0
+Instance.new("UICorner", lsCore).CornerRadius = UDim.new(1, 0)
+TweenService:Create(lsCore, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	BackgroundTransparency = 0.93,
+	Size = UDim2.new(0, 350, 0, 350)
+}):Play()
+
+local lsRing = Instance.new("Frame", lsBg)
+lsRing.AnchorPoint = Vector2.new(0.5, 0.5)
+lsRing.Position = UDim2.new(0.5, 0, 0.42, 0)
+lsRing.Size = UDim2.new(0, 150, 0, 150)
+lsRing.BackgroundTransparency = 1
+lsRing.BorderSizePixel = 0
+for i = 1, 10 do
+	local d = Instance.new("Frame", lsRing)
+	d.AnchorPoint = Vector2.new(0.5, 0.5)
+	d.Size = UDim2.new(0, 5, 0, 5)
+	d.BackgroundColor3 = Color3.fromRGB(205, 190, 255)
+	d.BorderSizePixel = 0
+	Instance.new("UICorner", d).CornerRadius = UDim.new(1, 0)
+	local a = (i - 1) / 10 * math.pi * 2
+	d.Position = UDim2.new(0.5 + math.cos(a) * 0.5, 0, 0.5 + math.sin(a) * 0.5, 0)
+	d.BackgroundTransparency = 0.15 + 0.7 * (0.5 + 0.5 * math.cos(a))
+end
+TweenService:Create(lsRing, TweenInfo.new(2.4, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {
+	Rotation = 360
+}):Play()
+
 local lsTitle = Instance.new("TextLabel", lsBg)
-lsTitle.Size = UDim2.new(1, 0, 0, 44)
-lsTitle.Position = UDim2.new(0, 0, 0.5, -64)
+lsTitle.Size = UDim2.new(1, 0, 0, 50)
+lsTitle.Position = UDim2.new(0, 0, 0.5, -88)
 lsTitle.BackgroundTransparency = 1
 lsTitle.Text = "🌐  bkz HUB"
-lsTitle.TextColor3 = Color3.fromRGB(165, 135, 255)
+lsTitle.TextColor3 = Color3.fromRGB(185, 160, 255)
+lsTitle.TextStrokeTransparency = 0.4
+lsTitle.TextStrokeColor3 = Color3.fromRGB(95, 60, 205)
 lsTitle.Font = Enum.Font.GothamBlack
-lsTitle.TextSize = 34
+lsTitle.TextSize = 38
+local lsTitleStroke = Instance.new("UIStroke", lsTitle)
+lsTitleStroke.Color = Color3.fromRGB(125, 85, 255)
+lsTitleStroke.Thickness = 1
+lsTitleStroke.Transparency = 0.55
+
 local lsSub = Instance.new("TextLabel", lsBg)
-lsSub.Size = UDim2.new(1, 0, 0, 16)
-lsSub.Position = UDim2.new(0, 0, 0.5, -18)
+lsSub.Size = UDim2.new(1, 0, 0, 18)
+lsSub.Position = UDim2.new(0, 0, 0.5, -36)
 lsSub.BackgroundTransparency = 1
-lsSub.Text = "Chargement  •  v6.1"
-lsSub.TextColor3 = Color3.fromRGB(150, 150, 200)
+lsSub.Text = "Loading  •  v6.1"
+lsSub.TextColor3 = Color3.fromRGB(155, 145, 205)
 lsSub.Font = Enum.Font.Gotham
 lsSub.TextSize = 12
+
 local lsTrack = Instance.new("Frame", lsBg)
-lsTrack.Size = UDim2.new(0, 260, 0, 6)
-lsTrack.Position = UDim2.new(0.5, -130, 0.5, 6)
-lsTrack.BackgroundColor3 = Color3.fromRGB(28, 28, 44)
+lsTrack.AnchorPoint = Vector2.new(0.5, 0.5)
+lsTrack.Size = UDim2.new(0, 300, 0, 8)
+lsTrack.Position = UDim2.new(0.5, 0, 0.5, 30)
+lsTrack.BackgroundColor3 = Color3.fromRGB(30, 28, 48)
+lsTrack.BackgroundTransparency = 0.2
 lsTrack.BorderSizePixel = 0
 Instance.new("UICorner", lsTrack).CornerRadius = UDim.new(1, 0)
 local lsBar = Instance.new("Frame", lsTrack)
 lsBar.Size = UDim2.new(0, 0, 1, 0)
-lsBar.BackgroundColor3 = Color3.fromRGB(165, 135, 255)
+lsBar.BackgroundColor3 = Color3.fromRGB(170, 140, 255)
 lsBar.BorderSizePixel = 0
 Instance.new("UICorner", lsBar).CornerRadius = UDim.new(1, 0)
-TweenService:Create(lsBar, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+Instance.new("UIGradient", lsBar).Color = ColorSequence.new(Color3.fromRGB(140, 100, 255), Color3.fromRGB(255, 110, 180))
+
+local lsPct = Instance.new("TextLabel", lsBg)
+lsPct.Size = UDim2.new(1, 0, 0, 16)
+lsPct.Position = UDim2.new(0, 0, 0.5, 48)
+lsPct.BackgroundTransparency = 1
+lsPct.Text = "0%"
+lsPct.TextColor3 = Color3.fromRGB(205, 195, 255)
+lsPct.Font = Enum.Font.GothamBold
+lsPct.TextSize = 14
+
+local lsStatus = Instance.new("TextLabel", lsBg)
+lsStatus.Size = UDim2.new(1, 0, 0, 14)
+lsStatus.Position = UDim2.new(0, 0, 0.5, 70)
+lsStatus.BackgroundTransparency = 1
+lsStatus.Text = "Chargement des modules ..."
+lsStatus.TextColor3 = Color3.fromRGB(120, 115, 160)
+lsStatus.Font = Enum.Font.Gotham
+lsStatus.TextSize = 10
+
+TweenService:Create(lsBar, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
 	Size = UDim2.new(1, 0, 1, 0)
 }):Play()
-local lsDots = Instance.new("TextLabel", lsBg)
-lsDots.Size = UDim2.new(1, 0, 0, 14)
-lsDots.Position = UDim2.new(0, 0, 0.5, 22)
-lsDots.BackgroundTransparency = 1
-lsDots.Text = "Initialisation des modules ..."
-lsDots.TextColor3 = Color3.fromRGB(110, 110, 160)
-lsDots.Font = Enum.Font.Gotham
-lsDots.TextSize = 10
+task.spawn(function()
+	local totalSteps = 24
+	for step = 1, totalSteps do
+		if not (loadingScreen and loadingScreen.Parent) then break end
+		local t = step / totalSteps
+		lsPct.Text = math.floor(t * 100) .. "%"
+		if t < 0.3 then
+			lsStatus.Text = "Chargement des modules ..."
+		elseif t < 0.6 then
+			lsStatus.Text = "Application des thèmes ..."
+		elseif t < 0.9 then
+			lsStatus.Text = "Finalisation de l'interface ..."
+		else
+			lsStatus.Text = "Prêt !"
+		end
+		task.wait(0.05)
+	end
+	if loadingScreen and loadingScreen.Parent then
+		lsBar.Size = UDim2.new(1, 0, 1, 0)
+		lsPct.Text = "100%"
+		lsStatus.Text = "Prêt !"
+		task.wait(0.15)
+		TweenService:Create(lsBg, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			BackgroundTransparency = 1
+		}):Play()
+		task.wait(0.35)
+		pcall(function() if loadingScreen then loadingScreen:Destroy() end end)
+	end
+end)
 
 
 
@@ -314,6 +401,14 @@ gui.Enabled = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
 gui.ResetOnSpawn = false
+
+backdrop = Instance.new("Frame", gui)
+backdrop.Size = UDim2.new(1, 0, 1, 0)
+backdrop.Position = UDim2.new(0, 0, 0, 0)
+backdrop.BackgroundColor3 = currentTheme.BG
+backdrop.BackgroundTransparency = 0.45
+backdrop.BorderSizePixel = 0
+backdrop.ZIndex = 0
 
 local hoverSound
 function playHover()
@@ -3377,6 +3472,7 @@ function applyTheme(t)
 	closeBtn.BackgroundColor3 = t.Danger
 	lockBtn.BackgroundColor3 = interfaceLocked and t.Success or t.Button
 	glassOverlay.BackgroundColor3 = t.BG
+	backdrop.BackgroundColor3 = t.BG
 	tabBar.BackgroundColor3 = t.Tab
 	for name, btn in pairs(tabBtns) do
 		btn.BackgroundColor3 = (name == activeTab) and t.TabActive or t.Tab
@@ -4225,6 +4321,10 @@ showNotification("👉𝐁 Press <b>[B]</b> to open the menu", 5)
 
 function openMenu()
 	gui.Enabled = true
+	backdrop.BackgroundTransparency = 0.7
+	TweenService:Create(backdrop, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 0.45
+	}):Play()
 	main.Size = UDim2.new(0, menuW, 0, 0)
 	main.BackgroundTransparency = 0.4
 	TweenService:Create(main, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
@@ -4234,6 +4334,9 @@ function openMenu()
 end
 
 function closeMenu()
+	TweenService:Create(backdrop, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		BackgroundTransparency = 1
+	}):Play()
 	TweenService:Create(main, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		Size = UDim2.new(0, menuW, 0, 0),
 		BackgroundTransparency = 0.35
@@ -5746,7 +5849,7 @@ if scrSuccess then
 	collectgarbage("collect")
 	print("✅  bkz HUB v6.1 chargé avec succès  (" .. player.Name .. ")")
 	task.spawn(function()
-		task.wait(1.5)
+		task.wait(1.7)
 		pcall(function() if loadingScreen then loadingScreen:Destroy() end end)
 		openMenu()
 	end)
