@@ -644,7 +644,7 @@ function createBtn(parent, text, color, order, func)
 		task.delay(0.06, function()
 			TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.ButtonHov, Size = UDim2.new(1, 0, 0, 40)}):Play()
 		end)
-		func()
+		func(btn)
 	end)
 
 	onThemeChanged(function(t)
@@ -2339,7 +2339,7 @@ createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
 	table.insert(recoilConns, c2)
 end, "noRecoil")
 
-createSection(pages.Personal, "🧪  Extra", 20)
+createSection(pages.Personal, "🧪  Extra", 23)
 
 invisibleEnabled = false
 invisibleConns = {}
@@ -2369,7 +2369,7 @@ function stopInvisible()
 	setInvisible(player.Character, false)
 end
 
-createToggle(pages.Personal, "👻  Invisible", 21, function(state)
+createToggle(pages.Personal, "👻  Invisible", 24, function(state)
 	if state then
 		invisibleEnabled = true
 		setInvisible(player.Character, true)
@@ -2401,7 +2401,7 @@ local function getFireRemotes(tool)
 	return list
 end
 
-createToggle(pages.Personal, "🔥  Rapid Fire (hold click)", 22, function(state)
+createToggle(pages.Personal, "🔥  Rapid Fire (hold click)", 21, function(state)
 	rapidFireEnabled = state
 	rapidFireTimer = 0
 	if state then
@@ -2416,6 +2416,7 @@ createToggle(pages.Personal, "🔥  Rapid Fire (hold click)", 22, function(state
 			rapidFireTimer = rapidFireTimer - dt
 			if rapidFireTimer <= 0 then
 				rapidFireTimer = rapidFireInterval
+				pcall(function() tool:Activated() end)
 				for _, v in ipairs(getFireRemotes(tool)) do
 					pcall(function() v:FireServer() end)
 				end
@@ -2426,14 +2427,14 @@ createToggle(pages.Personal, "🔥  Rapid Fire (hold click)", 22, function(state
 	end
 end, "rapidFire")
 
-createSlider(pages.Personal, "⏱  Fire Interval (ms)", 50, 500, 100, 23, function(val)
+createSlider(pages.Personal, "⏱  Fire Interval (ms)", 50, 500, 100, 22, function(val)
 	rapidFireInterval = val / 1000
 end)
 
 jerkToolsEnabled = false
 jerkToolsConn = nil
 
-createToggle(pages.Personal, "🌀  Jerk Tools", 24, function(state)
+createToggle(pages.Personal, "🌀  Jerk Tools", 25, function(state)
 	jerkToolsEnabled = state
 	if state then
 		jerkToolsConn = RunService.RenderStepped:Connect(function()
@@ -2756,6 +2757,8 @@ end
 
 
 aimMethod = 1   
+aimPrevCamType = nil
+aimCamScriptable = false
 
 aimPrediction = 0.15
 aimTargetPart = "Head"
@@ -2787,11 +2790,13 @@ function applyAim(targetPart)
 		cam.CFrame = cam.CFrame:Lerp(targetCF, smoothFactor)
 
 	elseif aimMethod == 2 then
-		local prev = cam.CameraType
+		if not aimCamScriptable then
+			aimPrevCamType = cam.CameraType
+			aimCamScriptable = true
+		end
 		cam.CameraType = Enum.CameraType.Scriptable
 		local targetCF = CFrame.new(cam.CFrame.Position, targetPos)
 		cam.CFrame = cam.CFrame:Lerp(targetCF, smoothFactor)
-		cam.CameraType = prev
 
 	elseif aimMethod == 3 then
 		local myHrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -2811,7 +2816,13 @@ function startAim()
 	if aimConn then return end
 	aimConn = RunService.RenderStepped:Connect(function()
 		updateFOVCircle()
-		if not aimActive then return end
+		if not aimActive then
+			if aimCamScriptable then
+				pcall(function() workspace.CurrentCamera.CameraType = aimPrevCamType or Enum.CameraType.Custom end)
+				aimCamScriptable = false
+			end
+			return
+		end
 		botListTimer = botListTimer + 1
 		if botListTimer >= 120 then
 			botListTimer = 0
@@ -2837,6 +2848,10 @@ end
 function stopAim()
 	if aimConn then aimConn:Disconnect(); aimConn = nil end
 	aimActive = false
+	if aimCamScriptable then
+		pcall(function() workspace.CurrentCamera.CameraType = aimPrevCamType or Enum.CameraType.Custom end)
+		aimCamScriptable = false
+	end
 	destroyFOVCircle()
 end
 
@@ -2860,7 +2875,7 @@ end)
 
 
 
-createSection(pages.Personal, "📐  Appearance", 20)
+createSection(pages.Personal, "📐  Appearance", 26)
 
 currentScale = 1.0
 
@@ -2918,7 +2933,7 @@ player.CharacterAdded:Connect(function(char)
 	applyScale(currentScale * 100)
 end)
 
-createNumberInput(pages.Personal, "📐  Character Size", 100, 21, function(val)
+createNumberInput(pages.Personal, "📐  Character Size", 100, 27, function(val)
 	applyScale(val)
 end)
 
@@ -2949,13 +2964,16 @@ createToggle(pages.Aim, "🎯  Aim Lock ON / OFF", 2, function(state)
 end, "aimLock")
 
 
-createSlider(pages.Aim, "🎚  Smooth (aim speed)", 1, 30, 8, 3, function(val)
+createSection(pages.Aim, "⚙️  Settings", 3)
+
+
+createSlider(pages.Aim, "🎚  Smooth (aim speed)", 1, 30, 8, 4, function(val)
 	aimSmooth = val / 100
 	updateAimStatus()
 end)
 
 
-createNumberInput(pages.Aim, "🔵  FOV (radius pixels)", 250, 4, function(val)
+createNumberInput(pages.Aim, "🔵  FOV (radius pixels)", 250, 18, function(val)
 	aimFOV = val
 end)
 
@@ -2964,8 +2982,7 @@ createSlider(pages.Aim, "🎯  Prediction (lead)", 0, 50, 15, 5, function(val)
 end)
 
 
-local aimModeBtn = nil
-aimModeBtn = createBtn(pages.Aim, "🔄  Mode: " .. aimMode, currentTheme.Button, 6, function(btn)
+local aimModeFrame, aimModeBtn = createBtn(pages.Aim, "🔄  Mode: " .. aimMode, currentTheme.Button, 6, function()
 	aimMode = (aimMode == "hold") and "toggle" or "hold"
 	aimModeBtn.Text = "🔄  Mode: " .. aimMode
 	updateAimStatus()
@@ -2973,8 +2990,7 @@ aimModeBtn = createBtn(pages.Aim, "🔄  Mode: " .. aimMode, currentTheme.Button
 end)
 
 methodNames = {"1 - Direct Cam", "2 - Scriptable Cam", "3 - HRP Orient"}
-local aimMethodBtn = nil
-aimMethodBtn = createBtn(pages.Aim, "🔧  Method: " .. methodNames[aimMethod], currentTheme.Button, 7, function()
+local aimMethodFrame, aimMethodBtn = createBtn(pages.Aim, "🔧  Method: " .. methodNames[aimMethod], currentTheme.Button, 7, function()
 	aimMethod = (aimMethod % 3) + 1
 	aimMethodBtn.Text = "🔧  Method: " .. methodNames[aimMethod]
 	showNotification("🎯  Method: " .. methodNames[aimMethod], 2)
@@ -3081,30 +3097,29 @@ mkDropdown(pages.Aim, "🎯  Target Part", aimPartItems, 1, 10, function(selecte
 end)
 
 
-createSection(pages.Aim, "🎯  Target Types", 15)
-createToggle(pages.Aim, "👤  Players", 16, function(state)
+createSection(pages.Aim, "🎯  Target Types", 11)
+createToggle(pages.Aim, "👤  Players", 12, function(state)
 	aimTargetPlayers = state
 end, "aimTargetPlayers")
-createToggle(pages.Aim, "🤖  Bots / AI", 17, function(state)
+createToggle(pages.Aim, "🤖  Bots / AI", 13, function(state)
 	aimTargetBots = state
 end, "aimTargetBots")
-createToggle(pages.Aim, "🚗  Vehicles", 18, function(state)
+createToggle(pages.Aim, "🚗  Vehicles", 14, function(state)
 	aimTargetVehicles = state
 end, "aimTargetVehicles")
-createToggle(pages.Aim, "📦  Objects", 19, function(state)
+createToggle(pages.Aim, "📦  Objects", 15, function(state)
 	aimTargetObjects = state
 end, "aimTargetObjects")
 
 
-createSection(pages.Aim, "🎯  Visuals", 20)
-createToggle(pages.Aim, "⭕  Show FOV Circle", 21, function(state)
+createSection(pages.Aim, "🔭  Visuals & Distance", 16)
+createToggle(pages.Aim, "🔵  Show FOV Circle", 17, function(state)
 	aimShowCircle = state
 	if state then updateFOVCircle() else destroyFOVCircle() end
 end, "aimShowCircle")
 
 
-createSection(pages.Aim, "📏  Aim Distance", 25)
-createSlider(pages.Aim, "📏  Max Distance (0 = infinite)", 0, 500, 0, 26, function(val)
+createSlider(pages.Aim, "📏  Max Distance (0 = infinite)", 0, 500, 0, 19, function(val)
 	aimDistance = val
 end)
 
