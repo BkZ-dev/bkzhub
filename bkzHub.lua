@@ -1,6 +1,13 @@
 
 
 
+print("")
+print("==================================================")
+print("   bkz HUB  v6.1   |   by bkz")
+print("   Loading ...")
+print("==================================================")
+print("")
+
 local _Instance = Instance
 local scrSuccess, scrError = pcall(function()
 if not Instance then Instance = _Instance end
@@ -36,7 +43,60 @@ if not playerGui then
 	playerGui.Name = "PlayerGui_Fallback"
 end
 
-if playerGui:FindFirstChild("AdminMenu") then playerGui.AdminMenu:Destroy() end
+for _, oldGui in ipairs({"AdminMenu", "PlayerInfo", "BkzLoader", "AdminToast", "PlayerInfoToast", "AdminMenuBtn", "PlayerInfoBtn"}) do
+	local old = playerGui:FindFirstChild(oldGui)
+	if old then pcall(function() old:Destroy() end) end
+end
+
+loadingScreen = Instance.new("ScreenGui", playerGui)
+loadingScreen.Name = "BkzLoader"
+loadingScreen.ResetOnSpawn = false
+loadingScreen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+loadingScreen.DisplayOrder = 2000
+local lsBg = Instance.new("Frame", loadingScreen)
+lsBg.Size = UDim2.new(1, 0, 1, 0)
+lsBg.BackgroundColor3 = Color3.fromRGB(7, 7, 13)
+lsBg.BackgroundTransparency = 0.1
+lsBg.BorderSizePixel = 0
+Instance.new("UIGradient", lsBg).Color = ColorSequence.new(Color3.fromRGB(7, 7, 13), Color3.fromRGB(16, 12, 30))
+local lsTitle = Instance.new("TextLabel", lsBg)
+lsTitle.Size = UDim2.new(1, 0, 0, 44)
+lsTitle.Position = UDim2.new(0, 0, 0.5, -64)
+lsTitle.BackgroundTransparency = 1
+lsTitle.Text = "🌐  bkz HUB"
+lsTitle.TextColor3 = Color3.fromRGB(165, 135, 255)
+lsTitle.Font = Enum.Font.GothamBlack
+lsTitle.TextSize = 34
+local lsSub = Instance.new("TextLabel", lsBg)
+lsSub.Size = UDim2.new(1, 0, 0, 16)
+lsSub.Position = UDim2.new(0, 0, 0.5, -18)
+lsSub.BackgroundTransparency = 1
+lsSub.Text = "Chargement  •  v6.1"
+lsSub.TextColor3 = Color3.fromRGB(150, 150, 200)
+lsSub.Font = Enum.Font.Gotham
+lsSub.TextSize = 12
+local lsTrack = Instance.new("Frame", lsBg)
+lsTrack.Size = UDim2.new(0, 260, 0, 6)
+lsTrack.Position = UDim2.new(0.5, -130, 0.5, 6)
+lsTrack.BackgroundColor3 = Color3.fromRGB(28, 28, 44)
+lsTrack.BorderSizePixel = 0
+Instance.new("UICorner", lsTrack).CornerRadius = UDim.new(1, 0)
+local lsBar = Instance.new("Frame", lsTrack)
+lsBar.Size = UDim2.new(0, 0, 1, 0)
+lsBar.BackgroundColor3 = Color3.fromRGB(165, 135, 255)
+lsBar.BorderSizePixel = 0
+Instance.new("UICorner", lsBar).CornerRadius = UDim.new(1, 0)
+TweenService:Create(lsBar, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	Size = UDim2.new(1, 0, 1, 0)
+}):Play()
+local lsDots = Instance.new("TextLabel", lsBg)
+lsDots.Size = UDim2.new(1, 0, 0, 14)
+lsDots.Position = UDim2.new(0, 0, 0.5, 22)
+lsDots.BackgroundTransparency = 1
+lsDots.Text = "Initialisation des modules ..."
+lsDots.TextColor3 = Color3.fromRGB(110, 110, 160)
+lsDots.Font = Enum.Font.Gotham
+lsDots.TextSize = 10
 
 
 
@@ -248,102 +308,8 @@ function onThemeChanged(fn)
 	return themeListenerNextId
 end
 
-vcAntiBan = false
-vcAntiBanConns = {}
-vcAntiBanActive = false
-vcAntiBanKey = "V"
-
-function activateVCAntiBan()
-	if vcAntiBanActive then
-		showNotification("🎤  VC Anti-Ban déjà actif", 2)
-		return
-	end
-	task.spawn(function()
-		pcall(function()
-			local vcs = game:FindService("VoiceChatService") or game:GetService("VoiceChatService")
-			local function findVoice()
-				for _, c in ipairs(player:GetChildren()) do
-					if c:IsA("Voice") then return c end
-				end
-				return nil
-			end
-			local voice = findVoice()
-			if not voice then
-				for _ = 1, 20 do
-					task.wait(0.3)
-					voice = findVoice()
-					if voice then break end
-				end
-			end
-			if not voice then
-				showNotification("❌  Voice introuvable", 2)
-				return
-			end
-			local muted = false
-			pcall(function() muted = voice.IsMuted end)
-			if muted then
-				showNotification("🔇  Désactive le mute d'abord", 2)
-				return
-			end
-			vcAntiBan = true
-			vcAntiBanActive = true
-			if vcs then
-				local mt = getrawmetatable and getrawmetatable(vcs)
-				if mt and mt.__namecall then
-					local nc = mt.__namecall
-					if setreadonly then pcall(function() setreadonly(mt, false) end) end
-					mt.__namecall = function(self, ...)
-						local m = getnamecallmethod and getnamecallmethod()
-						if m and vcAntiBan then
-							local lm = m:lower()
-							if lm == "isvoicechatenabled" then return false end
-							if lm == "getvoicechatstatus" then return "Disabled" end
-						end
-						return nc(self, ...)
-					end
-					if setreadonly then pcall(function() setreadonly(mt, true) end) end
-				end
-			end
-			local vmt = getrawmetatable and getrawmetatable(voice)
-			if vmt and vmt.__index then
-				local vi = vmt.__index
-				if setreadonly then pcall(function() setreadonly(vmt, false) end) end
-				vmt.__index = function(self, k)
-					if vcAntiBan then
-						if k == "VoiceState" then return Enum.ParticleStatus.Inactive end
-					end
-					return vi(self, k)
-				end
-				if setreadonly then pcall(function() setreadonly(vmt, true) end) end
-			end
-			local function isV(v)
-				if not v:IsA("GuiObject") then return false end
-				local n = v.Name:lower()
-				return n:find("voice") or n:find("mic") or n:find("speaker") or n:find("speak") or n:find("mute") or n:find("audio") or n:find("push") or n:find("talk") or n:find("vcs")
-			end
-			for _, v in ipairs(playerGui:GetDescendants()) do
-				if isV(v) then v.Visible = false; v.Active = false end
-			end
-			vcAntiBanConns[#vcAntiBanConns+1] = playerGui.DescendantAdded:Connect(function(v)
-				if not vcAntiBan then return end
-				task.wait(0.05)
-				if isV(v) then v.Visible = false; v.Active = false end
-			end)
-			vcAntiBanConns[#vcAntiBanConns+1] = UIS.InputBegan:Connect(function(input, gpe)
-				if not vcAntiBan or gpe then return end
-				if input.KeyCode.Name == vcAntiBanKey then
-					pcall(function()
-						if vcs then vcs:ToggleMicrophone() end
-					end)
-				end
-			end)
-			showNotification("🎤  VC Anti-Ban: ON (" .. vcAntiBanKey .. ")", 2)
-		end)
-	end)
-end
-
 gui = Instance.new("ScreenGui", playerGui)
-gui.Name = "AdminMenu"
+gui.Name = "PlayerInfo"
 gui.Enabled = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
@@ -375,6 +341,10 @@ main.BorderSizePixel = 0
 main.ZIndex = 1
 main.ClipsDescendants = true
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 16)
+mainGradient = Instance.new("UIGradient", main)
+mainGradient.Rotation = 90
+mainGradient.Color = ColorSequence.new(currentTheme.BG, currentTheme.Panel)
+mainGradient.Transparency = NumberSequence.new(0.5, 1)
 
 
 stroke = Instance.new("UIStroke", main)
@@ -391,7 +361,31 @@ header.Size = UDim2.new(1, 0, 0, 52)
 header.BackgroundColor3 = currentTheme.Panel
 header.BorderSizePixel = 0
 Instance.new("UICorner", header).CornerRadius = UDim.new(0, 16)
+headerGradient = Instance.new("UIGradient", header)
+headerGradient.Rotation = 90
+headerGradient.Color = ColorSequence.new(currentTheme.Panel, currentTheme.Button)
 
+
+logoBadge = Instance.new("Frame", header)
+logoBadge.Size = UDim2.new(0, 34, 0, 34)
+logoBadge.Position = UDim2.new(0, 14, 0.5, -17)
+logoBadge.BackgroundColor3 = currentTheme.Accent
+logoBadge.BorderSizePixel = 0
+logoBadge.ZIndex = 3
+Instance.new("UICorner", logoBadge).CornerRadius = UDim.new(0, 9)
+local logoBadgeStroke = Instance.new("UIStroke", logoBadge)
+logoBadgeStroke.Color = currentTheme.AccentHov
+logoBadgeStroke.Thickness = 1.5
+logoBadgeStroke.Transparency = 0.4
+logoText = Instance.new("TextLabel", logoBadge)
+logoText.Size = UDim2.new(1, 0, 1, 0)
+logoText.BackgroundTransparency = 1
+logoText.Text = "B"
+logoText.TextColor3 = Color3.new(1, 1, 1)
+logoText.Font = Enum.Font.GothamBlack
+logoText.TextSize = 20
+logoText.TextStrokeTransparency = 0.2
+logoText.TextStrokeColor3 = Color3.new(0, 0, 0)
 
 accentBar = Instance.new("Frame", header)
 accentBar.Size = UDim2.new(1, -40, 0, 2)
@@ -414,8 +408,8 @@ headerFix.BorderSizePixel = 0
 
 title = Instance.new("TextLabel", header)
 title.Text = "🌐 bkz HUB"
-title.Size = UDim2.new(1, -50, 1, 0)
-title.Position = UDim2.new(0, 15, 0, 0)
+title.Size = UDim2.new(1, -100, 1, 0)
+title.Position = UDim2.new(0, 58, 0, 0)
 title.BackgroundTransparency = 1
 title.TextColor3 = currentTheme.Text
 title.Font = Enum.Font.GothamBold
@@ -423,9 +417,9 @@ title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v6.0  •  " .. player.Name
-subtitle.Size = UDim2.new(1, -50, 0, 14)
-subtitle.Position = UDim2.new(0, 15, 0, 33)
+subtitle.Text = "v6.1  •  " .. player.Name
+subtitle.Size = UDim2.new(1, -100, 0, 14)
+subtitle.Position = UDim2.new(0, 58, 0, 33)
 subtitle.BackgroundTransparency = 1
 subtitle.TextColor3 = currentTheme.SubText
 subtitle.Font = Enum.Font.Gotham
@@ -499,7 +493,6 @@ tabDefs = {
 	{ name = "Aim",      icon = "🎯" },
 	{ name = "ESP",      icon = "👁" },
 	{ name = "World",    icon = "🌍" },
-	{ name = "Emotes",   icon = "💃" },
 	{ name = "Settings", icon = "⚙" },
 	{ name = "Other",    icon = "ℹ" },
 }
@@ -530,7 +523,7 @@ for _, def in ipairs(tabDefs) do
 
 	local tb = Instance.new("TextButton", tabBar)
 	tb.Text = def.icon
-	tb.Size = UDim2.new(0.125, -3, 1, 0)
+	tb.Size = UDim2.new(1 / #tabDefs, -3, 1, 0)
 	tb.BackgroundColor3 = (def.name == "Player") and currentTheme.TabActive or currentTheme.Tab
 	tb.TextColor3 = (def.name == "Player") and Color3.new(1,1,1) or currentTheme.SubText
 	tb.Font = Enum.Font.GothamBold
@@ -854,7 +847,9 @@ function createSlider(parent, text, min, max, default, order, func)
 	return frame
 end
 
-function createNumberInput(parent, text, default, order, func)
+numberInputApply = {}
+
+function createNumberInput(parent, text, default, order, func, configKey)
 	local frame = Instance.new("Frame", parent)
 	frame.Size = UDim2.new(1, 0, 0, 40)
 	frame.BackgroundColor3 = currentTheme.Button
@@ -886,6 +881,14 @@ function createNumberInput(parent, text, default, order, func)
 	Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
 
 	local current = default
+
+	if configKey then
+		numberInputApply[configKey] = function(newVal)
+			current = newVal
+			box.Text = tostring(newVal)
+			func(newVal)
+		end
+	end
 
 	box.Changed:Connect(function(prop)
 		if prop == "Text" then
@@ -1171,7 +1174,7 @@ ddList.BackgroundColor3 = currentTheme.Panel
 ddList.BorderSizePixel = 0
 ddList.ScrollBarThickness = 3
 ddList.Visible = false
-ddList.LayoutOrder = 2
+ddList.LayoutOrder = 3
 ddList.AutomaticCanvasSize = Enum.AutomaticSize.Y
 ddList.CanvasSize = UDim2.new(0,0,0,0)
 Instance.new("UICorner", ddList).CornerRadius = UDim.new(0, 8)
@@ -1278,14 +1281,14 @@ searchBox.Focused:Connect(function()
 	updateDD(searchBox.Text)
 end)
 
-createSection(pages.Player, "Actions", 2)
+createSection(pages.Player, "Actions", 10)
 
 
 infoPanel = Instance.new("Frame", pages.Player)
 infoPanel.Size = UDim2.new(1, 0, 0, 60)
 infoPanel.BackgroundColor3 = currentTheme.Panel
 infoPanel.BorderSizePixel = 0
-infoPanel.LayoutOrder = 2
+infoPanel.LayoutOrder = 4
 Instance.new("UICorner", infoPanel).CornerRadius = UDim.new(0, 8)
 infoPad = Instance.new("UIPadding", infoPanel)
 infoPad.PaddingLeft = UDim.new(0, 10)
@@ -1333,15 +1336,15 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
-createBtn(pages.Player, "🎥  Spectate", currentTheme.Button, 3, function()
+createBtn(pages.Player, "🎥  Spectate", currentTheme.Button, 11, function()
 	if targetPlayer and targetPlayer.Character then
 		workspace.CurrentCamera.CameraSubject = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
 	end
 end)
-createBtn(pages.Player, "⏹  Stop Spectate", currentTheme.Button, 4, function()
+createBtn(pages.Player, "⏹  Stop Spectate", currentTheme.Button, 12, function()
 	if player.Character then workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChildOfClass("Humanoid") end
 end)
-createBtn(pages.Player, "📍  TP Player to Me", currentTheme.Button, 5, function()
+createBtn(pages.Player, "📍  TP Player to Me", currentTheme.Button, 13, function()
 	if not (targetPlayer and targetPlayer.Character and player.Character) then return end
 	local myHRP = player.Character:FindFirstChild("HumanoidRootPart")
 	local theirHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -1353,7 +1356,7 @@ createBtn(pages.Player, "📍  TP Player to Me", currentTheme.Button, 5, functio
 		theirHRP.Anchored = wasAnchored
 	end
 end)
-createBtn(pages.Player, "🚀  TP Me to Player", currentTheme.Button, 6, function()
+createBtn(pages.Player, "🚀  TP Me to Player", currentTheme.Button, 14, function()
 	if not (targetPlayer and targetPlayer.Character and player.Character) then return end
 	local myHRP = player.Character:FindFirstChild("HumanoidRootPart")
 	local theirHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -1414,7 +1417,7 @@ function startChatSpy(filterPlayer)
 	table.insert(chatSpyConns, cAdd)
 end
 
-createBtn(pages.Player, "💬  Chat Spy (joueur ciblé)", currentTheme.Button, 7, function()
+createBtn(pages.Player, "💬  Chat Spy (joueur ciblé)", currentTheme.Button, 15, function()
 	if chatSpyActive then
 		stopChatSpy()
 		showNotification("👁  Chat Spy OFF", 2)
@@ -1427,7 +1430,7 @@ createBtn(pages.Player, "💬  Chat Spy (joueur ciblé)", currentTheme.Button, 7
 		end
 	end
 end)
-createBtn(pages.Player, "💬  Chat Spy (tous les joueurs)", currentTheme.Button, 8, function()
+createBtn(pages.Player, "💬  Chat Spy (tous les joueurs)", currentTheme.Button, 16, function()
 	if chatSpyActive then
 		stopChatSpy()
 		showNotification("👁  Chat Spy OFF", 2)
@@ -1437,9 +1440,9 @@ createBtn(pages.Player, "💬  Chat Spy (tous les joueurs)", currentTheme.Button
 	end
 end)
 
-createSection(pages.Player, "🎭  Local Visual Fun", 9)
+createSection(pages.Player, "🎭  Local Visual Fun", 30)
 
-createBtn(pages.Player, "🪑  Sit All (Local)", currentTheme.Button, 10, function()
+createBtn(pages.Player, "🪑  Sit All (Local)", currentTheme.Button, 31, function()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
 			local hum = p.Character:FindFirstChildOfClass("Humanoid")
@@ -1449,7 +1452,7 @@ createBtn(pages.Player, "🪑  Sit All (Local)", currentTheme.Button, 10, functi
 	showNotification("🪑  Local: All sitting (visual only)", 3)
 end)
 
-createBtn(pages.Player, "💀  Kill All (Local)", currentTheme.Danger, 11, function()
+createBtn(pages.Player, "💀  Kill All (Local)", currentTheme.Danger, 32, function()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
 			local hum = p.Character:FindFirstChildOfClass("Humanoid")
@@ -1459,7 +1462,7 @@ createBtn(pages.Player, "💀  Kill All (Local)", currentTheme.Danger, 11, funct
 	showNotification("💀  Local: All killed (visual only)", 3)
 end)
 
-createBtn(pages.Player, "🧊  Freeze All (Local)", currentTheme.Button, 12, function()
+createBtn(pages.Player, "🧊  Freeze All (Local)", currentTheme.Button, 33, function()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
 			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
@@ -1469,7 +1472,7 @@ createBtn(pages.Player, "🧊  Freeze All (Local)", currentTheme.Button, 12, fun
 	showNotification("🧊  Local: All frozen (visual only)", 3)
 end)
 
-createBtn(pages.Player, "🧊  Unfreeze All (Local)", currentTheme.Button, 13, function()
+createBtn(pages.Player, "🧊  Unfreeze All (Local)", currentTheme.Button, 34, function()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
 			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
@@ -1479,7 +1482,7 @@ createBtn(pages.Player, "🧊  Unfreeze All (Local)", currentTheme.Button, 13, f
 	showNotification("🧊  Local: All unfrozen (visual only)", 3)
 end)
 
-createBtn(pages.Player, "🗡  Remove All Tools (Local)", currentTheme.Button, 14, function()
+createBtn(pages.Player, "🗡  Remove All Tools (Local)", currentTheme.Button, 35, function()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then
 			for _, t in ipairs(p.Character:GetChildren()) do
@@ -1490,7 +1493,7 @@ createBtn(pages.Player, "🗡  Remove All Tools (Local)", currentTheme.Button, 1
 	showNotification("🗡  Local: Tools removed (visual only)", 3)
 end)
 
-createBtn(pages.Player, "📡  TP All to Me (Local)", currentTheme.Accent, 15, function()
+createBtn(pages.Player, "📡  TP All to Me (Local)", currentTheme.Accent, 36, function()
 	if not player.Character then return end
 	local myHRP = player.Character:FindFirstChild("HumanoidRootPart")
 	if not myHRP then return end
@@ -1525,7 +1528,7 @@ do
 	toolsFrame.Size = UDim2.new(1, 0, 0, 40)
 	toolsFrame.BackgroundColor3 = currentTheme.Button
 	toolsFrame.BorderSizePixel = 0
-	toolsFrame.LayoutOrder = 16
+	toolsFrame.LayoutOrder = 37
 	Instance.new("UICorner", toolsFrame).CornerRadius = UDim.new(0, 8)
 
 	local toolBtn = Instance.new("TextButton", toolsFrame)
@@ -1540,7 +1543,7 @@ do
 	list.Size = UDim2.new(1, 0, 0, 0)
 	list.BackgroundColor3 = currentTheme.Panel
 	list.BorderSizePixel = 0
-	list.LayoutOrder = 17
+	list.LayoutOrder = 38
 	list.Visible = false
 	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	list.ZIndex = 5
@@ -1614,74 +1617,6 @@ do
 	end)
 end
 
-createSection(pages.Player, "🎤  Voice Chat", 16)
-createBtn(pages.Player, "🎤  Activer VC Anti-Ban", currentTheme.Accent, 17, function(btn)
-	activateVCAntiBan()
-	if btn then
-		btn.Text = "🎤  VC Anti-Ban: ON"
-		btn.BackgroundColor3 = currentTheme.Success
-		btn.AutoButtonColor = false
-	end
-end)
-do
-	local vcKf = Instance.new("Frame", pages.Player)
-	vcKf.Size = UDim2.new(1,0,0,34)
-	vcKf.BackgroundColor3 = currentTheme.Button
-	vcKf.BorderSizePixel = 0
-	vcKf.LayoutOrder = 18
-	Instance.new("UICorner", vcKf).CornerRadius = UDim.new(0, 8)
-	local vcKl = Instance.new("TextLabel", vcKf)
-	vcKl.Size = UDim2.new(1,-10,1,0)
-	vcKl.Position = UDim2.new(0,10,0,0)
-	vcKl.BackgroundTransparency = 1
-	vcKl.Text = "⌨  Touche: " .. vcAntiBanKey .. "  [cliquer]"
-	vcKl.TextColor3 = currentTheme.Text
-	vcKl.Font = Enum.Font.Gotham
-	vcKl.TextSize = 12
-	vcKl.TextXAlignment = Enum.TextXAlignment.Left
-	local vcKb = Instance.new("TextButton", vcKf)
-	vcKb.Size = UDim2.new(1,0,1,0)
-	vcKb.BackgroundTransparency = 1
-	vcKb.Text = ""
-	local listening = false
-	local bindConn = nil
-	vcKb.MouseEnter:Connect(playHover)
-	vcKb.MouseButton1Click:Connect(function()
-		if listening then return end
-		listening = true
-		vcKl.Text = "⌨  Appuie sur une touche..."
-		if bindConn then bindConn:Disconnect() end
-		bindConn = UIS.InputBegan:Connect(function(input, gpe)
-			if gpe then return end
-			local key = nil
-			if input.UserInputType == Enum.UserInputType.Keyboard then
-				key = input.KeyCode.Name
-			elseif input.UserInputType == Enum.UserInputType.MouseButton1 then key = "Mouse1"
-			elseif input.UserInputType == Enum.UserInputType.MouseButton2 then key = "Mouse2"
-			elseif input.UserInputType == Enum.UserInputType.MouseButton3 then key = "Mouse3"
-			end
-			if key then
-				vcAntiBanKey = key
-				vcKl.Text = "⌨  Touche: " .. key .. "  [cliquer]"
-				listening = false
-				if bindConn then bindConn:Disconnect(); bindConn = nil end
-				showNotification("🎤  Touche: " .. key, 2)
-			end
-		end)
-		task.delay(5, function()
-			if listening then
-				listening = false
-				if bindConn then bindConn:Disconnect(); bindConn = nil end
-				vcKl.Text = "⌨  Touche: " .. vcAntiBanKey .. "  [cliquer]"
-			end
-		end)
-	end)
-	onThemeChanged(function(t)
-		vcKf.BackgroundColor3 = t.Button
-		vcKl.TextColor3 = t.Text
-	end)
-end
-
 createSection(pages.Personal, "🏃  Movement", 0)
 
 savedWalkSpeed = 16
@@ -1708,7 +1643,7 @@ createNumberInput(pages.Personal, "🏃  Walk Speed", 16, 2, function(val)
 	savedWalkSpeed = val
 	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if hum then hum.WalkSpeed = val end
-end)
+end, "walkSpeed")
 
 createNumberInput(pages.Personal, "🦘  Jump Height", 50, 3, function(val)
 	savedJumpPower = val
@@ -1717,7 +1652,7 @@ createNumberInput(pages.Personal, "🦘  Jump Height", 50, 3, function(val)
 		hum.JumpPower = val
 		hum.JumpHeight = val * 0.3
 	end
-end)
+end, "jumpPower")
 
 createToggle(pages.Personal, "🧊  Freeze (no move)", 4, function(state)
 	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -1785,7 +1720,7 @@ end, "fly")
 
 createNumberInput(pages.Personal, "🦅  Fly Speed", 40, 7, function(val)
 	flySpeed = val
-end)
+end, "flySpeed")
 
 createSection(pages.Personal, "👁  Collision & Visual", 8)
 
@@ -1811,81 +1746,6 @@ createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(st
 		end
 	end
 end, "noclip")
-
-local emoteTracks = {}
-emoteSpeed = 1.0
-
-local function createEmoteToggle(parent, name, order, animId, configKey)
-	createToggle(parent, name, order, function(state)
-		if state then
-			local char = player.Character
-			if not char then return end
-			local hum = char:FindFirstChildOfClass("Humanoid")
-			if not hum then return end
-			local animator = hum:FindFirstChildOfClass("Animator")
-			if not animator then animator = Instance.new("Animator", hum) end
-			local anim = Instance.new("Animation")
-			anim.AnimationId = "rbxassetid://" .. tostring(animId)
-			local track = animator:LoadAnimation(anim)
-			track.Looped = true
-			track:AdjustSpeed(emoteSpeed)
-			track:Play()
-			emoteTracks[configKey] = track
-		else
-			if emoteTracks[configKey] then
-				emoteTracks[configKey]:Stop()
-				emoteTracks[configKey]:Destroy()
-				emoteTracks[configKey] = nil
-			end
-		end
-	end, configKey)
-end
-
-function stopAllEmotes()
-	for k, track in pairs(emoteTracks) do
-		pcall(function() track:Stop(); track:Destroy() end)
-	end
-	emoteTracks = {}
-	for k, v in pairs(toggleStates) do
-		if k:match("^anim_") and v then
-			toggleStates[k] = false
-			if toggleApply[k] then toggleApply[k](false) end
-		end
-	end
-end
-
-createSection(pages.Emotes, "🎬  Animator Packs", 1)
-
-createBtn(pages.Emotes, "⏹  Stop All Emotes", currentTheme.Danger, 2, function()
-	stopAllEmotes()
-	showNotification("⏹  Toutes les emotes arrêtées", 2)
-end)
-
-createSlider(pages.Emotes, "⚡  Speed Animation", 10, 300, 100, 3, function(val)
-	emoteSpeed = val / 100
-	for _, track in pairs(emoteTracks) do
-		pcall(function() track:AdjustSpeed(emoteSpeed) end)
-	end
-end)
-
-local animEmotes = {
-	{"Wave", 18455766909},
-	{"Point", 18455774293},
-	{"Dance", 18455789433},
-	{"Dance 2", 18378430756},
-	{"Dance 3", 18378426625},
-	{"Laugh", 18455781785},
-	{"Cheer", 18455778635},
-	{"Idle", 18376648560},
-	{"Walk Style", 18376651750},
-	{"Run Style", 18376654895},
-	{"Fall", 18376657688},
-	{"Sit", 18376662353},
-}
-
-for i, em in ipairs(animEmotes) do
-	createEmoteToggle(pages.Emotes, em[1], i + 1, em[2], "anim_" .. em[1]:gsub("%s+", ""))
-end
 
 createSection(pages.Personal, "🛡  Survival", 10)
 
@@ -2101,7 +1961,7 @@ end, "antiCheat")
 
 
 jumpConn = nil
-createToggle(pages.Personal, "🦘  Infinite Jump", 14, function(state)
+createToggle(pages.Personal, "🦘  Infinite Jump", 16, function(state)
 	if state then
 		jumpConn = UIS.JumpRequest:Connect(function()
 			local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
@@ -2112,7 +1972,7 @@ createToggle(pages.Personal, "🦘  Infinite Jump", 14, function(state)
 	end
 end, "infJump")
 
-createSection(pages.Personal, "🎯  Combat", 16)
+createSection(pages.Personal, "🎯  Combat", 20)
 
 
 ammoEnabled   = false
@@ -2169,7 +2029,7 @@ function watchAmmoChar(char)
 	table.insert(ammoConns, c)
 end
 
-createToggle(pages.Personal, "🔫  Unlimited Ammo", 17, function(state)
+createToggle(pages.Personal, "🔫  Unlimited Ammo", 21, function(state)
 	ammoEnabled = state
 	ammoCleanup()
 	if not state then return end
@@ -2215,7 +2075,7 @@ function watchReloadChar(char)
 	table.insert(reloadConns, c)
 end
 
-createToggle(pages.Personal, "⚡  Instant Reload", 18, function(state)
+createToggle(pages.Personal, "⚡  Instant Reload", 22, function(state)
 	reloadEnabled = state
 	reloadCleanup()
 	if reloadLoopConn then reloadLoopConn:Disconnect(); reloadLoopConn = nil end
@@ -2270,7 +2130,7 @@ function recoilPatchTool(tool)
 	end
 end
 
-createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
+createToggle(pages.Personal, "🎯  No Recoil", 23, function(state)
 	recoilEnabled = state
 	
 	if recoilConn then recoilConn:Disconnect(); recoilConn = nil end
@@ -2339,7 +2199,7 @@ createToggle(pages.Personal, "🎯  No Recoil", 19, function(state)
 	table.insert(recoilConns, c2)
 end, "noRecoil")
 
-createSection(pages.Personal, "🧪  Extra", 23)
+createSection(pages.Personal, "🧪  Extra", 30)
 
 invisibleEnabled = false
 invisibleConns = {}
@@ -2369,7 +2229,7 @@ function stopInvisible()
 	setInvisible(player.Character, false)
 end
 
-createToggle(pages.Personal, "👻  Invisible", 24, function(state)
+createToggle(pages.Personal, "👻  Invisible", 31, function(state)
 	if state then
 		invisibleEnabled = true
 		setInvisible(player.Character, true)
@@ -2401,7 +2261,7 @@ local function getFireRemotes(tool)
 	return list
 end
 
-createToggle(pages.Personal, "🔥  Rapid Fire (hold click)", 21, function(state)
+createToggle(pages.Personal, "🔥  Rapid Fire (hold click)", 25, function(state)
 	rapidFireEnabled = state
 	rapidFireTimer = 0
 	if state then
@@ -2427,14 +2287,14 @@ createToggle(pages.Personal, "🔥  Rapid Fire (hold click)", 21, function(state
 	end
 end, "rapidFire")
 
-createSlider(pages.Personal, "⏱  Fire Interval (ms)", 50, 500, 100, 22, function(val)
+createSlider(pages.Personal, "⏱  Fire Interval (ms)", 50, 500, 100, 26, function(val)
 	rapidFireInterval = val / 1000
 end)
 
 jerkToolsEnabled = false
 jerkToolsConn = nil
 
-createToggle(pages.Personal, "🌀  Jerk Tools", 25, function(state)
+createToggle(pages.Personal, "🌀  Jerk Tools", 32, function(state)
 	jerkToolsEnabled = state
 	if state then
 		jerkToolsConn = RunService.RenderStepped:Connect(function()
@@ -2488,7 +2348,7 @@ function disableAutoParry()
 	if autoParryConn then autoParryConn:Disconnect(); autoParryConn = nil end
 end
 
-createToggle(pages.Personal, "⚔  Auto Parry (block)", 20, function(state)
+createToggle(pages.Personal, "⚔  Auto Parry (block)", 24, function(state)
 	if state then enableAutoParry() else disableAutoParry() end
 end, "autoParry")
 
@@ -2875,7 +2735,7 @@ end)
 
 
 
-createSection(pages.Personal, "📐  Appearance", 26)
+createSection(pages.Personal, "📐  Appearance", 40)
 
 currentScale = 1.0
 
@@ -2933,9 +2793,9 @@ player.CharacterAdded:Connect(function(char)
 	applyScale(currentScale * 100)
 end)
 
-createNumberInput(pages.Personal, "📐  Character Size", 100, 27, function(val)
+createNumberInput(pages.Personal, "📐  Character Size", 100, 41, function(val)
 	applyScale(val)
-end)
+end, "characterSize")
 
 
 
@@ -2975,7 +2835,8 @@ end)
 
 createNumberInput(pages.Aim, "🔵  FOV (radius pixels)", 250, 18, function(val)
 	aimFOV = val
-end)
+	if aimShowCircle then pcall(updateFOVCircle) end
+end, "aimFOV")
 
 createSlider(pages.Aim, "🎯  Prediction (lead)", 0, 50, 15, 5, function(val)
 	aimPrediction = val / 100
@@ -3205,7 +3066,7 @@ createToggle(pages.World, "🌈  Rainbow Sky", 4, function(state)
 end, "rainbowSky")
 
 
-createSection(pages.World, "🌫  Fog & Effects", 4)
+createSection(pages.World, "🌫  Fog & Effects", 20)
 
 function getAtmo()
 	local a = Lighting:FindFirstChildOfClass("Atmosphere")
@@ -3213,7 +3074,7 @@ function getAtmo()
 	return a
 end
 
-createToggle(pages.World, "🌫  Dense Fog", 5, function(state)
+createToggle(pages.World, "🌫  Dense Fog", 21, function(state)
 	local atmo = getAtmo()
 	TweenService:Create(atmo, TweenInfo.new(1.5), {
 		Density = state and 0.85 or 0.3,
@@ -3221,7 +3082,7 @@ createToggle(pages.World, "🌫  Dense Fog", 5, function(state)
 	}):Play()
 end, "denseFog")
 
-createToggle(pages.World, "☁  Light Fog", 6, function(state)
+createToggle(pages.World, "☁  Light Fog", 22, function(state)
 	local atmo = getAtmo()
 	TweenService:Create(atmo, TweenInfo.new(1.5), {
 		Density = state and 0.5 or 0.3,
@@ -3229,7 +3090,7 @@ createToggle(pages.World, "☁  Light Fog", 6, function(state)
 end, "lightFog")
 
 
-createToggle(pages.World, "🌧  Rain", 7, function(state)
+createToggle(pages.World, "🌧  Rain", 23, function(state)
 	RunService:UnbindFromRenderStep("AdminRain")
 	for _, v in ipairs(workspace:GetChildren()) do
 		if v.Name == "AdminRain" or v.Name == "AdminRainFar" or v.Name == "AdminRainSplash" then v:Destroy() end
@@ -3321,7 +3182,7 @@ createToggle(pages.World, "🌧  Rain", 7, function(state)
 end, "rain")
 
 
-createToggle(pages.World, "❄  Snow", 8, function(state)
+createToggle(pages.World, "❄  Snow", 24, function(state)
 	RunService:UnbindFromRenderStep("AdminSnow")
 	for _, v in ipairs(workspace:GetChildren()) do
 		if v.Name == "AdminSnow" or v.Name == "AdminSnowFar" or v.Name == "AdminSnowGround" then v:Destroy() end
@@ -3434,7 +3295,7 @@ createToggle(pages.World, "❄  Snow", 8, function(state)
 	end
 end, "snow")
 
-createToggle(pages.World, "🌅  Sunset", 9, function(state)
+createToggle(pages.World, "🌅  Sunset", 25, function(state)
 	if state then
 		TweenService:Create(Lighting, TweenInfo.new(2), {
 			ClockTime = 18, Brightness = 1.2,
@@ -3454,13 +3315,13 @@ createToggle(pages.World, "🌅  Sunset", 9, function(state)
 	end
 end, "sunset")
 
-createSection(pages.World, "⏩  Time", 9)
+createSection(pages.World, "⏩  Time", 40)
 
-createNumberInput(pages.World, "☀  Time of Day", 14, 10, function(val)
+createNumberInput(pages.World, "☀  Time of Day", 14, 41, function(val)
 	Lighting.ClockTime = val
-end)
+end, "timeOfDay")
 
-createSlider(pages.World, "⏩  Time Speed (x)", 0, 5, 0, 11, function(val)
+createSlider(pages.World, "⏩  Time Speed (x)", 0, 5, 0, 42, function(val)
 	RunService:UnbindFromRenderStep("AdminTimeSpeed")
 	if val > 0 then
 		RunService:BindToRenderStep("AdminTimeSpeed", 1, function(dt)
@@ -3469,21 +3330,21 @@ createSlider(pages.World, "⏩  Time Speed (x)", 0, 5, 0, 11, function(val)
 	end
 end)
 
-createSection(pages.World, "⚙  Physics", 11)
+createSection(pages.World, "⚙  Physics", 50)
 
-createNumberInput(pages.World, "🌍  Gravity", 196, 12, function(val)
+createNumberInput(pages.World, "🌍  Gravity", 196, 51, function(val)
 	workspace.Gravity = val
-end)
-createBtn(pages.World, "↩  Reset Gravity", currentTheme.Button, 13, function()
+end, "gravity")
+createBtn(pages.World, "↩  Reset Gravity", currentTheme.Button, 52, function()
 	workspace.Gravity = 196
 end)
 
-createSection(pages.World, "🖥  Performance", 13)
+createSection(pages.World, "🖥  Performance", 60)
 
-createBtn(pages.World, "🔓  Unlock FPS", currentTheme.Button, 14, function()
+createBtn(pages.World, "🔓  Unlock FPS", currentTheme.Button, 61, function()
 	if setfpscap then RunService:BindToRenderStep("FPSUnlock",1,function() setfpscap(0) end) end
 end)
-createBtn(pages.World, "🔒  Reset FPS (60)", currentTheme.Button, 15, function()
+createBtn(pages.World, "🔒  Reset FPS (60)", currentTheme.Button, 62, function()
 	RunService:UnbindFromRenderStep("FPSUnlock")
 	if setfpscap then setfpscap(60) end
 end)
@@ -3504,8 +3365,11 @@ end
 function applyTheme(t)
 	currentTheme = t
 	main.BackgroundColor3 = t.BG
+	mainGradient.Color = ColorSequence.new(t.BG, t.Panel)
 	stroke.Color = t.Accent
 	header.BackgroundColor3 = t.Panel
+	headerGradient.Color = ColorSequence.new(t.Panel, t.Button)
+	logoBadge.BackgroundColor3 = t.Accent
 	accentBar.BackgroundColor3 = t.Accent
 	headerFix.BackgroundColor3 = t.Panel
 	title.TextColor3 = t.Text
@@ -3965,18 +3829,19 @@ end)
 
 createSection(pages.Settings, "💾  Configuration", 100)
 
-local CONFIG_FILE = "AdminMenu_config.json"
-local autoSaveTimer = nil
+local CONFIG_FILE = "PlayerInfo.json"
+
+local function writeConfigData()
+	if not writefile then return false, "writefile not available" end
+	local ok, err = pcall(function()
+		local data = game:GetService("HttpService"):JSONEncode(getConfig())
+		writefile(CONFIG_FILE, data)
+	end)
+	return ok, err
+end
 
 function autoSave()
-	if not writefile then return end
-	if autoSaveTimer then autoSaveTimer:Cancel() end
-	autoSaveTimer = task.delay(1, function()
-		pcall(function()
-			local data = game:GetService("HttpService"):JSONEncode(getConfig())
-			writefile(CONFIG_FILE, data)
-		end)
-	end)
+	pcall(writeConfigData)
 end
 
 
@@ -4057,6 +3922,10 @@ function getConfig()
 		flySpeed  = flySpeed,
 		walkSpeed = savedWalkSpeed,
 		jumpPower = savedJumpPower,
+		aimFOV    = aimFOV,
+		characterSize = currentScale * 100,
+		timeOfDay = Lighting.ClockTime,
+		gravity   = workspace.Gravity,
 		bgAnim    = bgAnimEnabled,
 		freecamSpeed = freecamSpeed,
 		aimDistance    = aimDistance,
@@ -4080,7 +3949,6 @@ function getConfig()
 			boxStyle = ESP_BOX_STYLE,
 			skeletonWidth = ESP_SKELETON_WIDTH,
 		},
-		emoteSpeed = emoteSpeed,
 		rapidFireInterval = rapidFireInterval,
 		autoSaveAll = autoSaveAllEnabled,
 		toggles   = toggles,
@@ -4108,8 +3976,11 @@ function applyConfig(cfg)
 	if cfg.aimPrediction then aimPrediction = cfg.aimPrediction end
 	if cfg.aimTargetPart then aimTargetPart = cfg.aimTargetPart end
 	if cfg.flySpeed then flySpeed = cfg.flySpeed end
-	if cfg.walkSpeed then savedWalkSpeed = cfg.walkSpeed; applyMovement(player.Character) end
-	if cfg.jumpPower then savedJumpPower = cfg.jumpPower; applyMovement(player.Character) end
+	for _, nk in ipairs({"walkSpeed", "jumpPower", "flySpeed", "characterSize", "aimFOV", "timeOfDay", "gravity"}) do
+		if cfg[nk] ~= nil and numberInputApply[nk] then
+			pcall(function() numberInputApply[nk](cfg[nk]) end)
+		end
+	end
 	if cfg.bgAnim ~= nil then
 		bgAnimEnabled = cfg.bgAnim
 		if bgAnimEnabled then enableBgAnim() end
@@ -4136,7 +4007,6 @@ function applyConfig(cfg)
 		if cfg.espStyle.boxStyle then ESP_BOX_STYLE = cfg.espStyle.boxStyle end
 		if cfg.espStyle.skeletonWidth then ESP_SKELETON_WIDTH = cfg.espStyle.skeletonWidth end
 	end
-	if cfg.emoteSpeed then emoteSpeed = cfg.emoteSpeed end
 	if cfg.rapidFireInterval then rapidFireInterval = cfg.rapidFireInterval end
 	if cfg.toggles then
 		for k, v in pairs(cfg.toggles) do
@@ -4153,13 +4023,7 @@ function applyConfig(cfg)
 end
 
 function saveConfig()
-	if not writefile then
-		showNotification("❌  writefile not available", 3); return
-	end
-	local ok, err = pcall(function()
-		local data = game:GetService("HttpService"):JSONEncode(getConfig())
-		writefile(CONFIG_FILE, data)
-	end)
+	local ok, err = writeConfigData()
 	if ok then
 		showNotification("✅  Config saved!", 3)
 	else
@@ -4186,22 +4050,22 @@ end
 autoSaveAllEnabled = false
 autoSaveAllLoop = nil
 
-createToggle(pages.Settings, "💾  Auto Save All (every 5s)", 100, function(state)
+createToggle(pages.Settings, "💾  Auto Save All (every 5s)", 101, function(state)
 	autoSaveAllEnabled = state
 	if autoSaveAllLoop then pcall(function() task.cancel(autoSaveAllLoop) end); autoSaveAllLoop = nil end
 	if state then
 		autoSaveAllLoop = task.spawn(function()
 			while autoSaveAllEnabled do
 				task.wait(5)
-				if autoSaveAllEnabled then saveConfig() end
+				if autoSaveAllEnabled then autoSave() end
 			end
 		end)
 	end
 end, "autoSaveAll")
 
-createBtn(pages.Settings, "💾  Save Config",  currentTheme.Success, 101, saveConfig)
-createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  102, loadConfig)
-createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  103, function()
+createBtn(pages.Settings, "💾  Save Config",  currentTheme.Success, 102, saveConfig)
+createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  103, loadConfig)
+createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  104, function()
 	applyTheme(Themes.Dark)
 	applyMenuSize(380, 500)
 	keyLayout = "QWERTY"
@@ -4210,6 +4074,13 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  103, funct
 	aimKey = "Mouse2"; aimMode = "hold"; flySpeed = 40
 	aimMethod = 1; aimSmooth = 0.08; aimPrediction = 0.15; aimTargetPart = "Head"
 	savedWalkSpeed = 16; savedJumpPower = 50
+	if numberInputApply.walkSpeed then numberInputApply.walkSpeed(16) end
+	if numberInputApply.jumpPower then numberInputApply.jumpPower(50) end
+	if numberInputApply.flySpeed then numberInputApply.flySpeed(40) end
+	if numberInputApply.characterSize then numberInputApply.characterSize(100) end
+	if numberInputApply.aimFOV then numberInputApply.aimFOV(250) end
+	if numberInputApply.timeOfDay then numberInputApply.timeOfDay(14) end
+	if numberInputApply.gravity then numberInputApply.gravity(196) end
 	savedOpacity = 100
 	main.BackgroundTransparency = 0
 	if bgAnimEnabled then disableBgAnim() end
@@ -4223,10 +4094,8 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  103, funct
 	ESP_MAX_DIST_PLAYER = 0; ESP_MAX_DIST_BOT = 0
 	ESP_FILL_TRANSPARENCY = 0.85; ESP_BOX_STYLE = "corners"
 	ESP_SKELETON_WIDTH = 0.15; ESP_HEAD_DOT = false
-	emoteSpeed = 1.0
 	rapidFireInterval = 0.1
 	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
-	stopAllEmotes()
 	applyMovement(player.Character)
 	updateAimStatus()
 	showNotification("↩  Config reset", 2)
@@ -4244,46 +4113,60 @@ showNotification = function(message, duration)
 
 	if not toastGui or not toastGui.Parent then
 		toastGui = Instance.new("ScreenGui", playerGui)
-		toastGui.Name = "AdminToast"
+		toastGui.Name = "PlayerInfoToast"
 		toastGui.ResetOnSpawn = false
 		toastGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 		toastGui.DisplayOrder = 1001
 		toastContainer = Instance.new("Frame", toastGui)
 		toastContainer.Name = "ToastContainer"
-		toastContainer.Size = UDim2.new(0, 280, 1, -20)
-		toastContainer.Position = UDim2.new(1, -290, 0, 10)
+		toastContainer.Size = UDim2.new(0, 300, 1, -20)
+		toastContainer.Position = UDim2.new(1, -310, 0, 10)
 		toastContainer.BackgroundTransparency = 1
 		toastContainer.BorderSizePixel = 0
+		onThemeChanged(function(t)
+			for _, tf in ipairs(activeToasts) do
+				local ic = tf:FindFirstChild("ToastIcon")
+				if ic then ic.BackgroundColor3 = t.Accent end
+				local pg = tf:FindFirstChild("ToastProgress")
+				if pg then pg.BackgroundColor3 = t.Accent end
+				local st = tf:FindFirstChildOfClass("UIStroke")
+				if st then st.Color = t.Accent end
+			end
+		end)
 	end
 
 	local toast = Instance.new("Frame", toastContainer)
-	toast.Size = UDim2.new(1, 0, 0, 48)
-	toast.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+	toast.Size = UDim2.new(1, 0, 0, 50)
+	toast.BackgroundColor3 = Color3.fromRGB(16, 16, 26)
 	toast.BorderSizePixel = 0
 	toast.AnchorPoint = Vector2.new(0, 1)
 	toast.Position = UDim2.new(0, 0, 1, 0)
 	toast.ZIndex = 10
 	Instance.new("UICorner", toast).CornerRadius = UDim.new(0, 12)
+	local toastGrad = Instance.new("UIGradient", toast)
+	toastGrad.Rotation = 90
+	toastGrad.Color = ColorSequence.new(Color3.fromRGB(26, 26, 40), Color3.fromRGB(12, 12, 20))
 
 	local toastStroke = Instance.new("UIStroke", toast)
-	toastStroke.Color = Color3.fromRGB(100, 80, 255)
+	toastStroke.Color = currentTheme.Accent
 	toastStroke.Thickness = 1.5
-	toastStroke.Transparency = 0.3
+	toastStroke.Transparency = 0.35
 
 	local icon = Instance.new("Frame", toast)
-	icon.Size = UDim2.new(0, 4, 1, -14)
-	icon.Position = UDim2.new(0, 8, 0.5, 0)
+	icon.Name = "ToastIcon"
+	icon.Size = UDim2.new(0, 5, 1, -16)
+	icon.Position = UDim2.new(0, 10, 0.5, 0)
 	icon.AnchorPoint = Vector2.new(0, 0.5)
-	icon.BackgroundColor3 = Color3.fromRGB(100, 80, 255)
+	icon.BackgroundColor3 = currentTheme.Accent
 	icon.BorderSizePixel = 0
 	Instance.new("UICorner", icon).CornerRadius = UDim.new(1, 0)
 
 	local toastLabel = Instance.new("TextLabel", toast)
 	toastLabel.Text = message
-	toastLabel.Size = UDim2.new(1, -26, 1, 0)
-	toastLabel.Position = UDim2.new(0, 22, 0, 0)
+	toastLabel.Size = UDim2.new(1, -30, 1, 0)
+	toastLabel.Position = UDim2.new(0, 26, 0, 0)
 	toastLabel.BackgroundTransparency = 1
-	toastLabel.TextColor3 = Color3.fromRGB(220, 220, 240)
+	toastLabel.TextColor3 = Color3.fromRGB(230, 230, 248)
 	toastLabel.Font = Enum.Font.GothamSemibold
 	toastLabel.TextSize = 12
 	toastLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -4291,17 +4174,18 @@ showNotification = function(message, duration)
 	toastLabel.RichText = true
 
 	local progress = Instance.new("Frame", toast)
+	progress.Name = "ToastProgress"
 	progress.Size = UDim2.new(1, 0, 0, 3)
 	progress.Position = UDim2.new(0, 0, 1, -3)
-	progress.BackgroundColor3 = Color3.fromRGB(100, 80, 255)
+	progress.BackgroundColor3 = currentTheme.Accent
 	progress.BorderSizePixel = 0
 	progress.ZIndex = 11
 	Instance.new("UICorner", progress).CornerRadius = UDim.new(0, 12)
 
 	table.insert(activeToasts, toast)
 
-	toast.Position = UDim2.new(0, 0, 1, 54)
-	TweenService:Create(toast, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	toast.Position = UDim2.new(0, 0, 1, 56)
+	TweenService:Create(toast, TweenInfo.new(0.32, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Position = UDim2.new(0, 0, 1, 0)
 	}):Play()
 
@@ -4309,11 +4193,10 @@ showNotification = function(message, duration)
 		Size = UDim2.new(0, 0, 0, 3)
 	}):Play()
 
-	local totalH = 0
 	for i, t in ipairs(activeToasts) do
 		local targetY = 0
 		for j = i, #activeToasts do
-			targetY = targetY - 54
+			targetY = targetY - 56
 		end
 		TweenService:Create(t, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			Position = UDim2.new(0, 0, 1, targetY)
@@ -4486,12 +4369,12 @@ function stopNuke()
 end
 
 
-createSection(pages.Personal, "💥  Chaos & Fun", 30)
-createToggle(pages.Personal, "🚀  NUKE MODE  (propulsion + explosion)", 31, function(state)
+createSection(pages.Personal, "💥  Chaos & Fun", 50)
+createToggle(pages.Personal, "🚀  NUKE MODE  (propulsion + explosion)", 51, function(state)
 	nukeEnabled = state
 	if state then startNuke() else stopNuke() end
 end, "nukeMode")
-createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 32, function()
+createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 52, function()
 	local char = player.Character
 	local hrp  = char and char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
@@ -4506,7 +4389,7 @@ createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 32, fun
 		end)
 	end
 end)
-createBtn(pages.Personal, "🔄  Reset Character", currentTheme.Button, 33, function()
+createBtn(pages.Personal, "🔄  Reset Character", currentTheme.Button, 53, function()
 	if player.Character then
 		local hum = player.Character:FindFirstChildOfClass("Humanoid")
 		if hum then hum.Health = 0 end
@@ -5493,7 +5376,7 @@ verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
 verLabel = Instance.new("TextLabel", verFrame)
 verLabel.Size = UDim2.new(1, -12, 0, 16)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v6.0"
+verLabel.Text = "🌐 bkz HUB  v6.1"
 verLabel.TextColor3 = currentTheme.Accent
 verLabel.Font = Enum.Font.GothamBold
 verLabel.TextSize = 14
@@ -5818,7 +5701,7 @@ task.spawn(function()
 	task.wait(0.5)
 	if readfile then
 		local ok2, result = pcall(function()
-			return game:GetService("HttpService"):JSONDecode(readfile("AdminMenu_config.json"))
+			return game:GetService("HttpService"):JSONDecode(readfile(CONFIG_FILE))
 		end)
 		if ok2 and result then
 			applyConfig(result)
@@ -5831,7 +5714,7 @@ end)
 
 if UIS.TouchEnabled then
 	local mgui = Instance.new("ScreenGui", playerGui)
-	mgui.Name = "AdminMenuBtn"
+	mgui.Name = "PlayerInfoBtn"
 	mgui.ResetOnSpawn = false
 	mgui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	mgui.DisplayOrder = 1000
@@ -5860,14 +5743,18 @@ if UIS.TouchEnabled then
 end
 
 if scrSuccess then
+	collectgarbage("collect")
+	print("✅  bkz HUB v6.1 chargé avec succès  (" .. player.Name .. ")")
 	task.spawn(function()
 		task.wait(1.5)
+		pcall(function() if loadingScreen then loadingScreen:Destroy() end end)
 		openMenu()
 	end)
 end
 
 if not scrSuccess then
 	warn("bkz HUB Error:", scrError)
+	pcall(function() if loadingScreen then loadingScreen:Destroy() end end)
 	
 	pcall(function()
 		local plr = game:GetService("Players").LocalPlayer
