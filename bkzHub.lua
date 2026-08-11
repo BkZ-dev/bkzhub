@@ -77,8 +77,9 @@ for _, sp in ipairs(auroraSpecs) do
 	a.BorderSizePixel = 0
 	Instance.new("UICorner", a).CornerRadius = UDim.new(1, 0)
 	table.insert(auroras, a)
+	local baseS = sp[4]
 	TweenService:Create(a, TweenInfo.new(6 + math.random() * 4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-		Size = sp[4] * 1.4,
+		Size = UDim2.new(baseS.X.Scale, baseS.X.Offset * 1.4, baseS.Y.Scale, baseS.Y.Offset * 1.4),
 		BackgroundTransparency = sp[2] - 0.06,
 	}):Play()
 end
