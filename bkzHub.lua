@@ -61,6 +61,58 @@ lsBg.BackgroundTransparency = 0
 lsBg.BorderSizePixel = 0
 Instance.new("UIGradient", lsBg).Color = ColorSequence.new(Color3.fromRGB(6, 6, 12), Color3.fromRGB(20, 13, 38))
 
+local auroras = {}
+local auroraSpecs = {
+	{ Color3.fromRGB(160, 130, 255), 0.96, UDim2.new(0.25, 0, 0.25, 0), UDim2.new(0, 420, 0, 420) },
+	{ Color3.fromRGB(80, 170, 255), 0.96, UDim2.new(0.8, 0, 0.6, 0), UDim2.new(0, 380, 0, 380) },
+	{ Color3.fromRGB(255, 120, 180), 0.97, UDim2.new(0.68, 0, 0.18, 0), UDim2.new(0, 300, 0, 300) },
+}
+for _, sp in ipairs(auroraSpecs) do
+	local a = Instance.new("Frame", lsBg)
+	a.AnchorPoint = Vector2.new(0.5, 0.5)
+	a.Position = sp[3]
+	a.Size = sp[4]
+	a.BackgroundColor3 = sp[1]
+	a.BackgroundTransparency = sp[2]
+	a.BorderSizePixel = 0
+	Instance.new("UICorner", a).CornerRadius = UDim.new(1, 0)
+	table.insert(auroras, a)
+	TweenService:Create(a, TweenInfo.new(6 + math.random() * 4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+		Size = sp[4] * 1.4,
+		BackgroundTransparency = sp[2] - 0.06,
+	}):Play()
+end
+
+local lsParticles = {}
+task.spawn(function()
+	while loadingScreen and loadingScreen.Parent do
+		if #lsParticles < 14 then
+			local p = Instance.new("Frame", lsBg)
+			p.AnchorPoint = Vector2.new(0.5, 0.5)
+			local sz = math.random(3, 7)
+			p.Size = UDim2.new(0, sz, 0, sz)
+			p.Position = UDim2.new(math.random(), 0, 1.05, 0)
+			p.BackgroundColor3 = (math.random(2) == 1) and Color3.fromRGB(180, 150, 255) or Color3.fromRGB(255, 160, 210)
+			p.BackgroundTransparency = 0.15
+			p.BorderSizePixel = 0
+			Instance.new("UICorner", p).CornerRadius = UDim.new(1, 0)
+			table.insert(lsParticles, p)
+			task.spawn(function()
+				local dur = 6 + math.random() * 5
+				local drift = math.random(-8, 8) / 100
+				TweenService:Create(p, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
+					Position = UDim2.new(p.Position.X.Scale + drift, 0, -0.05, 0),
+					BackgroundTransparency = 1,
+				}):Play()
+				task.wait(dur + 0.2)
+				pcall(function() p:Destroy() end)
+				for i2, pp in ipairs(lsParticles) do if pp == p then table.remove(lsParticles, i2); break end end
+			end)
+		end
+		task.wait(0.25)
+	end
+end)
+
 local lsCore = Instance.new("Frame", lsBg)
 lsCore.AnchorPoint = Vector2.new(0.5, 0.5)
 lsCore.Position = UDim2.new(0.5, 0, 0.42, 0)
@@ -77,56 +129,117 @@ TweenService:Create(lsCore, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.Easin
 local lsRing = Instance.new("Frame", lsBg)
 lsRing.AnchorPoint = Vector2.new(0.5, 0.5)
 lsRing.Position = UDim2.new(0.5, 0, 0.42, 0)
-lsRing.Size = UDim2.new(0, 150, 0, 150)
+lsRing.Size = UDim2.new(0, 172, 0, 172)
 lsRing.BackgroundTransparency = 1
 lsRing.BorderSizePixel = 0
-for i = 1, 10 do
+for i = 1, 12 do
 	local d = Instance.new("Frame", lsRing)
 	d.AnchorPoint = Vector2.new(0.5, 0.5)
-	d.Size = UDim2.new(0, 5, 0, 5)
-	d.BackgroundColor3 = Color3.fromRGB(205, 190, 255)
+	local sz = (i % 3 == 0) and 7 or 5
+	d.Size = UDim2.new(0, sz, 0, sz)
+	d.BackgroundColor3 = (i % 3 == 0) and Color3.fromRGB(255, 190, 230) or Color3.fromRGB(195, 170, 255)
 	d.BorderSizePixel = 0
 	Instance.new("UICorner", d).CornerRadius = UDim.new(1, 0)
-	local a = (i - 1) / 10 * math.pi * 2
+	local a = (i - 1) / 12 * math.pi * 2
 	d.Position = UDim2.new(0.5 + math.cos(a) * 0.5, 0, 0.5 + math.sin(a) * 0.5, 0)
-	d.BackgroundTransparency = 0.15 + 0.7 * (0.5 + 0.5 * math.cos(a))
+	d.BackgroundTransparency = 0.15 + 0.6 * (0.5 + 0.5 * math.cos(a))
 end
-TweenService:Create(lsRing, TweenInfo.new(2.4, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {
+TweenService:Create(lsRing, TweenInfo.new(2.6, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {
 	Rotation = 360
+}):Play()
+
+local lsRing2 = Instance.new("Frame", lsBg)
+lsRing2.AnchorPoint = Vector2.new(0.5, 0.5)
+lsRing2.Position = UDim2.new(0.5, 0, 0.42, 0)
+lsRing2.Size = UDim2.new(0, 112, 0, 112)
+lsRing2.BackgroundTransparency = 1
+lsRing2.BorderSizePixel = 0
+for i = 1, 6 do
+	local d = Instance.new("Frame", lsRing2)
+	d.AnchorPoint = Vector2.new(0.5, 0.5)
+	d.Size = UDim2.new(0, 3, 0, 3)
+	d.BackgroundColor3 = Color3.fromRGB(255, 150, 200)
+	d.BorderSizePixel = 0
+	Instance.new("UICorner", d).CornerRadius = UDim.new(1, 0)
+	local a = (i - 1) / 6 * math.pi * 2
+	d.Position = UDim2.new(0.5 + math.cos(a) * 0.5, 0, 0.5 + math.sin(a) * 0.5, 0)
+	d.BackgroundTransparency = 0.2
+end
+TweenService:Create(lsRing2, TweenInfo.new(1.9, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {
+	Rotation = -360
+}):Play()
+
+local lsLogo = Instance.new("Frame", lsBg)
+lsLogo.AnchorPoint = Vector2.new(0.5, 0.5)
+lsLogo.Position = UDim2.new(0.5, 0, 0.42, 0)
+lsLogo.Size = UDim2.new(0, 62, 0, 62)
+lsLogo.BackgroundColor3 = Color3.fromRGB(160, 130, 255)
+lsLogo.BackgroundTransparency = 0.12
+lsLogo.BorderSizePixel = 0
+Instance.new("UICorner", lsLogo).CornerRadius = UDim.new(0, 16)
+local lsLogoGrad = Instance.new("UIGradient", lsLogo)
+lsLogoGrad.Rotation = 45
+lsLogoGrad.Color = ColorSequence.new(Color3.fromRGB(150, 115, 255), Color3.fromRGB(255, 130, 200))
+local lsLogoTxt = Instance.new("TextLabel", lsLogo)
+lsLogoTxt.Size = UDim2.new(1, 0, 1, 0)
+lsLogoTxt.BackgroundTransparency = 1
+lsLogoTxt.Text = "B"
+lsLogoTxt.TextColor3 = Color3.new(1, 1, 1)
+lsLogoTxt.Font = Enum.Font.GothamBlack
+lsLogoTxt.TextSize = 34
+local lsLogoStroke = Instance.new("UIStroke", lsLogo)
+lsLogoStroke.Color = Color3.new(1, 1, 1)
+lsLogoStroke.Thickness = 1.5
+lsLogoStroke.Transparency = 0.4
+TweenService:Create(lsLogo, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	BackgroundTransparency = 0.25,
+	Size = UDim2.new(0, 68, 0, 68),
+	Rotation = 4
 }):Play()
 
 local lsTitle = Instance.new("TextLabel", lsBg)
 lsTitle.Size = UDim2.new(1, 0, 0, 50)
-lsTitle.Position = UDim2.new(0, 0, 0.5, -88)
+lsTitle.Position = UDim2.new(0, 0, 0.5, -92)
 lsTitle.BackgroundTransparency = 1
 lsTitle.Text = "🌐  bkz HUB"
-lsTitle.TextColor3 = Color3.fromRGB(185, 160, 255)
-lsTitle.TextStrokeTransparency = 0.4
+lsTitle.TextColor3 = Color3.fromRGB(215, 195, 255)
+lsTitle.TextStrokeTransparency = 0.3
 lsTitle.TextStrokeColor3 = Color3.fromRGB(95, 60, 205)
 lsTitle.Font = Enum.Font.GothamBlack
-lsTitle.TextSize = 38
+lsTitle.TextSize = 40
+local lsTitleGrad = Instance.new("UIGradient", lsTitle)
+lsTitleGrad.Rotation = 90
+lsTitleGrad.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(170, 140, 255))
 local lsTitleStroke = Instance.new("UIStroke", lsTitle)
 lsTitleStroke.Color = Color3.fromRGB(125, 85, 255)
-lsTitleStroke.Thickness = 1
-lsTitleStroke.Transparency = 0.55
+lsTitleStroke.Thickness = 1.5
+lsTitleStroke.Transparency = 0.4
+TweenService:Create(lsTitleStroke, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	Transparency = 0.12
+}):Play()
 
 local lsSub = Instance.new("TextLabel", lsBg)
 lsSub.Size = UDim2.new(1, 0, 0, 18)
-lsSub.Position = UDim2.new(0, 0, 0.5, -36)
+lsSub.Position = UDim2.new(0, 0, 0.5, -40)
 lsSub.BackgroundTransparency = 1
 lsSub.Text = "Loading  •  v6.1"
-lsSub.TextColor3 = Color3.fromRGB(155, 145, 205)
+lsSub.TextColor3 = Color3.fromRGB(168, 158, 218)
 lsSub.Font = Enum.Font.Gotham
 lsSub.TextSize = 12
 
 local lsTrack = Instance.new("Frame", lsBg)
 lsTrack.AnchorPoint = Vector2.new(0.5, 0.5)
-lsTrack.Size = UDim2.new(0, 300, 0, 8)
-lsTrack.Position = UDim2.new(0.5, 0, 0.5, 30)
-lsTrack.BackgroundColor3 = Color3.fromRGB(30, 28, 48)
+lsTrack.Size = UDim2.new(0, 300, 0, 10)
+lsTrack.Position = UDim2.new(0.5, 0, 0.5, 26)
+lsTrack.BackgroundColor3 = Color3.fromRGB(28, 26, 46)
 lsTrack.BackgroundTransparency = 0.2
 lsTrack.BorderSizePixel = 0
+lsTrack.ClipsDescendants = true
 Instance.new("UICorner", lsTrack).CornerRadius = UDim.new(1, 0)
+local lsTrackStroke = Instance.new("UIStroke", lsTrack)
+lsTrackStroke.Color = Color3.fromRGB(160, 130, 255)
+lsTrackStroke.Thickness = 1
+lsTrackStroke.Transparency = 0.7
 local lsBar = Instance.new("Frame", lsTrack)
 lsBar.Size = UDim2.new(0, 0, 1, 0)
 lsBar.BackgroundColor3 = Color3.fromRGB(170, 140, 255)
@@ -134,39 +247,87 @@ lsBar.BorderSizePixel = 0
 Instance.new("UICorner", lsBar).CornerRadius = UDim.new(1, 0)
 Instance.new("UIGradient", lsBar).Color = ColorSequence.new(Color3.fromRGB(140, 100, 255), Color3.fromRGB(255, 110, 180))
 
+local lsGlow = Instance.new("Frame", lsBar)
+lsGlow.AnchorPoint = Vector2.new(1, 0.5)
+lsGlow.Position = UDim2.new(1, 0, 0.5, 0)
+lsGlow.Size = UDim2.new(0, 14, 0, 14)
+lsGlow.BackgroundColor3 = Color3.fromRGB(255, 205, 240)
+lsGlow.BorderSizePixel = 0
+Instance.new("UICorner", lsGlow).CornerRadius = UDim.new(1, 0)
+
+local lsShimmer = Instance.new("Frame", lsTrack)
+lsShimmer.Size = UDim2.new(0, 60, 1, 0)
+lsShimmer.BackgroundColor3 = Color3.new(1, 1, 1)
+lsShimmer.BackgroundTransparency = 0.6
+lsShimmer.BorderSizePixel = 0
+local lsShimmerGrad = Instance.new("UIGradient", lsShimmer)
+lsShimmerGrad.Rotation = 90
+lsShimmerGrad.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.new(1, 1, 1), Color3.new(1, 1, 1))
+TweenService:Create(lsShimmer, TweenInfo.new(1.4, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {
+	Position = UDim2.new(1.15, 0, 0, 0)
+}):Play()
+
 local lsPct = Instance.new("TextLabel", lsBg)
 lsPct.Size = UDim2.new(1, 0, 0, 16)
-lsPct.Position = UDim2.new(0, 0, 0.5, 48)
+lsPct.Position = UDim2.new(0, 0, 0.5, 44)
 lsPct.BackgroundTransparency = 1
 lsPct.Text = "0%"
-lsPct.TextColor3 = Color3.fromRGB(205, 195, 255)
+lsPct.TextColor3 = Color3.fromRGB(215, 205, 255)
 lsPct.Font = Enum.Font.GothamBold
 lsPct.TextSize = 14
 
 local lsStatus = Instance.new("TextLabel", lsBg)
 lsStatus.Size = UDim2.new(1, 0, 0, 14)
-lsStatus.Position = UDim2.new(0, 0, 0.5, 70)
+lsStatus.Position = UDim2.new(0, 0, 0.5, 66)
 lsStatus.BackgroundTransparency = 1
 lsStatus.Text = "Chargement des modules ..."
-lsStatus.TextColor3 = Color3.fromRGB(120, 115, 160)
+lsStatus.TextColor3 = Color3.fromRGB(132, 127, 178)
 lsStatus.Font = Enum.Font.Gotham
 lsStatus.TextSize = 10
+
+for _, cs in ipairs({{0,0},{1,0},{0,1},{1,1}}) do
+	local cx, cy = cs[1], cs[2]
+	local c = Instance.new("Frame", lsBg)
+	c.AnchorPoint = Vector2.new(cx, cy)
+	c.Position = UDim2.new(cx, 0, cy, 0)
+	c.Size = UDim2.new(0, 46, 0, 46)
+	c.BackgroundTransparency = 1
+	c.BorderSizePixel = 0
+	local function cornerBar(szX)
+		local b = Instance.new("Frame", c)
+		b.AnchorPoint = Vector2.new(cx, cy)
+		b.Position = UDim2.new(cx, (cx == 0) and 12 or -12, cy, (cy == 0) and 12 or -12)
+		b.Size = szX and UDim2.new(0, 34, 0, 3) or UDim2.new(0, 3, 0, 34)
+		b.BackgroundColor3 = Color3.fromRGB(150, 120, 255)
+		b.BackgroundTransparency = 0.35
+		b.BorderSizePixel = 0
+		Instance.new("UICorner", b).CornerRadius = UDim.new(1, 0)
+		TweenService:Create(b, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+			BackgroundTransparency = 0.15
+		}):Play()
+	end
+	cornerBar(true)
+	cornerBar(false)
+end
 
 TweenService:Create(lsBar, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
 	Size = UDim2.new(1, 0, 1, 0)
 }):Play()
 task.spawn(function()
 	local totalSteps = 24
+	local dots = 0
 	for step = 1, totalSteps do
 		if not (loadingScreen and loadingScreen.Parent) then break end
 		local t = step / totalSteps
 		lsPct.Text = math.floor(t * 100) .. "%"
+		dots = (dots % 3) + 1
+		local dd = string.rep(".", dots)
 		if t < 0.3 then
-			lsStatus.Text = "Chargement des modules ..."
+			lsStatus.Text = "Chargement des modules" .. dd
 		elseif t < 0.6 then
-			lsStatus.Text = "Application des thèmes ..."
+			lsStatus.Text = "Application des thèmes" .. dd
 		elseif t < 0.9 then
-			lsStatus.Text = "Finalisation de l'interface ..."
+			lsStatus.Text = "Finalisation de l'interface" .. dd
 		else
 			lsStatus.Text = "Prêt !"
 		end
@@ -176,10 +337,28 @@ task.spawn(function()
 		lsBar.Size = UDim2.new(1, 0, 1, 0)
 		lsPct.Text = "100%"
 		lsStatus.Text = "Prêt !"
+		pcall(function()
+			lsGlow.BackgroundColor3 = Color3.new(1, 1, 1)
+			lsBar.BackgroundColor3 = Color3.fromRGB(120, 255, 180)
+			local g = lsBar:FindFirstChildOfClass("UIGradient")
+			if g then g.Color = ColorSequence.new(Color3.fromRGB(80, 230, 150), Color3.fromRGB(255, 230, 120)) end
+			TweenService:Create(lsLogo, TweenInfo.new(0.3), {Size = UDim2.new(0, 80, 0, 80), BackgroundTransparency = 0.05}):Play()
+		end)
 		task.wait(0.15)
 		TweenService:Create(lsBg, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 			BackgroundTransparency = 1
 		}):Play()
+		for _, a in ipairs(auroras) do
+			TweenService:Create(a, TweenInfo.new(0.35), {BackgroundTransparency = 1}):Play()
+		end
+		TweenService:Create(lsTrack, TweenInfo.new(0.35), {BackgroundTransparency = 1}):Play()
+		TweenService:Create(lsTrackStroke, TweenInfo.new(0.35), {Transparency = 1}):Play()
+		TweenService:Create(lsTitle, TweenInfo.new(0.35), {TextTransparency = 1}):Play()
+		TweenService:Create(lsSub, TweenInfo.new(0.35), {TextTransparency = 1}):Play()
+		TweenService:Create(lsPct, TweenInfo.new(0.35), {TextTransparency = 1}):Play()
+		TweenService:Create(lsStatus, TweenInfo.new(0.35), {TextTransparency = 1}):Play()
+		TweenService:Create(lsRing, TweenInfo.new(0.35), {BackgroundTransparency = 1}):Play()
+		TweenService:Create(lsRing2, TweenInfo.new(0.35), {BackgroundTransparency = 1}):Play()
 		task.wait(0.35)
 		pcall(function() if loadingScreen then loadingScreen:Destroy() end end)
 	end
@@ -406,7 +585,7 @@ backdrop = Instance.new("Frame", gui)
 backdrop.Size = UDim2.new(1, 0, 1, 0)
 backdrop.Position = UDim2.new(0, 0, 0, 0)
 backdrop.BackgroundColor3 = currentTheme.BG
-backdrop.BackgroundTransparency = 0.45
+backdrop.BackgroundTransparency = 0.88
 backdrop.BorderSizePixel = 0
 backdrop.ZIndex = 0
 
@@ -439,7 +618,7 @@ Instance.new("UICorner", main).CornerRadius = UDim.new(0, 16)
 mainGradient = Instance.new("UIGradient", main)
 mainGradient.Rotation = 90
 mainGradient.Color = ColorSequence.new(currentTheme.BG, currentTheme.Panel)
-mainGradient.Transparency = NumberSequence.new(0.5, 1)
+mainGradient.Transparency = NumberSequence.new(0, 0.35)
 
 
 stroke = Instance.new("UIStroke", main)
@@ -2725,35 +2904,14 @@ function applyAim(targetPart)
 	local targetPos = targetPart.Position
 	local char = targetPart.Parent
 	local hrpTarget = char:FindFirstChild("HumanoidRootPart")
-	local hum = char:FindFirstChildOfClass("Humanoid")
 
 	if hrpTarget and aimPrediction > 0 then
-		local vel = hrpTarget.Velocity
-		if hum and hum.WalkSpeed then
-			local speed = hum.WalkSpeed
-			if speed > 0 then
-				vel = vel * (aimPrediction * 1.2)
-			end
-		end
-		targetPos = targetPos + vel * aimPrediction
+		targetPos = targetPos + hrpTarget.Velocity * aimPrediction
 	end
 
 	local smoothFactor = math.clamp(aimSmooth, 0.01, 0.95)
 
-	if aimMethod == 1 then
-		local targetCF = CFrame.new(cam.CFrame.Position, targetPos)
-		cam.CFrame = cam.CFrame:Lerp(targetCF, smoothFactor)
-
-	elseif aimMethod == 2 then
-		if not aimCamScriptable then
-			aimPrevCamType = cam.CameraType
-			aimCamScriptable = true
-		end
-		cam.CameraType = Enum.CameraType.Scriptable
-		local targetCF = CFrame.new(cam.CFrame.Position, targetPos)
-		cam.CFrame = cam.CFrame:Lerp(targetCF, smoothFactor)
-
-	elseif aimMethod == 3 then
+	if aimMethod == 3 then
 		local myHrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 		if myHrp then
 			local dir = (targetPos - myHrp.Position) * Vector3.new(1, 0, 1)
@@ -2764,7 +2922,16 @@ function applyAim(targetPart)
 				)
 			end
 		end
+		return
 	end
+
+	if not aimCamScriptable then
+		aimPrevCamType = cam.CameraType
+		aimCamScriptable = true
+	end
+	cam.CameraType = Enum.CameraType.Scriptable
+	local targetCF = CFrame.new(cam.CFrame.Position, targetPos)
+	cam.CFrame = cam.CFrame:Lerp(targetCF, smoothFactor)
 end
 
 function startAim()
@@ -2906,8 +3073,9 @@ aimStatusLabel.TextSize = 11
 aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 aimStatusLabel.LayoutOrder = 1
 function updateAimStatus()
+	local modeDisp = aimMode:sub(1,1):upper() .. aimMode:sub(2)
 	aimStatusLabel.Text = "  Key: " .. aimKey
-		.. "   Mode: " .. aimMode
+		.. "   Mode: " .. modeDisp
 		.. "   Smooth: " .. math.floor(aimSmooth * 100) .. "%"
 end
 updateAimStatus()
@@ -2919,37 +3087,22 @@ createToggle(pages.Aim, "🎯  Aim Lock ON / OFF", 2, function(state)
 end, "aimLock")
 
 
-createSection(pages.Aim, "⚙️  Settings", 3)
+createSection(pages.Aim, "⚙️  Settings", 10)
 
 
-createSlider(pages.Aim, "🎚  Smooth (aim speed)", 1, 30, 8, 4, function(val)
+createSlider(pages.Aim, "🎚  Smooth (aim speed)", 1, 30, 8, 11, function(val)
 	aimSmooth = val / 100
 	updateAimStatus()
 end)
 
 
-createNumberInput(pages.Aim, "🔵  FOV (radius pixels)", 250, 18, function(val)
+createNumberInput(pages.Aim, "🔵  FOV (radius pixels)", 250, 12, function(val)
 	aimFOV = val
 	if aimShowCircle then pcall(updateFOVCircle) end
 end, "aimFOV")
 
-createSlider(pages.Aim, "🎯  Prediction (lead)", 0, 50, 15, 5, function(val)
+createSlider(pages.Aim, "🎯  Prediction (lead)", 0, 50, 15, 13, function(val)
 	aimPrediction = val / 100
-end)
-
-
-local aimModeFrame, aimModeBtn = createBtn(pages.Aim, "🔄  Mode: " .. aimMode, currentTheme.Button, 6, function()
-	aimMode = (aimMode == "hold") and "toggle" or "hold"
-	aimModeBtn.Text = "🔄  Mode: " .. aimMode
-	updateAimStatus()
-	showNotification("🎯  Mode: " .. aimMode, 2)
-end)
-
-methodNames = {"1 - Direct Cam", "2 - Scriptable Cam", "3 - HRP Orient"}
-local aimMethodFrame, aimMethodBtn = createBtn(pages.Aim, "🔧  Method: " .. methodNames[aimMethod], currentTheme.Button, 7, function()
-	aimMethod = (aimMethod % 3) + 1
-	aimMethodBtn.Text = "🔧  Method: " .. methodNames[aimMethod]
-	showNotification("🎯  Method: " .. methodNames[aimMethod], 2)
 end)
 
 
@@ -3027,55 +3180,80 @@ function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 		TweenService:Create(list, TweenInfo.new(0.14), {Size=UDim2.new(1,0,0,h)}):Play()
 		if not open then task.delay(0.15, function() list.Visible = false end) end
 	end)
+
+	return {
+		set = function(item)
+			for i, it in ipairs(items) do
+				if it == item then selIdx = i; break end
+			end
+			htxt.Text = label .. " : " .. (items[selIdx] or item)
+		end,
+		current = function()
+			return items[selIdx]
+		end,
+	}
 end
 
 
 MOUSE_LABELS = {}
 for _, m in ipairs(MOUSE_KEYS) do table.insert(MOUSE_LABELS, m.label) end
 
-mkDropdown(pages.Aim, "🖱  Mouse", MOUSE_LABELS, 1, 8, function(lbl)
-	for _, m in ipairs(MOUSE_KEYS) do
-		if m.label == lbl then aimKey = m.id; break end
+methodNames = {"1 - Direct Cam", "2 - Scriptable Cam", "3 - HRP Orient"}
+aimMethodDropdown = mkDropdown(pages.Aim, "🔧  Method", methodNames, math.clamp(aimMethod, 1, 3), 14, function(selected)
+	for i, m in ipairs(methodNames) do
+		if m == selected then aimMethod = i; break end
 	end
-	updateAimStatus()
-end)
-
-mkDropdown(pages.Aim, "⌨  Keyboard", KEYBOARD_KEYS, 1, 9, function(key)
-	aimKey = key
-	updateAimStatus()
+	showNotification("🎯  Method: " .. selected, 2)
 end)
 
 aimTargetPart = aimTargetPart or "Head"
 local aimPartItems = {"Head", "UpperTorso", "Torso", "HumanoidRootPart"}
-mkDropdown(pages.Aim, "🎯  Target Part", aimPartItems, 1, 10, function(selected)
+aimPartDropdown = mkDropdown(pages.Aim, "🎯  Target Part", aimPartItems, 1, 15, function(selected)
 	aimTargetPart = selected
 	showNotification("🎯  Target: " .. selected, 2)
 end)
 
 
-createSection(pages.Aim, "🎯  Target Types", 11)
-createToggle(pages.Aim, "👤  Players", 12, function(state)
+createSection(pages.Aim, "⌨  Binding", 20)
+aimModeDropdown = mkDropdown(pages.Aim, "🔄  Mode", {"Hold", "Toggle"}, (aimMode == "toggle") and 2 or 1, 21, function(selected)
+	aimMode = (selected == "Toggle") and "toggle" or "hold"
+	updateAimStatus()
+end)
+aimMouseDropdown = mkDropdown(pages.Aim, "🖱  Mouse", MOUSE_LABELS, 1, 22, function(lbl)
+	for _, m in ipairs(MOUSE_KEYS) do
+		if m.label == lbl then aimKey = m.id; break end
+	end
+	updateAimStatus()
+end)
+aimKeyDropdown = mkDropdown(pages.Aim, "⌨  Keyboard", KEYBOARD_KEYS, 1, 23, function(key)
+	aimKey = key
+	updateAimStatus()
+end)
+
+
+createSection(pages.Aim, "🎯  Target Types", 30)
+createToggle(pages.Aim, "👤  Players", 31, function(state)
 	aimTargetPlayers = state
 end, "aimTargetPlayers")
-createToggle(pages.Aim, "🤖  Bots / AI", 13, function(state)
+createToggle(pages.Aim, "🤖  Bots / AI", 32, function(state)
 	aimTargetBots = state
 end, "aimTargetBots")
-createToggle(pages.Aim, "🚗  Vehicles", 14, function(state)
+createToggle(pages.Aim, "🚗  Vehicles", 33, function(state)
 	aimTargetVehicles = state
 end, "aimTargetVehicles")
-createToggle(pages.Aim, "📦  Objects", 15, function(state)
+createToggle(pages.Aim, "📦  Objects", 34, function(state)
 	aimTargetObjects = state
 end, "aimTargetObjects")
 
 
-createSection(pages.Aim, "🔭  Visuals & Distance", 16)
-createToggle(pages.Aim, "🔵  Show FOV Circle", 17, function(state)
+createSection(pages.Aim, "🔭  Visuals & Distance", 40)
+createToggle(pages.Aim, "🔵  Show FOV Circle", 41, function(state)
 	aimShowCircle = state
 	if state then updateFOVCircle() else destroyFOVCircle() end
 end, "aimShowCircle")
 
 
-createSlider(pages.Aim, "📏  Max Distance (0 = infinite)", 0, 500, 0, 19, function(val)
+createSlider(pages.Aim, "📏  Max Distance (0 = infinite)", 0, 500, 0, 42, function(val)
 	aimDistance = val
 end)
 
@@ -3500,14 +3678,16 @@ end
 
 createSection(pages.Settings, "🎨  Theme", 0)
 local themeItems = {"🟣  Purple", "⭐  Gold", "🌊  Ocean", "💎  Neon", "🟠  Orange", "💗  Pink", "🌑  Dark", "🌕  Light", "💠  Cyber", "🔴  Red", "🟢  Green", "🔵  Blue", "🌐  Matrix"}
-mkDropdown(pages.Settings, "🎨  Theme", themeItems, 7, 1, function(selected)
-    local themeMap = {
-        ["🟣  Purple"]="Purple", ["⭐  Gold"]="Gold", ["🌊  Ocean"]="Ocean", ["💎  Neon"]="Neon",
-        ["🟠  Orange"]="Orange", ["💗  Pink"]="Pink", ["🌑  Dark"]="Dark", ["🌕  Light"]="Light",
-        ["💠  Cyber"]="Cyber", ["🔴  Red"]="Rouge", ["🟢  Green"]="Vert", ["🔵  Blue"]="Blue",
-        ["🌐  Matrix"]="Matrix",
-    }
-    local key = themeMap[selected]
+themeKeyToLabel = {
+    ["Purple"]="🟣  Purple", ["Gold"]="⭐  Gold", ["Ocean"]="🌊  Ocean", ["Neon"]="💎  Neon",
+    ["Orange"]="🟠  Orange", ["Pink"]="💗  Pink", ["Dark"]="🌑  Dark", ["Light"]="🌕  Light",
+    ["Cyber"]="💠  Cyber", ["Rouge"]="🔴  Red", ["Vert"]="🟢  Green", ["Blue"]="🔵  Blue",
+    ["Matrix"]="🌐  Matrix",
+}
+themeLabelToKey = {}
+for tk, tl in pairs(themeKeyToLabel) do themeLabelToKey[tl] = tk end
+themeDropdown = mkDropdown(pages.Settings, "🎨  Theme", themeItems, 7, 1, function(selected)
+    local key = themeLabelToKey[selected]
     if key and Themes[key] then
         applyTheme(Themes[key])
         autoSave()
@@ -3535,6 +3715,8 @@ local menuFxGui = nil
 local blackBgFrame = nil
 local menuBorderParts = {}
 local menuBorderGlowEnabled = false
+local menuBorderContainer = nil
+local menuGlowTrackConn = nil
 
 local matrixChars = {"ﾊ","ﾐ","ﾋ","ｰ","ｳ","ｼ","ﾅ","ﾓ","ﾆ","ｻ","ﾏ","ﾉ","ﾘ","ｹ","ﾁ","ｷ","ﾄ","ﾟ","ﾞ","ﾌ","ﾎ","ﾍ","ﾑ","ﾚ","ﾕ"}
 
@@ -3767,27 +3949,46 @@ local function disableBlackBg()
 	end
 end
 
+local function updateGlowContainer()
+	if not menuBorderContainer or not menuBorderContainer.Parent then return end
+	local p = main.Position
+	local s = main.Size
+	menuBorderContainer.Position = UDim2.new(p.X.Scale, p.X.Offset - 4, p.Y.Scale, p.Y.Offset - 4)
+	menuBorderContainer.Size = UDim2.new(s.X.Scale, s.X.Offset + 8, s.Y.Scale, s.Y.Offset + 8)
+end
+
 local function enableMenuBorderGlow()
 	if #menuBorderParts > 0 then return end
 	menuBorderGlowEnabled = true
+	if not menuBorderContainer or not menuBorderContainer.Parent then
+		menuBorderContainer = Instance.new("Frame", gui)
+		menuBorderContainer.BackgroundTransparency = 1
+		menuBorderContainer.BorderSizePixel = 0
+		menuBorderContainer.ZIndex = 1
+		menuBorderContainer.ClipsDescendants = false
+		menuBorderContainer.Active = false
+	end
+	updateGlowContainer()
 	local pad = 3
 	local th = 3
 	local function makeBar(szX, szY, pos)
-		local b = Instance.new("Frame")
+		local b = Instance.new("Frame", menuBorderContainer)
 		b.Size = szX and UDim2.new(szX, pad*2, 0, th) or UDim2.new(0, th, szY, pad*2)
 		b.Position = pos
 		b.BackgroundColor3 = currentTheme.Accent
 		b.BorderSizePixel = 0
 		b.BackgroundTransparency = 0.5
 		b.ZIndex = 5
-		b.Parent = main
 		table.insert(menuBorderParts, b)
 		return b
 	end
-	makeBar(1, nil, UDim2.new(0, -pad, 0, -pad)) -- top
-	local bb = makeBar(1, nil, UDim2.new(0, -pad, 1, pad-th)) -- bottom
-	local lb = makeBar(nil, 1, UDim2.new(0, -pad, 0, -pad)) -- left
-	local rb = makeBar(nil, 1, UDim2.new(1, pad-th, 0, -pad)) -- right
+	makeBar(1, nil, UDim2.new(0, 0, 0, 0))
+	makeBar(1, nil, UDim2.new(0, 0, 1, -th))
+	makeBar(nil, 1, UDim2.new(0, 0, 0, 0))
+	makeBar(nil, 1, UDim2.new(1, -th, 0, 0))
+	if not menuGlowTrackConn then
+		menuGlowTrackConn = RunService.RenderStepped:Connect(updateGlowContainer)
+	end
 	task.spawn(function()
 		while menuBorderGlowEnabled do
 			local dur = 1.5
@@ -3815,6 +4016,14 @@ local function disableMenuBorderGlow()
 		pcall(function() b:Destroy() end)
 	end
 	menuBorderParts = {}
+	if menuGlowTrackConn then
+		pcall(function() menuGlowTrackConn:Disconnect() end)
+		menuGlowTrackConn = nil
+	end
+	if menuBorderContainer then
+		pcall(function() menuBorderContainer:Destroy() end)
+		menuBorderContainer = nil
+	end
 end
 
 createToggle(fxContainer, "❄  Menu Snow", 1, function(state)
@@ -3995,6 +4204,18 @@ onThemeChanged(function(t)
 	end
 end)
 
+local function serializeColor(c)
+	return { math.round(c.R * 255), math.round(c.G * 255), math.round(c.B * 255) }
+end
+
+local function deserializeColor(t)
+	if type(t) == "table" and t[1] and t[2] and t[3] then
+		local ok, c = pcall(function() return Color3.fromRGB(t[1], t[2], t[3]) end)
+		if ok and c then return c end
+	end
+	return nil
+end
+
 function getConfig()
 	local toggles = {}
 	for k, v in pairs(toggleStates) do toggles[k] = v end
@@ -4031,10 +4252,10 @@ function getConfig()
 		aimTargetVehicles = aimTargetVehicles,
 		aimTargetObjects  = aimTargetObjects,
 		espColors = {
-			enemy = ESP_COLOR_ENEMY,
-			ally  = ESP_COLOR_ALLY,
-			bot   = ESP_COLOR_BOT,
-			self  = ESP_COLOR_SELF,
+			enemy = serializeColor(ESP_COLOR_ENEMY),
+			ally  = serializeColor(ESP_COLOR_ALLY),
+			bot   = serializeColor(ESP_COLOR_BOT),
+			self  = serializeColor(ESP_COLOR_SELF),
 		},
 		espMaxDist = {
 			player = ESP_MAX_DIST_PLAYER,
@@ -4052,7 +4273,12 @@ function getConfig()
 end
 
 function applyConfig(cfg)
-	if cfg.theme and Themes[cfg.theme] then applyTheme(Themes[cfg.theme]) end
+	if cfg.theme and Themes[cfg.theme] then
+		applyTheme(Themes[cfg.theme])
+		if themeDropdown and themeKeyToLabel[cfg.theme] then
+			themeDropdown.set(themeKeyToLabel[cfg.theme])
+		end
+	end
 	if cfg.menuW and cfg.menuH then applyMenuSize(cfg.menuW, cfg.menuH) end
 	if cfg.menuPos and cfg.menuPos[1] and cfg.menuPos[2] then
 		pcall(function()
@@ -4071,6 +4297,23 @@ function applyConfig(cfg)
 	if cfg.aimSmooth then aimSmooth = cfg.aimSmooth end
 	if cfg.aimPrediction then aimPrediction = cfg.aimPrediction end
 	if cfg.aimTargetPart then aimTargetPart = cfg.aimTargetPart end
+	pcall(function()
+		if aimMethodDropdown and cfg.aimMethod then aimMethodDropdown.set(methodNames[math.clamp(cfg.aimMethod, 1, #methodNames)]) end
+		if aimPartDropdown and cfg.aimTargetPart then aimPartDropdown.set(cfg.aimTargetPart) end
+		if aimModeDropdown and cfg.aimMode then aimModeDropdown.set((cfg.aimMode == "toggle") and "Toggle" or "Hold") end
+		if cfg.aimKey then
+			if aimMouseDropdown then
+				for _, ml in ipairs(MOUSE_KEYS) do
+					if ml.id == cfg.aimKey then aimMouseDropdown.set(ml.label); break end
+				end
+			end
+			if aimKeyDropdown then
+				for _, kk in ipairs(KEYBOARD_KEYS) do
+					if kk == cfg.aimKey then aimKeyDropdown.set(kk); break end
+				end
+			end
+		end
+	end)
 	if cfg.flySpeed then flySpeed = cfg.flySpeed end
 	for _, nk in ipairs({"walkSpeed", "jumpPower", "flySpeed", "characterSize", "aimFOV", "timeOfDay", "gravity"}) do
 		if cfg[nk] ~= nil and numberInputApply[nk] then
@@ -4089,10 +4332,10 @@ function applyConfig(cfg)
 	if cfg.aimTargetVehicles ~= nil then aimTargetVehicles = cfg.aimTargetVehicles end
 	if cfg.aimTargetObjects  ~= nil then aimTargetObjects  = cfg.aimTargetObjects  end
 	if cfg.espColors then
-		if cfg.espColors.enemy then ESP_COLOR_ENEMY = cfg.espColors.enemy end
-		if cfg.espColors.ally  then ESP_COLOR_ALLY  = cfg.espColors.ally  end
-		if cfg.espColors.bot   then ESP_COLOR_BOT   = cfg.espColors.bot   end
-		if cfg.espColors.self  then ESP_COLOR_SELF  = cfg.espColors.self  end
+		local c = deserializeColor(cfg.espColors.enemy); if c then ESP_COLOR_ENEMY = c end
+		local c2 = deserializeColor(cfg.espColors.ally);  if c2 then ESP_COLOR_ALLY  = c2 end
+		local c3 = deserializeColor(cfg.espColors.bot);   if c3 then ESP_COLOR_BOT   = c3 end
+		local c4 = deserializeColor(cfg.espColors.self);  if c4 then ESP_COLOR_SELF  = c4 end
 	end
 	if cfg.espMaxDist then
 		if cfg.espMaxDist.player then ESP_MAX_DIST_PLAYER = cfg.espMaxDist.player end
@@ -4163,6 +4406,7 @@ createBtn(pages.Settings, "💾  Save Config",  currentTheme.Success, 102, saveC
 createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  103, loadConfig)
 createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  104, function()
 	applyTheme(Themes.Dark)
+	if themeDropdown then themeDropdown.set(themeKeyToLabel["Dark"]) end
 	applyMenuSize(380, 500)
 	keyLayout = "QWERTY"
 	local cam = workspace.CurrentCamera
@@ -4321,15 +4565,16 @@ showNotification("👉𝐁 Press <b>[B]</b> to open the menu", 5)
 
 function openMenu()
 	gui.Enabled = true
-	backdrop.BackgroundTransparency = 0.7
+	backdrop.BackgroundTransparency = 0.92
 	TweenService:Create(backdrop, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundTransparency = 0.45
+		BackgroundTransparency = 0.88
 	}):Play()
+	local targetOpacity = 1 - math.clamp(savedOpacity or 100, 0, 100) / 100
 	main.Size = UDim2.new(0, menuW, 0, 0)
 	main.BackgroundTransparency = 0.4
 	TweenService:Create(main, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Size = UDim2.new(0, menuW, 0, menuH),
-		BackgroundTransparency = 0
+		BackgroundTransparency = targetOpacity
 	}):Play()
 end
 
@@ -4337,6 +4582,7 @@ function closeMenu()
 	TweenService:Create(backdrop, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		BackgroundTransparency = 1
 	}):Play()
+	local targetOpacity = 1 - math.clamp(savedOpacity or 100, 0, 100) / 100
 	TweenService:Create(main, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		Size = UDim2.new(0, menuW, 0, 0),
 		BackgroundTransparency = 0.35
@@ -4344,7 +4590,7 @@ function closeMenu()
 	task.wait(0.15)
 	gui.Enabled = false
 	main.Size = UDim2.new(0, menuW, 0, menuH)
-	main.BackgroundTransparency = 0
+	main.BackgroundTransparency = targetOpacity
 	autoSave()
 end
 
@@ -5164,8 +5410,11 @@ function toggleESP(key, state)
 	espState[key] = state
 	if key == "selfESP" then
 		buildSelfESP()
+	elseif string.find(key, "^player") then
+		for _, p in ipairs(Players:GetPlayers()) do buildESPFor(p) end
+	elseif string.find(key, "^bot") then
+		refreshBotESP()
 	end
-	refreshAllESP()
 end
 
 
