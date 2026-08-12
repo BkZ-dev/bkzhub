@@ -4,9 +4,9 @@
 
 ### The All-in-One Roblox Admin & Utility Hub
 
-**v6.0** • Build 2026.08
+**v6.1** • Build 2026.08
 
-> 🔥 Rapid Fire • Jerk Tools • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix • ESP HD per Category • Aimbot + FOV Circle • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects
+> 🔥 Rapid Fire • Jerk Tools • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix + Zoom fix • ESP HD per Category • Aimbot + FOV Circle + Team Check + Wall Check • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects
 
 </div>
 
@@ -129,6 +129,8 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 | **🖱 Mouse** | Select trigger key: Mouse1 / Mouse2 / Mouse3 |
 | **⌨ Keyboard** | Select trigger key from full keyboard layout (A-Z, 0-9, F1-F12, etc.) |
 | **🎯 Target Part** | Select target body part: Head, UpperTorso, Torso, HumanoidRootPart |
+| **🧱 Wall Check** | Raycast caméra→cible : ignore les cibles derrière un mur (toggle, ON par défaut) |
+| **👥 Team Check** | Ignore les coéquipiers (toggle, ON par défaut — désactivable) |
 
 ### 🎯 Target Types (New in v5.7)
 
@@ -282,6 +284,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 | `W` / `A` / `S` / `D` | Move camera forward/left/back/right |
 | `Space` | Move up |
 | `LeftShift` | Move down (also halved speed) |
+| `Alt` | Move down |
 | `Q` / `E` | Strafe left/right perpendicular to view |
 | `Z` / `Q` (AZERTY) or `Q` | Strafe left |
 | `E` / `D` (AZERTY) or `E` | Strafe right |
@@ -328,6 +331,19 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 | **🎯 No Recoil fix** | Camera correction now only triggers right after firing — no more fighting your normal look movement |
 | **⚡ Instant Reload fix** | Removed the broken animation-speed hack; now actively spams reload remotes + zeroes reload values |
 | **🎨 Theme fix** | Toggle switches now recolor correctly when you change theme while toggles are ON |
+
+---
+
+## 🔥 What's New in v6.1
+
+| Feature | Description |
+|:---|:---|
+| **🧱 Wall Check** | New aimbot toggle — raycasts to each target and ignores anyone behind a wall |
+| **👥 Team Check** | New aimbot toggle — skips teammates (previously hard-coded) |
+| **📷 Freecam zoom fix** | Scroll wheel zoom now works correctly without breaking camera orientation |
+| **🕶 No full-screen backdrop** | Menu no longer overlays/darkens the whole game view |
+| **⚡ Performance pass** | ESP updates throttled (~4×/s), bot/vehicle target lists cached, menu FX pause when closed, nuke particle rate capped, FPS unlock is one-shot |
+| **🔌 Memory leak fix** | ESP health/name connections are properly disconnected on toggle/despawn |
 
 ---
 
@@ -460,7 +476,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 |:---|:---|
 | 👑 **Owner** | bkz |
 | 🤝 **Contributors** | All people who use this menu ❤️ |
-| 📦 **Version** | **5.7** (Build 2026.07) |
+| 📦 **Version** | **6.1** (Build 2026.08) |
 
 ---
 

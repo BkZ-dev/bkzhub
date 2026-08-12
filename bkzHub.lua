@@ -586,9 +586,10 @@ backdrop = Instance.new("Frame", gui)
 backdrop.Size = UDim2.new(1, 0, 1, 0)
 backdrop.Position = UDim2.new(0, 0, 0, 0)
 backdrop.BackgroundColor3 = currentTheme.BG
-backdrop.BackgroundTransparency = 0.88
+backdrop.BackgroundTransparency = 1
 backdrop.BorderSizePixel = 0
 backdrop.ZIndex = 0
+backdrop.Visible = false
 
 local hoverSound
 function playHover()
@@ -2646,6 +2647,9 @@ aimTargetPlayers  = true
 aimTargetBots     = true
 aimTargetVehicles = false
 aimTargetObjects  = false
+aimTeamCheck  = true
+aimWallCheck  = true
+aimRayParams  = nil
 
 
 MOUSE_KEYS = {
@@ -2748,11 +2752,59 @@ end
 
 function refreshBotList()
 	botList = {}
+	if not aimTargetBots then return end
 	for _, model in ipairs(workspace:GetDescendants()) do
 		if isBot(model) then
 			table.insert(botList, model)
 		end
 	end
+end
+
+vehicleList = {}
+objectList  = {}
+function refreshSeatList()
+	vehicleList = {}
+	objectList  = {}
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("VehicleSeat") or obj:IsA("TankSeat") or obj:IsA("Seat") then
+			if obj:IsA("BasePart") then
+				local inChar = false
+				for _, p in ipairs(Players:GetPlayers()) do
+					if p.Character and (obj:IsDescendantOf(p.Character) or obj:IsDescendantOf(p)) then
+						inChar = true; break
+					end
+				end
+				if not inChar then
+					if obj:IsA("VehicleSeat") or obj:IsA("TankSeat") then
+						table.insert(vehicleList, obj)
+					else
+						table.insert(objectList, obj)
+					end
+				end
+			end
+		end
+	end
+end
+
+function aimVisibleFromCamera(targetPart)
+	if not aimWallCheck then return true end
+	local cam = workspace.CurrentCamera
+	if not cam then return true end
+	local origin = cam.CFrame.Position
+	local dest = targetPart.Position
+	local dir = dest - origin
+	if dir.Magnitude < 0.01 then return true end
+	if not aimRayParams then
+		aimRayParams = RaycastParams.new()
+		aimRayParams.FilterType = Enum.RaycastFilterType.Exclude
+	end
+	local excl = {}
+	local myChar = player.Character
+	if myChar then table.insert(excl, myChar) end
+	aimRayParams.FilterDescendantsInstances = excl
+	local result = workspace:Raycast(origin, dir, aimRayParams)
+	if not result then return true end
+	return result.Instance:IsDescendantOf(targetPart.Parent) or result.Instance == targetPart
 end
 
 function getTarget()
@@ -2770,9 +2822,13 @@ function getTarget()
 	if aimTargetPlayers then
 		for _, p in ipairs(Players:GetPlayers()) do
 			if p ~= player and p.Character then
-				local myTeam     = player.Team
-				local theirTeam  = p.Team
-				if not (myTeam and theirTeam and myTeam == theirTeam) then
+				local skipByTeam = false
+				if aimTeamCheck then
+					local myTeam     = player.Team
+					local theirTeam  = p.Team
+					skipByTeam = (myTeam and theirTeam and myTeam == theirTeam)
+				end
+				if not skipByTeam then
 					local hum  = p.Character:FindFirstChildOfClass("Humanoid")
 					if hum and hum.Health > 0 then
 						local targetPart = nil
@@ -2785,15 +2841,16 @@ function getTarget()
 							end
 						end
 						if targetPart then
-							if aimDistance > 0 and (targetPart.Position - myPos).Magnitude > aimDistance then
-							else
-								local sp, onScreen = cam:WorldToViewportPoint(targetPart.Position)
-								if onScreen and sp.Z > 0 then
-									local dx = sp.X - cx
-									local dy = sp.Y - cy
-									local fovDist = math.sqrt(dx*dx + dy*dy)
-									if fovDist < aimFOV and fovDist < bestScore then
-										bestScore = fovDist; best = p
+							local sp, onScreen = cam:WorldToViewportPoint(targetPart.Position)
+							if onScreen and sp.Z > 0 then
+								local dx = sp.X - cx
+								local dy = sp.Y - cy
+								local fovDist = math.sqrt(dx*dx + dy*dy)
+								if fovDist < aimFOV and fovDist < bestScore then
+									if aimDistance == 0 or (targetPart.Position - myPos).Magnitude <= aimDistance then
+										if aimVisibleFromCamera(targetPart) then
+											bestScore = fovDist; best = p
+										end
 									end
 								end
 							end
@@ -2812,15 +2869,16 @@ function getTarget()
 					local targetPart = model:FindFirstChild(aimTargetPart or "Head")
 					if not targetPart then targetPart = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart") end
 					if targetPart then
-						if aimDistance > 0 and (targetPart.Position - myPos).Magnitude > aimDistance then
-						else
-							local sp, onScreen = cam:WorldToViewportPoint(targetPart.Position)
-							if onScreen and sp.Z > 0 then
-								local dx = sp.X - cx
-								local dy = sp.Y - cy
-								local fovDist = math.sqrt(dx*dx + dy*dy)
-								if fovDist < aimFOV and fovDist < bestScore then
-									bestScore = fovDist; best = model
+						local sp, onScreen = cam:WorldToViewportPoint(targetPart.Position)
+						if onScreen and sp.Z > 0 then
+							local dx = sp.X - cx
+							local dy = sp.Y - cy
+							local fovDist = math.sqrt(dx*dx + dy*dy)
+							if fovDist < aimFOV and fovDist < bestScore then
+								if aimDistance == 0 or (targetPart.Position - myPos).Magnitude <= aimDistance then
+									if aimVisibleFromCamera(targetPart) then
+										bestScore = fovDist; best = model
+									end
 								end
 							end
 						end
@@ -2831,25 +2889,16 @@ function getTarget()
 	end
 
 	if aimTargetVehicles then
-		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("VehicleSeat") or obj:IsA("TankSeat") or obj:IsA("Seat") then
-				local inChar = false
-				for _, p in ipairs(Players:GetPlayers()) do
-					if p.Character and (obj:IsDescendantOf(p.Character) or obj:IsDescendantOf(p)) then
-						inChar = true; break
-					end
-				end
-				if not inChar and obj:IsA("BasePart") then
-					if aimDistance > 0 and (obj.Position - myPos).Magnitude > aimDistance then
-					else
-						local sp, onScreen = cam:WorldToViewportPoint(obj.Position)
-						if onScreen and sp.Z > 0 then
-							local dx = sp.X - cx
-							local dy = sp.Y - cy
-							local fovDist = math.sqrt(dx*dx + dy*dy)
-							if fovDist < aimFOV and fovDist < bestScore then
-								bestScore = fovDist; best = obj
-							end
+		for _, obj in ipairs(vehicleList) do
+			if obj and obj.Parent then
+				local sp, onScreen = cam:WorldToViewportPoint(obj.Position)
+				if onScreen and sp.Z > 0 then
+					local dx = sp.X - cx
+					local dy = sp.Y - cy
+					local fovDist = math.sqrt(dx*dx + dy*dy)
+					if fovDist < aimFOV and fovDist < bestScore then
+						if aimDistance == 0 or (obj.Position - myPos).Magnitude <= aimDistance then
+							bestScore = fovDist; best = obj
 						end
 					end
 				end
@@ -2858,25 +2907,16 @@ function getTarget()
 	end
 
 	if aimTargetObjects then
-		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("Seat") and not obj:IsA("VehicleSeat") and not obj:IsA("TankSeat") then
-				local inChar = false
-				for _, p in ipairs(Players:GetPlayers()) do
-					if p.Character and (obj:IsDescendantOf(p.Character) or obj:IsDescendantOf(p)) then
-						inChar = true; break
-					end
-				end
-				if not inChar and obj:IsA("BasePart") then
-					if aimDistance > 0 and (obj.Position - myPos).Magnitude > aimDistance then
-					else
-						local sp, onScreen = cam:WorldToViewportPoint(obj.Position)
-						if onScreen and sp.Z > 0 then
-							local dx = sp.X - cx
-							local dy = sp.Y - cy
-							local fovDist = math.sqrt(dx*dx + dy*dy)
-							if fovDist < aimFOV and fovDist < bestScore then
-								bestScore = fovDist; best = obj
-							end
+		for _, obj in ipairs(objectList) do
+			if obj and obj.Parent then
+				local sp, onScreen = cam:WorldToViewportPoint(obj.Position)
+				if onScreen and sp.Z > 0 then
+					local dx = sp.X - cx
+					local dy = sp.Y - cy
+					local fovDist = math.sqrt(dx*dx + dy*dy)
+					if fovDist < aimFOV and fovDist < bestScore then
+						if aimDistance == 0 or (obj.Position - myPos).Magnitude <= aimDistance then
+							bestScore = fovDist; best = obj
 						end
 					end
 				end
@@ -2949,8 +2989,11 @@ function startAim()
 		botListTimer = botListTimer + 1
 		if botListTimer >= 120 then
 			botListTimer = 0
-			refreshBotList()
+			if aimTargetBots then refreshBotList() end
+			refreshSeatList()
 		end
+		if aimTargetVehicles and #vehicleList == 0 then refreshSeatList() end
+		if aimTargetObjects and #objectList == 0 then refreshSeatList() end
 		local t = getTarget()
 		if not t then return end
 		local targetPart = nil
@@ -3106,6 +3149,13 @@ createSlider(pages.Aim, "🎯  Prediction (lead)", 0, 50, 15, 13, function(val)
 	aimPrediction = val / 100
 end)
 
+createToggle(pages.Aim, "👥  Team Check", 14, function(state)
+	aimTeamCheck = state
+end, "aimTeamCheck")
+createToggle(pages.Aim, "🧱  Wall Check", 15, function(state)
+	aimWallCheck = state
+end, "aimWallCheck")
+
 
 function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 	local selIdx = defaultIdx
@@ -3200,7 +3250,7 @@ MOUSE_LABELS = {}
 for _, m in ipairs(MOUSE_KEYS) do table.insert(MOUSE_LABELS, m.label) end
 
 methodNames = {"1 - Direct Cam", "2 - Scriptable Cam", "3 - HRP Orient"}
-aimMethodDropdown = mkDropdown(pages.Aim, "🔧  Method", methodNames, math.clamp(aimMethod, 1, 3), 14, function(selected)
+aimMethodDropdown = mkDropdown(pages.Aim, "🔧  Method", methodNames, math.clamp(aimMethod, 1, 3), 16, function(selected)
 	for i, m in ipairs(methodNames) do
 		if m == selected then aimMethod = i; break end
 	end
@@ -3209,7 +3259,7 @@ end)
 
 aimTargetPart = aimTargetPart or "Head"
 local aimPartItems = {"Head", "UpperTorso", "Torso", "HumanoidRootPart"}
-aimPartDropdown = mkDropdown(pages.Aim, "🎯  Target Part", aimPartItems, 1, 15, function(selected)
+aimPartDropdown = mkDropdown(pages.Aim, "🎯  Target Part", aimPartItems, 1, 17, function(selected)
 	aimTargetPart = selected
 	showNotification("🎯  Target: " .. selected, 2)
 end)
@@ -3616,7 +3666,7 @@ end)
 createSection(pages.World, "🖥  Performance", 60)
 
 createBtn(pages.World, "🔓  Unlock FPS", currentTheme.Button, 61, function()
-	if setfpscap then RunService:BindToRenderStep("FPSUnlock",1,function() setfpscap(0) end) end
+	if setfpscap then setfpscap(0) end
 end)
 createBtn(pages.World, "🔒  Reset FPS (60)", currentTheme.Button, 62, function()
 	RunService:UnbindFromRenderStep("FPSUnlock")
@@ -3722,6 +3772,7 @@ local menuGlowTrackConn = nil
 local matrixChars = {"ﾊ","ﾐ","ﾋ","ｰ","ｳ","ｼ","ﾅ","ﾓ","ﾆ","ｻ","ﾏ","ﾉ","ﾘ","ｹ","ﾁ","ｷ","ﾄ","ﾟ","ﾞ","ﾌ","ﾎ","ﾍ","ﾑ","ﾚ","ﾕ"}
 
 local function ensureFxGui()
+	if not gui or not gui.Enabled then return nil end
 	if not menuFxGui or not menuFxGui.Parent then
 		menuFxGui = Instance.new("Frame")
 		menuFxGui.Size = UDim2.new(1, 0, 1, 0)
@@ -3744,6 +3795,7 @@ end
 local function spawnSnowFlake()
 	if not menuFx.snow then return end
 	local fx = ensureFxGui()
+	if not fx then return end
 	local s = Instance.new("Frame")
 	s.Size = UDim2.new(0, math.random(4, 8), 0, math.random(4, 8))
 	s.Position = UDim2.new(math.random(), -10, -0.05, 0)
@@ -3770,6 +3822,7 @@ end
 local function spawnRainDrop()
 	if not menuFx.rain then return end
 	local fx = ensureFxGui()
+	if not fx then return end
 	local r = Instance.new("TextLabel")
 	r.Size = UDim2.new(0, 2, 0, math.random(14, 28))
 	r.Position = UDim2.new(math.random(), 0, -0.05, 0)
@@ -3796,6 +3849,7 @@ end
 local function spawnFire()
 	if not menuFx.fire then return end
 	local fx = ensureFxGui()
+	if not fx then return end
 	local f = Instance.new("Frame")
 	local size = math.random(8, 22)
 	f.Size = UDim2.new(0, size, 0, size)
@@ -3823,6 +3877,7 @@ end
 local function spawnRocket()
 	if not menuFx.rocket then return end
 	local fx = ensureFxGui()
+	if not fx then return end
 	local r = Instance.new("TextLabel")
 	r.Size = UDim2.new(0, 20, 0, 26)
 	r.Position = UDim2.new(math.random(), 0, 1.0, 0)
@@ -3848,6 +3903,7 @@ end
 local function spawnSteveHead()
 	if not menuFx.steve then return end
 	local fx = ensureFxGui()
+	if not fx then return end
 	local s = Instance.new("Frame")
 	s.Size = UDim2.new(0, 18, 0, 18)
 	s.Position = UDim2.new(math.random(), 0, -0.05, 0)
@@ -3872,6 +3928,7 @@ end
 local function spawnMatrixRain()
 	if not menuFx.matrixRain then return end
 	local fx = ensureFxGui()
+	if not fx then return end
 	local char = matrixChars[math.random(#matrixChars)]
 	local r = Instance.new("TextLabel")
 	r.Size = UDim2.new(0, 14, 0, 18)
@@ -3952,6 +4009,7 @@ end
 
 local function updateGlowContainer()
 	if not menuBorderContainer or not menuBorderContainer.Parent then return end
+	if not gui or not gui.Enabled then return end
 	local p = main.Position
 	local s = main.Size
 	menuBorderContainer.Position = UDim2.new(p.X.Scale, p.X.Offset - 4, p.Y.Scale, p.Y.Offset - 4)
@@ -4252,6 +4310,8 @@ function getConfig()
 		aimTargetBots     = aimTargetBots,
 		aimTargetVehicles = aimTargetVehicles,
 		aimTargetObjects  = aimTargetObjects,
+		aimTeamCheck      = aimTeamCheck,
+		aimWallCheck      = aimWallCheck,
 		espColors = {
 			enemy = serializeColor(ESP_COLOR_ENEMY),
 			ally  = serializeColor(ESP_COLOR_ALLY),
@@ -4332,6 +4392,8 @@ function applyConfig(cfg)
 	if cfg.aimTargetBots     ~= nil then aimTargetBots     = cfg.aimTargetBots     end
 	if cfg.aimTargetVehicles ~= nil then aimTargetVehicles = cfg.aimTargetVehicles end
 	if cfg.aimTargetObjects  ~= nil then aimTargetObjects  = cfg.aimTargetObjects  end
+	if cfg.aimTeamCheck      ~= nil then aimTeamCheck      = cfg.aimTeamCheck      end
+	if cfg.aimWallCheck      ~= nil then aimWallCheck      = cfg.aimWallCheck      end
 	if cfg.espColors then
 		local c = deserializeColor(cfg.espColors.enemy); if c then ESP_COLOR_ENEMY = c end
 		local c2 = deserializeColor(cfg.espColors.ally);  if c2 then ESP_COLOR_ALLY  = c2 end
@@ -4427,6 +4489,7 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  104, funct
 	if bgAnimEnabled then disableBgAnim() end
 	aimDistance = 0; aimShowCircle = false; destroyFOVCircle()
 	aimTargetPlayers = true; aimTargetBots = true; aimTargetVehicles = false; aimTargetObjects = false
+	aimTeamCheck = true; aimWallCheck = true
 	freecamSpeed = 50
 	ESP_COLOR_ENEMY = Color3.fromRGB(255, 40, 50)
 	ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
@@ -4566,10 +4629,6 @@ showNotification("👉𝐁 Press <b>[B]</b> to open the menu", 5)
 
 function openMenu()
 	gui.Enabled = true
-	backdrop.BackgroundTransparency = 0.92
-	TweenService:Create(backdrop, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundTransparency = 0.88
-	}):Play()
 	local targetOpacity = 1 - math.clamp(savedOpacity or 100, 0, 100) / 100
 	main.Size = UDim2.new(0, menuW, 0, 0)
 	main.BackgroundTransparency = 0.4
@@ -4580,9 +4639,6 @@ function openMenu()
 end
 
 function closeMenu()
-	TweenService:Create(backdrop, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		BackgroundTransparency = 1
-	}):Play()
 	local targetOpacity = 1 - math.clamp(savedOpacity or 100, 0, 100) / 100
 	TweenService:Create(main, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		Size = UDim2.new(0, menuW, 0, 0),
@@ -4609,6 +4665,7 @@ end)
 
 nukeEnabled = false
 nukeConn = nil
+nukeTick = 0
 
 function spawnExplosionFX(pos)
 	
@@ -4676,11 +4733,16 @@ function startNuke()
 	lv.MaxForce = math.huge
 
 	
-	nukeConn = RunService.Heartbeat:Connect(function()
+	nukeTick = 0
+	
+	nukeConn = RunService.Heartbeat:Connect(function(dt)
 		local c = player.Character
 		if not c then return end
 		local h = c:FindFirstChild("HumanoidRootPart")
 		if not h then return end
+		nukeTick = nukeTick - dt
+		if nukeTick > 0 then return end
+		nukeTick = 0.1
 		local flame = Instance.new("Part", workspace)
 		flame.Shape = Enum.PartType.Ball
 		flame.Size = Vector3.new(math.random(1,3), math.random(1,3), math.random(1,3))
@@ -4772,6 +4834,9 @@ espState = {
 espObjects      = {}
 espBotObjects   = {}
 espSelfObjects  = {}
+espConns        = {}
+espBotConns     = {}
+espSelfConns    = {}
 
 ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
 ESP_COLOR_ENEMY = Color3.fromRGB(255, 40, 50)
@@ -4794,6 +4859,12 @@ function clearESPFor(p)
 		end
 		espObjects[p] = nil
 	end
+	if espConns[p] then
+		for _, c in ipairs(espConns[p]) do
+			pcall(function() c:Disconnect() end)
+		end
+		espConns[p] = nil
+	end
 end
 
 
@@ -4804,6 +4875,12 @@ function clearAllBotESP()
 		end
 	end
 	espBotObjects = {}
+	for model, conns in pairs(espBotConns) do
+		for _, c in ipairs(conns) do
+			pcall(function() c:Disconnect() end)
+		end
+	end
+	espBotConns = {}
 end
 
 
@@ -4821,7 +4898,7 @@ function isBot(model)
 end
 
 
-function buildHealthBar(hrp, hum, bbName, objs, guardKey)
+function buildHealthBar(hrp, hum, bbName, objs, guardKey, conns)
 	local bb = mkBB(hrp, bbName, 5, 54, 0)
 	bb.StudsOffset = Vector3.new(-1.3, 0, 0)
 	local bg = Instance.new("Frame", bb)
@@ -4838,13 +4915,15 @@ function buildHealthBar(hrp, hum, bbName, objs, guardKey)
 	fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-p0)), math.floor(220*p0+35), 40)
 	fill.BorderSizePixel  = 0
 	Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
-	hum.HealthChanged:Connect(function(h)
+	local c = hum.HealthChanged:Connect(function(h)
 		if guardKey and not espState[guardKey] then return end
 		local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
 		fill.Size             = UDim2.new(1,0,pct,0)
 		fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-pct)), math.floor(220*pct+35), 40)
 	end)
+	if conns then table.insert(conns, c) end
 	table.insert(objs, bb)
+	return c
 end
 
 
@@ -4856,6 +4935,7 @@ function buildESPBot(model)
 
 	local color = ESP_COLOR_BOT
 	local objs  = {}
+	local conns = {}
 
 	if espState.botChams then
 		local old = model:FindFirstChild("ESP_BotHL")
@@ -4913,22 +4993,23 @@ function buildESPBot(model)
 		table.insert(objs, bb)
 	end
 
-	if espState.botHealth and hum then
+if espState.botHealth and hum then
 		local bb  = mkBB(hrp, "ESP_BotHP", 90, 13, 2.7)
 		local lbl = mkLbl(bb, math.floor(hum.Health) .. " hp", 9,
 			Color3.fromRGB(80 + math.floor(175*(1 - hum.Health/math.max(hum.MaxHealth,1))),
-			200 - math.floor(150*(1 - hum.Health/math.max(hum.MaxHealth,1))), 50))
-		hum.HealthChanged:Connect(function(h)
+				200 - math.floor(150*(1 - hum.Health/math.max(hum.MaxHealth,1))), 50))
+		local c = hum.HealthChanged:Connect(function(h)
 			if not espState.botHealth then return end
 			local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
 			lbl.Text       = math.floor(h) .. " hp"
 			lbl.TextColor3 = Color3.fromRGB(80+math.floor(175*(1-pct)), 200-math.floor(150*(1-pct)), 50)
 		end)
+		table.insert(conns, c)
 		table.insert(objs, bb)
 	end
 
 	if espState.botHealthBar and hum then
-		buildHealthBar(hrp, hum, "ESP_BotBar", objs, "botHealthBar")
+		buildHealthBar(hrp, hum, "ESP_BotBar", objs, "botHealthBar", conns)
 	end
 
 	if espState.botDistance then
@@ -5035,6 +5116,7 @@ function buildESPBot(model)
 	end
 
 	espBotObjects[model] = objs
+	espBotConns[model]   = conns
 
 	model.AncestryChanged:Connect(function()
 		if not model.Parent then
@@ -5042,6 +5124,10 @@ function buildESPBot(model)
 				pcall(function() if obj and obj.Parent then obj:Destroy() end end)
 			end
 			espBotObjects[model] = nil
+			for _, c in ipairs(espBotConns[model] or {}) do
+				pcall(function() c:Disconnect() end)
+			end
+			espBotConns[model] = nil
 		end
 	end)
 end
@@ -5100,6 +5186,7 @@ function buildESPFor(p)
 	local isAlly = (player.Team ~= nil) and (p.Team == player.Team)
 	local color  = isAlly and ESP_COLOR_ALLY or ESP_COLOR_ENEMY
 	local objs   = {}
+	local conns  = {}
 
 	for _, part in ipairs(char:GetDescendants()) do
 		if part:IsA("BasePart") and part.Transparency >= 0.9 then
@@ -5206,21 +5293,22 @@ function buildESPFor(p)
 	
 	if espState.playerHealth and hum then
 		local bb  = mkBB(hrp, "ESP_HP", 90, 13, 2.7)
-		local lbl = mkLbl(bb, math.floor(hum.Health) .. " hp", 9,
+local lbl = mkLbl(bb, math.floor(hum.Health) .. " hp", 9,
 			Color3.fromRGB(80 + math.floor(175*(1 - hum.Health/math.max(hum.MaxHealth,1))),
-			200 - math.floor(150*(1 - hum.Health/math.max(hum.MaxHealth,1))), 50))
-		hum.HealthChanged:Connect(function(h)
+				200 - math.floor(150*(1 - hum.Health/math.max(hum.MaxHealth,1))), 50))
+		local c = hum.HealthChanged:Connect(function(h)
 			if not espState.playerHealth then return end
 			local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
 			lbl.Text       = math.floor(h) .. " hp"
 			lbl.TextColor3 = Color3.fromRGB(80+math.floor(175*(1-pct)), 200-math.floor(150*(1-pct)), 50)
 		end)
+		table.insert(conns, c)
 		table.insert(objs, bb)
 	end
 
 	
 	if espState.playerHealthBar and hum then
-		buildHealthBar(hrp, hum, "ESP_Bar", objs, "playerHealthBar")
+		buildHealthBar(hrp, hum, "ESP_Bar", objs, "playerHealthBar", conns)
 	end
 
 	
@@ -5343,6 +5431,7 @@ function buildESPFor(p)
 	end
 
 	espObjects[p] = objs
+	espConns[p]   = conns
 end
 
 
@@ -5424,6 +5513,10 @@ function clearSelfESP()
 		pcall(function() if obj and obj.Parent then obj:Destroy() end end)
 	end
 	espSelfObjects = {}
+	for _, c in ipairs(espSelfConns) do
+		pcall(function() c:Disconnect() end)
+	end
+	espSelfConns = {}
 end
 
 
@@ -5438,6 +5531,7 @@ function buildSelfESP()
 
 	local color = ESP_COLOR_SELF
 	local objs  = {}
+	local conns = {}
 
 	local bb = mkBB(hrp, "ESP_SelfName", 140, 18, -2.5)
 	mkLbl(bb, player.Name .. " (You)", 10, color)
@@ -5445,12 +5539,13 @@ function buildSelfESP()
 
 	local hpBB = mkBB(hrp, "ESP_SelfHP", 90, 13, -3.2)
 	local hpLbl = mkLbl(hpBB, math.floor(hum.Health) .. " hp", 9, color)
-	hum.HealthChanged:Connect(function(h)
+	local c = hum.HealthChanged:Connect(function(h)
 		if not espState.selfESP then return end
 		local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
 		hpLbl.Text       = math.floor(h) .. " hp"
 		hpLbl.TextColor3 = Color3.fromRGB(80+math.floor(175*(1-pct)), 200-math.floor(150*(1-pct)), 50)
 	end)
+	table.insert(conns, c)
 	table.insert(objs, hpBB)
 
 	local hl = Instance.new("Highlight", char)
@@ -5463,6 +5558,7 @@ function buildSelfESP()
 	table.insert(objs, hl)
 
 	espSelfObjects = objs
+	espSelfConns   = conns
 end
 
 
@@ -5822,15 +5918,17 @@ function startFreecam()
 	cam.CameraType = Enum.CameraType.Scriptable
 	cam.FieldOfView = 70
 
-	local keys = {W=false, A=false, S=false, D=false, Space=false, LShift=false, Q=false, E=false}
+	local keys = {W=false, A=false, S=false, D=false, Space=false, LShift=false, Q=false, E=false, Alt=false}
 	local mousePressed = false
 	local lastMousePos = Vector2.new()
 	local freecamMouseSens = 0.0015
 
 	freecamMoveConn = RunService.RenderStepped:Connect(function(dt)
 		if not freecamActive then return end
-		local forward = (cam.CFrame.LookVector * Vector3.new(1,0,1)).Unit
-		local right = (cam.CFrame.RightVector * Vector3.new(1,0,1)).Unit
+		local forward = (cam.CFrame.LookVector * Vector3.new(1,0,1))
+		if forward.Magnitude > 0.001 then forward = forward.Unit else forward = Vector3.new(0,0,-1) end
+		local right = (cam.CFrame.RightVector * Vector3.new(1,0,1))
+		if right.Magnitude > 0.001 then right = right.Unit else right = Vector3.new(1,0,0) end
 		local up = Vector3.new(0,1,0)
 		local vel = Vector3.new()
 		if keys.W then vel = vel + forward end
@@ -5838,7 +5936,7 @@ function startFreecam()
 		if keys.A then vel = vel - right end
 		if keys.D then vel = vel + right end
 		if keys.Space then vel = vel + up end
-		if keys.LShift then vel = vel - up end
+		if keys.LShift or keys.Alt then vel = vel - up end
 		if keys.Q then vel = vel - forward:Cross(up).Unit end
 		if keys.E then vel = vel + forward:Cross(up).Unit end
 		local spd = (keys.LShift or keys.Space) and freecamSpeed * 0.4 or freecamSpeed
@@ -5848,7 +5946,7 @@ function startFreecam()
 			freecamCamPos = freecamCamPos + vel
 		end
 		local cf = CFrame.new(freecamCamPos) * CFrame.Angles(0, freecamCamRot.X, 0) * CFrame.Angles(freecamCamRot.Y, 0, 0)
-		cf = cf + cf.LookVector * freecamZoom
+		cf = cf * CFrame.new(0, 0, freecamZoom - 50)
 		cam.CFrame = cf
 	end)
 
@@ -5856,7 +5954,7 @@ function startFreecam()
 		if not freecamActive or not mousePressed then return end
 		if input.UserInputType == Enum.UserInputType.MouseMovement then
 			local delta = input.Position - lastMousePos
-			freecamCamRot = freecamCamRot + Vector2.new(-delta.X, -delta.Y) * freecamMouseSens
+			freecamCamRot = freecamCamRot + Vector2.new(-delta.X, delta.Y) * freecamMouseSens
 			freecamCamRot = Vector2.new(freecamCamRot.X % (math.pi * 2), math.clamp(freecamCamRot.Y, -1.4, 1.4))
 			lastMousePos = input.Position
 		end
@@ -5871,6 +5969,7 @@ function startFreecam()
 
 	freecamKeyBeginConn = UIS.InputBegan:Connect(function(input, gpe)
 		if gpe or not freecamActive then return end
+		if input.KeyCode == Enum.KeyCode.LeftAlt or input.KeyCode == Enum.KeyCode.RightAlt then keys.Alt = true end
 		local m = keyMaps[keyLayout]
 		if m then
 			for kc, kn in pairs(m) do
@@ -5885,6 +5984,7 @@ function startFreecam()
 
 	freecamKeyEndConn = UIS.InputEnded:Connect(function(input, gpe)
 		if gpe or not freecamActive then return end
+		if input.KeyCode == Enum.KeyCode.LeftAlt or input.KeyCode == Enum.KeyCode.RightAlt then keys.Alt = false end
 		local m = keyMaps[keyLayout]
 		if m then
 			for kc, kn in pairs(m) do
@@ -5997,8 +6097,11 @@ function startESP()
 		if espState.selfESP then buildSelfESP() end
 	end)
 
+	espUpdateTick = 0
 	
 	RunService:BindToRenderStep("ESP_Update", Enum.RenderPriority.Last.Value, function()
+		espUpdateTick = espUpdateTick + 1
+		if espUpdateTick % 15 ~= 0 then return end
 		local anyPlayer = espState.playerDistance or espState.playerHealthBar or espState.playerHealth or espState.playerSkeletons or espState.playerBoxes or espState.playerChams or espState.playerNames or espState.playerHeadDot or espState.playerSnaplines
 		local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
 		if anyPlayer then
