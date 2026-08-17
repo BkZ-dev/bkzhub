@@ -1937,7 +1937,6 @@ end, "freeze")
 createSection(pages.Personal, "🦅  Fly", 5)
 
 flyEnabled = false
-flyBodyVel, flyBodyGyro = nil
 flySpeed = 40
 
 function enableFly()
@@ -1949,16 +1948,7 @@ function enableFly()
 
 	hum:ChangeState(Enum.HumanoidStateType.Physics)
 
-	flyBodyVel = Instance.new("BodyVelocity", hrp)
-	flyBodyVel.Velocity = Vector3.zero
-	flyBodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-
-	flyBodyGyro = Instance.new("BodyGyro", hrp)
-	flyBodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-	flyBodyGyro.P = 1e4
-	flyBodyGyro.D = 100
-
-	RunService:BindToRenderStep("Fly", Enum.RenderPriority.Character.Value + 1, function()
+	RunService:BindToRenderStep("Fly", Enum.RenderPriority.Character.Value + 1, function(dt)
 		if not flyEnabled then return end
 		local cam = workspace.CurrentCamera
 
@@ -1973,15 +1963,12 @@ function enableFly()
 
 		if dir.Magnitude > 0 then dir = dir.Unit end
 
-		flyBodyVel.Velocity = dir * flySpeed
-		flyBodyGyro.CFrame = cam.CFrame
+		hrp.CFrame = hrp.CFrame + (dir * flySpeed * dt)
 	end)
 end
 
 function disableFly()
 	RunService:UnbindFromRenderStep("Fly")
-	if flyBodyVel then flyBodyVel:Destroy(); flyBodyVel = nil end
-	if flyBodyGyro then flyBodyGyro:Destroy(); flyBodyGyro = nil end
 	local char = player.Character
 	if char then
 		local hum = char:FindFirstChildOfClass("Humanoid")
@@ -2001,19 +1988,22 @@ end, "flySpeed")
 createSection(pages.Personal, "👁  Collision & Visual", 8)
 
 local noclipEnabled = false
+local noclipConn = nil
 
 createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(state)
 	noclipEnabled = state
 	if state then
-		RunService:BindToRenderStep("Noclip", Enum.RenderPriority.Character.Value + 1, function()
+		if noclipConn then noclipConn:Disconnect() end
+		noclipConn = RunService.Stepped:Connect(function()
 			local char = player.Character
-			if not char then return end
-			for _, part in ipairs(char:GetDescendants()) do
-				if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end
+			if char then
+				for _, part in ipairs(char:GetDescendants()) do
+					if part:IsA("BasePart") then part.CanCollide = false end
+				end
 			end
 		end)
 	else
-		RunService:UnbindFromRenderStep("Noclip")
+		if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
 		local char = player.Character
 		if char then
 			for _, part in ipairs(char:GetDescendants()) do
