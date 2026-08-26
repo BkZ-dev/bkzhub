@@ -38,7 +38,7 @@
 ## 🚀 Injection
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/anonymedu04/bkzhub/refs/heads/main/bkzHub.lua", true))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BkZ-dev/bkzhub/refs/heads/main/bkzHub.lua", true))()
 ```
 
 > ⚠️ Paste the full script into your executor. Requires a **Lua 5.1 compatible executor** (Synapse, ScriptWare, Krnl, Fluxus, Matcha, etc.).
