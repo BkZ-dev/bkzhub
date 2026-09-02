@@ -3,7 +3,7 @@
 
 print("")
 print("==================================================")
-print("   bkz HUB  v6.1   |   by bkz")
+print("   bkz HUB  v7   |   by bkz")
 print("   Loading ...")
 print("==================================================")
 print("")
@@ -170,32 +170,51 @@ TweenService:Create(lsRing2, TweenInfo.new(1.9, Enum.EasingStyle.Linear, Enum.Ea
 	Rotation = -360
 }):Play()
 
+-- Animated glowing logo with lightning bolt + pulsing halo
+local lsHalo = Instance.new("Frame", lsBg)
+lsHalo.AnchorPoint = Vector2.new(0.5, 0.5)
+lsHalo.Position = UDim2.new(0.5, 0, 0.42, 0)
+lsHalo.Size = UDim2.new(0, 150, 0, 150)
+lsHalo.BackgroundColor3 = Color3.fromRGB(160, 130, 255)
+lsHalo.BackgroundTransparency = 0.9
+lsHalo.BorderSizePixel = 0
+Instance.new("UICorner", lsHalo).CornerRadius = UDim.new(1, 0)
+TweenService:Create(lsHalo, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	Size = UDim2.new(0, 190, 0, 190),
+	BackgroundTransparency = 0.82
+}):Play()
+
 local lsLogo = Instance.new("Frame", lsBg)
 lsLogo.AnchorPoint = Vector2.new(0.5, 0.5)
 lsLogo.Position = UDim2.new(0.5, 0, 0.42, 0)
-lsLogo.Size = UDim2.new(0, 62, 0, 62)
+lsLogo.Size = UDim2.new(0, 78, 0, 78)
 lsLogo.BackgroundColor3 = Color3.fromRGB(160, 130, 255)
-lsLogo.BackgroundTransparency = 0.12
+lsLogo.BackgroundTransparency = 0.05
 lsLogo.BorderSizePixel = 0
-Instance.new("UICorner", lsLogo).CornerRadius = UDim.new(0, 16)
+Instance.new("UICorner", lsLogo).CornerRadius = UDim.new(0, 22)
 local lsLogoGrad = Instance.new("UIGradient", lsLogo)
 lsLogoGrad.Rotation = 45
-lsLogoGrad.Color = ColorSequence.new(Color3.fromRGB(150, 115, 255), Color3.fromRGB(255, 130, 200))
+lsLogoGrad.Color = ColorSequence.new(Color3.fromRGB(120, 85, 255), Color3.fromRGB(255, 90, 200))
 local lsLogoTxt = Instance.new("TextLabel", lsLogo)
 lsLogoTxt.Size = UDim2.new(1, 0, 1, 0)
 lsLogoTxt.BackgroundTransparency = 1
-lsLogoTxt.Text = "B"
+lsLogoTxt.Text = "⚡"
 lsLogoTxt.TextColor3 = Color3.new(1, 1, 1)
 lsLogoTxt.Font = Enum.Font.GothamBlack
-lsLogoTxt.TextSize = 34
+lsLogoTxt.TextSize = 44
+lsLogoTxt.TextStrokeTransparency = 0.1
+lsLogoTxt.TextStrokeColor3 = Color3.fromRGB(255, 220, 120)
 local lsLogoStroke = Instance.new("UIStroke", lsLogo)
 lsLogoStroke.Color = Color3.new(1, 1, 1)
-lsLogoStroke.Thickness = 1.5
-lsLogoStroke.Transparency = 0.4
+lsLogoStroke.Thickness = 2
+lsLogoStroke.Transparency = 0.25
 TweenService:Create(lsLogo, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-	BackgroundTransparency = 0.25,
-	Size = UDim2.new(0, 68, 0, 68),
+	BackgroundTransparency = 0.15,
+	Size = UDim2.new(0, 86, 0, 86),
 	Rotation = 4
+}):Play()
+TweenService:Create(lsLogoStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	Transparency = 0.05
 }):Play()
 
 local lsTitle = Instance.new("TextLabel", lsBg)
@@ -218,12 +237,48 @@ lsTitleStroke.Transparency = 0.4
 TweenService:Create(lsTitleStroke, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
 	Transparency = 0.12
 }):Play()
+-- Animated gradient shimmer sweeping across the title
+local lsTitleShimmer = Instance.new("UIGradient", lsTitle)
+lsTitleShimmer.Rotation = 90
+lsTitleShimmer.Color = ColorSequence.new(
+	Color3.fromRGB(255, 255, 255),
+	Color3.fromRGB(255, 255, 255),
+	Color3.fromRGB(255, 255, 255)
+)
+lsTitleShimmer.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 1),
+	NumberSequenceKeypoint.new(0.5, 0.4),
+	NumberSequenceKeypoint.new(1, 1)
+})
+TweenService:Create(lsTitleShimmer, TweenInfo.new(2.2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {
+	Offset = Vector2.new(1, 0)
+}):Play()
+
+-- Version badge
+local lsBadge = Instance.new("Frame", lsBg)
+lsBadge.AnchorPoint = Vector2.new(0.5, 0.5)
+lsBadge.Position = UDim2.new(0.5, 0, 0.5, -52)
+lsBadge.Size = UDim2.new(0, 74, 0, 20)
+lsBadge.BackgroundColor3 = Color3.fromRGB(160, 130, 255)
+lsBadge.BackgroundTransparency = 0.25
+lsBadge.BorderSizePixel = 0
+Instance.new("UICorner", lsBadge).CornerRadius = UDim.new(1, 0)
+local lsBadgeTxt = Instance.new("TextLabel", lsBadge)
+lsBadgeTxt.Size = UDim2.new(1, 0, 1, 0)
+lsBadgeTxt.BackgroundTransparency = 1
+lsBadgeTxt.Text = "⚡  v7  •  ULTIMATE"
+lsBadgeTxt.TextColor3 = Color3.new(1, 1, 1)
+lsBadgeTxt.Font = Enum.Font.GothamBold
+lsBadgeTxt.TextSize = 10
+TweenService:Create(lsBadge, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	BackgroundTransparency = 0.05
+}):Play()
 
 local lsSub = Instance.new("TextLabel", lsBg)
 lsSub.Size = UDim2.new(1, 0, 0, 18)
 lsSub.Position = UDim2.new(0, 0, 0.5, -40)
 lsSub.BackgroundTransparency = 1
-lsSub.Text = "Loading  •  v6.1"
+lsSub.Text = "Loading  •  v7"
 lsSub.TextColor3 = Color3.fromRGB(168, 158, 218)
 lsSub.Font = Enum.Font.Gotham
 lsSub.TextSize = 12
@@ -286,6 +341,28 @@ lsStatus.TextColor3 = Color3.fromRGB(132, 127, 178)
 lsStatus.Font = Enum.Font.Gotham
 lsStatus.TextSize = 10
 
+-- Animated spinner next to the status text
+local lsSpinner = Instance.new("Frame", lsBg)
+lsSpinner.AnchorPoint = Vector2.new(0.5, 0.5)
+lsSpinner.Position = UDim2.new(0.5, -118, 0.5, 66)
+lsSpinner.Size = UDim2.new(0, 12, 0, 12)
+lsSpinner.BackgroundTransparency = 1
+lsSpinner.BorderSizePixel = 0
+for i = 1, 8 do
+	local d = Instance.new("Frame", lsSpinner)
+	d.AnchorPoint = Vector2.new(0.5, 0.5)
+	d.Size = UDim2.new(0, 2, 0, 2)
+	d.BackgroundColor3 = Color3.fromRGB(200, 175, 255)
+	d.BorderSizePixel = 0
+	Instance.new("UICorner", d).CornerRadius = UDim.new(1, 0)
+	local a = (i - 1) / 8 * math.pi * 2
+	d.Position = UDim2.new(0.5 + math.cos(a) * 0.5, 0, 0.5 + math.sin(a) * 0.5, 0)
+	d.BackgroundTransparency = 0.2 + 0.6 * (i / 8)
+end
+TweenService:Create(lsSpinner, TweenInfo.new(1.2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {
+	Rotation = 360
+}):Play()
+
 for _, cs in ipairs({{0,0},{1,0},{0,1},{1,1}}) do
 	local cx, cy = cs[1], cs[2]
 	local c = Instance.new("Frame", lsBg)
@@ -323,14 +400,18 @@ task.spawn(function()
 		lsPct.Text = math.floor(t * 100) .. "%"
 		dots = (dots % 3) + 1
 		local dd = string.rep(".", dots)
-		if t < 0.3 then
-			lsStatus.Text = "Chargement des modules" .. dd
+		if t < 0.2 then
+			lsStatus.Text = "⚙  Initialisation des modules" .. dd
+		elseif t < 0.4 then
+			lsStatus.Text = "🎨 Application des thèmes" .. dd
 		elseif t < 0.6 then
-			lsStatus.Text = "Application des thèmes" .. dd
-		elseif t < 0.9 then
-			lsStatus.Text = "Finalisation de l'interface" .. dd
+			lsStatus.Text = "🧠 Chargement de l'ESP" .. dd
+		elseif t < 0.8 then
+			lsStatus.Text = "🎯 Configuration de l'aimbot" .. dd
+		elseif t < 0.95 then
+			lsStatus.Text = "✨ Finalisation de l'interface" .. dd
 		else
-			lsStatus.Text = "Prêt !"
+			lsStatus.Text = "🚀 Prêt !"
 		end
 		task.wait(0.05)
 	end
@@ -360,6 +441,10 @@ task.spawn(function()
 		TweenService:Create(lsStatus, TweenInfo.new(0.35), {TextTransparency = 1}):Play()
 		TweenService:Create(lsRing, TweenInfo.new(0.35), {BackgroundTransparency = 1}):Play()
 		TweenService:Create(lsRing2, TweenInfo.new(0.35), {BackgroundTransparency = 1}):Play()
+		TweenService:Create(lsSpinner, TweenInfo.new(0.35), {BackgroundTransparency = 1}):Play()
+		TweenService:Create(lsBadge, TweenInfo.new(0.35), {BackgroundTransparency = 1}):Play()
+		TweenService:Create(lsHalo, TweenInfo.new(0.35), {BackgroundTransparency = 1}):Play()
+		TweenService:Create(lsLogo, TweenInfo.new(0.35), {BackgroundTransparency = 1}):Play()
 		task.wait(0.35)
 		pcall(function() if loadingScreen then loadingScreen:Destroy() end end)
 	end
@@ -622,11 +707,34 @@ mainGradient.Rotation = 90
 mainGradient.Color = ColorSequence.new(currentTheme.BG, currentTheme.Panel)
 mainGradient.Transparency = NumberSequence.new(0, 0.35)
 
+-- Animated color-shifting gradient that breathes the theme accent into the menu
+local mainGradAnim = Instance.new("UIGradient", main)
+mainGradAnim.Name = "mainGradAnim"
+mainGradAnim.Rotation = 90
+mainGradAnim.Color = ColorSequence.new(currentTheme.BG, currentTheme.Accent)
+mainGradAnim.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 1),
+	NumberSequenceKeypoint.new(0.5, 0.92),
+	NumberSequenceKeypoint.new(1, 1)
+})
+TweenService:Create(mainGradAnim, TweenInfo.new(3.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.5, 0.85),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+}):Play()
+
 
 stroke = Instance.new("UIStroke", main)
 stroke.Color = currentTheme.Accent
 stroke.Thickness = 2
 stroke.Transparency = 0.25
+-- Pulsing border glow
+TweenService:Create(stroke, TweenInfo.new(2.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	Transparency = 0.05,
+	Thickness = 2.5
+}):Play()
 
 
 
@@ -641,6 +749,20 @@ headerGradient = Instance.new("UIGradient", header)
 headerGradient.Rotation = 90
 headerGradient.Color = ColorSequence.new(currentTheme.Panel, currentTheme.Button)
 
+-- Animated shimmer sweeping across the header
+local headerShimmer = Instance.new("UIGradient", header)
+headerShimmer.Name = "headerShimmer"
+headerShimmer.Rotation = 90
+headerShimmer.Color = ColorSequence.new(currentTheme.Accent, currentTheme.Accent, currentTheme.Accent)
+headerShimmer.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 1),
+	NumberSequenceKeypoint.new(0.5, 0.9),
+	NumberSequenceKeypoint.new(1, 1)
+})
+TweenService:Create(headerShimmer, TweenInfo.new(3.2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {
+	Offset = Vector2.new(1, 0)
+}):Play()
+
 
 logoBadge = Instance.new("Frame", header)
 logoBadge.Size = UDim2.new(0, 34, 0, 34)
@@ -653,6 +775,20 @@ local logoBadgeStroke = Instance.new("UIStroke", logoBadge)
 logoBadgeStroke.Color = currentTheme.AccentHov
 logoBadgeStroke.Thickness = 1.5
 logoBadgeStroke.Transparency = 0.4
+-- Pulsing glow behind the logo badge
+local logoGlow = Instance.new("Frame", header)
+logoGlow.Name = "logoGlow"
+logoGlow.Size = UDim2.new(0, 44, 0, 44)
+logoGlow.Position = UDim2.new(0, 9, 0.5, -22)
+logoGlow.BackgroundColor3 = currentTheme.Accent
+logoGlow.BackgroundTransparency = 0.7
+logoGlow.BorderSizePixel = 0
+logoGlow.ZIndex = 2
+Instance.new("UICorner", logoGlow).CornerRadius = UDim.new(0, 12)
+TweenService:Create(logoGlow, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	BackgroundTransparency = 0.45,
+	Size = UDim2.new(0, 50, 0, 50)
+}):Play()
 logoText = Instance.new("TextLabel", logoBadge)
 logoText.Size = UDim2.new(1, 0, 1, 0)
 logoText.BackgroundTransparency = 1
@@ -693,7 +829,7 @@ title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v6.1  •  " .. player.Name
+subtitle.Text = "v7  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -100, 0, 14)
 subtitle.Position = UDim2.new(0, 58, 0, 33)
 subtitle.BackgroundTransparency = 1
@@ -992,6 +1128,7 @@ function createToggle(parent, text, order, func, configKey)
 		}):Play()
 		local label = text:gsub("[^%w%s]","")
 		func(state)
+		if configKey and autoSave then autoSave() end
 	end)
 
 	
@@ -1389,7 +1526,7 @@ end)
 
 
 
-createSection(pages.Player, "Targeting", 0)
+createSection(pages.Player, "🎯  Targeting", 0)
 
 
 searchRow = Instance.new("Frame", pages.Player)
@@ -1457,9 +1594,29 @@ Instance.new("UICorner", ddList).CornerRadius = UDim.new(0, 8)
 Instance.new("UIListLayout", ddList).Padding = UDim.new(0, 2)
 
 targetPlayer = nil
+spectatingPlayer = nil
 
+function stopSpectate()
+	spectatingPlayer = nil
+	if player.Character then
+		local hum = player.Character:FindFirstChildOfClass("Humanoid")
+		if hum then workspace.CurrentCamera.CameraSubject = hum end
+	end
+end
 
 function selectPlayer(p)
+	-- Clicking the already-selected player deselects them
+	if p == targetPlayer then
+		targetPlayer = nil
+		searchBox.Text = ""
+		searchBox.TextColor3 = currentTheme.Text
+		infoName.Text = "No player selected"
+		infoStats.Text = ""
+		infoHP.Text = ""
+		if spectatingPlayer then stopSpectate() end
+		return
+	end
+
 	targetPlayer = p
 	searchBox.Text = p.Name
 	searchBox.TextColor3 = currentTheme.Text
@@ -1476,6 +1633,52 @@ function selectPlayer(p)
 		infoHP.Text = "❤  HP: N/A"
 	end
 end
+
+-- Track a player that left so we can re-spectate/re-select them if they rejoin
+local lostTargetUserId = nil
+local lostTargetName = nil
+
+Players.PlayerRemoving:Connect(function(p)
+	if p == targetPlayer or p == spectatingPlayer then
+		local wasSpectating = (p == spectatingPlayer)
+		-- remember who left so we can re-find them
+		lostTargetUserId = p.UserId
+		lostTargetName = p.Name
+		-- stop spectate + deselect
+		stopSpectate()
+		targetPlayer = nil
+		searchBox.Text = ""
+		infoName.Text = "No player selected"
+		infoStats.Text = ""
+		infoHP.Text = ""
+		showNotification("👋  " .. p.Name .. " a quitté la partie", 3)
+		-- if we were spectating, keep trying to re-spectate them when they rejoin
+		if wasSpectating then
+			task.spawn(function()
+				while lostTargetUserId and not targetPlayer do
+					task.wait(1)
+					local rejoined = Players:FindFirstChild(lostTargetName)
+					if rejoined and rejoined.UserId == lostTargetUserId then
+						selectPlayer(rejoined)
+						-- re-spectate
+						task.wait(0.5)
+						if rejoined.Character then
+							local hum = rejoined.Character:FindFirstChildOfClass("Humanoid")
+							if hum then
+								spectatingPlayer = rejoined
+								workspace.CurrentCamera.CameraSubject = hum
+								showNotification("🎥  Re-spectate: " .. rejoined.Name, 3)
+							end
+						end
+						lostTargetUserId = nil
+						lostTargetName = nil
+						break
+					end
+				end
+			end)
+		end
+	end
+end)
 
 
 function updateDD(filter)
@@ -1557,7 +1760,7 @@ searchBox.Focused:Connect(function()
 	updateDD(searchBox.Text)
 end)
 
-createSection(pages.Player, "Actions", 10)
+createSection(pages.Player, "⚡  Actions", 10)
 
 
 infoPanel = Instance.new("Frame", pages.Player)
@@ -1614,11 +1817,15 @@ end)
 
 createBtn(pages.Player, "🎥  Spectate", currentTheme.Button, 11, function()
 	if targetPlayer and targetPlayer.Character then
-		workspace.CurrentCamera.CameraSubject = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+		local hum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+		if hum then
+			spectatingPlayer = targetPlayer
+			workspace.CurrentCamera.CameraSubject = hum
+		end
 	end
 end)
 createBtn(pages.Player, "⏹  Stop Spectate", currentTheme.Button, 12, function()
-	if player.Character then workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChildOfClass("Humanoid") end
+	stopSpectate()
 end)
 createBtn(pages.Player, "📍  TP Player to Me", currentTheme.Button, 13, function()
 	if not (targetPlayer and targetPlayer.Character and player.Character) then return end
@@ -1714,77 +1921,6 @@ createBtn(pages.Player, "💬  Chat Spy (tous les joueurs)", currentTheme.Button
 		startChatSpy(nil)
 		showNotification("👁  Chat Spy ON → tous les joueurs", 3)
 	end
-end)
-
-createSection(pages.Player, "🎭  Local Visual Fun", 30)
-
-createBtn(pages.Player, "🪑  Sit All (Local)", currentTheme.Button, 31, function()
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= player and p.Character then
-			local hum = p.Character:FindFirstChildOfClass("Humanoid")
-			if hum then pcall(function() hum.Sit = true end) end
-		end
-	end
-	showNotification("🪑  Local: All sitting (visual only)", 3)
-end)
-
-createBtn(pages.Player, "💀  Kill All (Local)", currentTheme.Danger, 32, function()
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= player and p.Character then
-			local hum = p.Character:FindFirstChildOfClass("Humanoid")
-			if hum then pcall(function() hum.Health = 0 end) end
-		end
-	end
-	showNotification("💀  Local: All killed (visual only)", 3)
-end)
-
-createBtn(pages.Player, "🧊  Freeze All (Local)", currentTheme.Button, 33, function()
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= player and p.Character then
-			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-			if hrp then pcall(function() hrp.Anchored = true end) end
-		end
-	end
-	showNotification("🧊  Local: All frozen (visual only)", 3)
-end)
-
-createBtn(pages.Player, "🧊  Unfreeze All (Local)", currentTheme.Button, 34, function()
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= player and p.Character then
-			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-			if hrp then pcall(function() hrp.Anchored = false end) end
-		end
-	end
-	showNotification("🧊  Local: All unfrozen (visual only)", 3)
-end)
-
-createBtn(pages.Player, "🗡  Remove All Tools (Local)", currentTheme.Button, 35, function()
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= player and p.Character then
-			for _, t in ipairs(p.Character:GetChildren()) do
-				if t:IsA("Tool") then pcall(function() t:Destroy() end) end
-			end
-		end
-	end
-	showNotification("🗡  Local: Tools removed (visual only)", 3)
-end)
-
-createBtn(pages.Player, "📡  TP All to Me (Local)", currentTheme.Accent, 36, function()
-	if not player.Character then return end
-	local myHRP = player.Character:FindFirstChild("HumanoidRootPart")
-	if not myHRP then return end
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= player and p.Character then
-			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-			if hrp then
-				pcall(function()
-					hrp.Anchored = false
-					hrp.CFrame = myHRP.CFrame * CFrame.new(math.random(-4,4), 0, math.random(-4,4))
-				end)
-			end
-		end
-	end
-	showNotification("📡  Local: All TP to you (visual only)", 3)
 end)
 
 function giveTool(tool)
@@ -2563,25 +2699,20 @@ jerkToolsConn = nil
 createToggle(pages.Personal, "🌀  Jerk Tools", 32, function(state)
 	jerkToolsEnabled = state
 	if state then
-		jerkToolsConn = RunService.RenderStepped:Connect(function()
+		jerkToolsConn = RunService.Stepped:Connect(function()
 			if not jerkToolsEnabled then return end
 			local char = player.Character
 			if not char then return end
-			local hrp = char:FindFirstChild("HumanoidRootPart")
 			for _, tool in ipairs(char:GetChildren()) do
 				if tool:IsA("Tool") then
 					pcall(function()
 						local handle = tool:FindFirstChild("Handle")
 						if not handle then return end
 						local t = os.clock()
-						-- Rapid up/down "jerking" motion along the character's up axis
-						local pump = math.sin(t * 22) * 0.9
-						local base = hrp and hrp.Position or handle.Position
-						local pos = base + Vector3.new(0, 1.2 + pump, 0)
-						-- Slight tilt back and forth for a natural jerk feel
-						local tilt = math.sin(t * 22 + 1) * 0.35
-						local rot = CFrame.Angles(tilt, 0, 0)
-						handle.CFrame = CFrame.new(pos) * rot
+						-- Rapid up/down "jerking" motion (relative to the handle so the weld keeps it in hand)
+						local pump = math.sin(t * 24) * 0.55
+						local tilt = math.sin(t * 24 + 1) * 0.4
+						handle.CFrame = handle.CFrame * CFrame.new(0, pump, 0) * CFrame.Angles(tilt, 0, 0)
 					end)
 				end
 			end
@@ -3687,6 +3818,23 @@ function applyTheme(t)
 	headerGradient.Color = ColorSequence.new(t.Panel, t.Button)
 	logoBadge.BackgroundColor3 = t.Accent
 	accentBar.BackgroundColor3 = t.Accent
+	-- update animated theme elements
+	pcall(function()
+		local ga = main:FindFirstChild("mainGradAnim")
+		if ga then ga.Color = ColorSequence.new(t.BG, t.Accent) end
+	end)
+	pcall(function()
+		local hs = header:FindFirstChild("headerShimmer")
+		if hs then hs.Color = ColorSequence.new(t.Accent, t.Accent, t.Accent) end
+	end)
+	pcall(function()
+		local lg = header:FindFirstChild("logoGlow")
+		if lg then lg.BackgroundColor3 = t.Accent end
+	end)
+	pcall(function()
+		local lbs = logoBadge:FindFirstChildOfClass("UIStroke")
+		if lbs then lbs.Color = t.AccentHov end
+	end)
 	headerFix.BackgroundColor3 = t.Panel
 	title.TextColor3 = t.Text
 	subtitle.TextColor3 = t.SubText
@@ -5626,7 +5774,7 @@ verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
 verLabel = Instance.new("TextLabel", verFrame)
 verLabel.Size = UDim2.new(1, -12, 0, 16)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v6.1"
+verLabel.Text = "🌐 bkz HUB  v7"
 verLabel.TextColor3 = currentTheme.Accent
 verLabel.Font = Enum.Font.GothamBold
 verLabel.TextSize = 14
@@ -6001,7 +6149,7 @@ end
 
 if scrSuccess then
 	collectgarbage("collect")
-	print("✅  bkz HUB v6.1 chargé avec succès  (" .. player.Name .. ")")
+	print("✅  bkz HUB v7 chargé avec succès  (" .. player.Name .. ")")
 	task.spawn(function()
 		task.wait(1.7)
 		pcall(function() if loadingScreen then loadingScreen:Destroy() end end)

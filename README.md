@@ -4,9 +4,9 @@
 
 ### The All-in-One Roblox Admin & Utility Hub
 
-**v6.1** • Build 2026.08
+**v7** • Build 2026.09
 
-> 🔥 Rapid Fire • Jerk Tools • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix + Zoom fix • ESP HD per Category • Aimbot + FOV Circle + Team Check + Wall Check • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects
+> 🔥 Rapid Fire • Jerk Tools • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix + Zoom fix • ESP HD per Category • Aimbot + FOV Circle + Team Check + Wall Check • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects • Animated Themes • New Loading Screen
 
 </div>
 
@@ -38,7 +38,7 @@
 ## 🚀 Injection
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/anonymedu04/bkzhub/refs/heads/main/bkzHub.lua", true))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BkZ-dev/bkzhub/refs/heads/main/bkzHub.lua", true))()
 ```
 
 > ⚠️ Paste the full script into your executor. Requires a **Lua 5.1 compatible executor** (Synapse, ScriptWare, Krnl, Fluxus, Matcha, etc.).
@@ -78,12 +78,9 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 | Section | Features |
 |:---|:---|
-| **Targeting** | Search bar to find any player by name or display name, with live refresh dropdown |
-| **Actions** | Spectate, Stop Spectate, TP Player to Me, TP Me to Player, Chat Spy (targeted or all players) |
-| **🎭 Local Visual Fun** | Sit All, Kill All, Freeze All, Unfreeze All, Remove All Tools, TP All to Me — **client-side visual only** (does not affect other players' game) |
+| **Targeting** | Search bar to find any player by name or display name, with live refresh dropdown — click a selected player again to **deselect** |
+| **Actions** | Spectate, Stop Spectate, TP Player to Me, TP Me to Player, Chat Spy (targeted or all players) — auto-stops spectate + notifies when your target leaves, and re-spectates them if they rejoin |
 | **🎤 Voice Chat** | Activate VC Anti-Ban + custom mute keybind (keyboard or mouse) |
-
-> 💡 The "Local Visual Fun" section is for **fun only** — changes are local to your client and won't disrupt other players.
 
 </details>
 
@@ -334,6 +331,19 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ---
 
+## 🔥 What's New in v7
+
+| Feature | Description |
+|:---|:---|
+| **🎨 Animated Themes** | The menu now breathes with your theme — animated color-shifting gradient, pulsing border, header shimmer, and a glowing logo badge, all recoloring live when you switch themes |
+| **⚡ New Loading Screen** | Redesigned with an animated ⚡ logo + pulsing halo, version badge, title shimmer, rotating spinner, and dynamic emoji status messages |
+| **🎯 Targeting rework** | Click a selected player again to **deselect**; deselecting stops spectate; when your target leaves you get a notification, auto-deselect, and auto re-spectate/re-select if they rejoin |
+| **🗑 Local Visual Fun removed** | The client-side "visual only" buttons (Sit/Kill/Freeze/TP All) have been removed |
+| **🌀 Jerk Tools fix** | Now uses relative motion in `Stepped` so the tool actually jerks in your hand instead of fighting the weld |
+| **💾 Toggle auto-save** | Toggling any option now saves the config immediately — Goku TP / Infinite Jump no longer come back ON after re-injecting |
+
+---
+
 ## 🔥 What's New in v6.1
 
 | Feature | Description |
@@ -476,7 +486,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 |:---|:---|
 | 👑 **Owner** | bkz |
 | 🤝 **Contributors** | All people who use this menu ❤️ |
-| 📦 **Version** | **6.1** (Build 2026.08) |
+| 📦 **Version** | **7** (Build 2026.09) |
 
 ---
 
