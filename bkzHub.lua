@@ -774,16 +774,17 @@ logoBadgeStroke.Transparency = 0.4
 -- Pulsing glow behind the logo badge
 local logoGlow = Instance.new("Frame", header)
 logoGlow.Name = "logoGlow"
-logoGlow.Size = UDim2.new(0, 44, 0, 44)
-logoGlow.Position = UDim2.new(0, 9, 0.5, -22)
+logoGlow.Size = UDim2.new(0, 38, 0, 38)
+logoGlow.Position = UDim2.new(0, 12, 0.5, -19)
+logoGlow.AnchorPoint = Vector2.new(0, 0.5)
 logoGlow.BackgroundColor3 = currentTheme.Accent
-logoGlow.BackgroundTransparency = 0.7
+logoGlow.BackgroundTransparency = 0.5
 logoGlow.BorderSizePixel = 0
-logoGlow.ZIndex = 2
+logoGlow.ZIndex = 4
 Instance.new("UICorner", logoGlow).CornerRadius = UDim.new(0, 12)
 TweenService:Create(logoGlow, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-	BackgroundTransparency = 0.45,
-	Size = UDim2.new(0, 50, 0, 50)
+	BackgroundTransparency = 0.1,
+	Size = UDim2.new(0, 46, 0, 46)
 }):Play()
 logoText = Instance.new("TextLabel", logoBadge)
 logoText.Size = UDim2.new(1, 0, 1, 0)
@@ -841,8 +842,8 @@ lockBtn.Size = UDim2.new(0, 30, 0, 30)
 lockBtn.Position = UDim2.new(1, -74, 0.5, -15)
 lockBtn.BackgroundColor3 = currentTheme.Button
 lockBtn.TextColor3 = Color3.new(1,1,1)
-lockBtn.Font = Enum.Font.GothamBold
-lockBtn.TextSize = 13
+lockBtn.Font = Enum.Font.GothamBlack
+lockBtn.TextSize = 14
 lockBtn.BorderSizePixel = 0
 Instance.new("UICorner", lockBtn).CornerRadius = UDim.new(0, 8)
 lockBtn.MouseEnter:Connect(playHover)
@@ -851,17 +852,21 @@ lockBtn.MouseButton1Click:Connect(function()
 	interfaceLocked = not interfaceLocked
 	lockBtn.Text = interfaceLocked and "🔒" or "🔓"
 	lockBtn.BackgroundColor3 = interfaceLocked and currentTheme.Success or currentTheme.Button
+	-- Toggle dragging
+	if main then
+		main.Draggable = not interfaceLocked
+	end
 	showNotification(interfaceLocked and "🔒 Interface locked" or "🔓 Interface unlocked", 1.5)
 end)
 
 
 closeBtn = Instance.new("TextButton", header)
-closeBtn.Text = "✕"
+closeBtn.Text = "X"
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -38, 0.5, -15)
 closeBtn.BackgroundColor3 = currentTheme.Danger
 closeBtn.TextColor3 = Color3.new(1,1,1)
-closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Font = Enum.Font.GothamBlack
 closeBtn.TextSize = 14
 closeBtn.BorderSizePixel = 0
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
@@ -1614,6 +1619,14 @@ function selectPlayer(p)
 	end
 
 	targetPlayer = p
+	-- Auto-spectate: if we were spectating someone, switch to the new target
+	if spectatingPlayer then
+		spectatingPlayer = p
+		if p.Character then
+			local hum = p.Character:FindFirstChildOfClass("Humanoid")
+			if hum then workspace.CurrentCamera.CameraSubject = hum end
+		end
+	end
 	searchBox.Text = p.Name
 	searchBox.TextColor3 = currentTheme.Text
 	TweenService:Create(ddList, TweenInfo.new(0.15), {Size = UDim2.new(1,0,0,0)}):Play()
@@ -1841,6 +1854,108 @@ createBtn(pages.Player, "🚀  TP Me to Player", currentTheme.Button, 14, functi
 	local theirHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 	if myHRP and theirHRP then
 		pcall(function() myHRP.CFrame = theirHRP.CFrame * CFrame.new(2, 2, 0) end)
+	end
+end)
+-- Helper: check if player collisions are active in this game
+targetInvisStorage = {}
+
+local function hasPlayerCollisions()
+	-- Check if any part of our own character can collide (meaning collisions are on)
+	local char = player.Character
+	if not char then return true end -- assume yes if no character
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if hrp then return hrp.CanCollide end
+	return true
+end
+
+createBtn(pages.Player, "🧊  Freeze Target", currentTheme.Button, 15, function()
+	if not hasPlayerCollisions() then
+		showNotification("⚠  Collisions désactivées dans ce jeu — Freeze impossible", 3)
+		return
+	end
+	if not targetPlayer or not targetPlayer.Character then return end
+	local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		pcall(function()
+			hrp.Anchored = true
+			hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+			hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+		end)
+		showNotification("🧊  " .. targetPlayer.Name .. " gelé", 3)
+	end
+end)
+createBtn(pages.Player, "♻  Unfreeze Target", currentTheme.Button, 16, function()
+	if not targetPlayer or not targetPlayer.Character then return end
+	local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		pcall(function() hrp.Anchored = false end)
+		showNotification("♻  " .. targetPlayer.Name .. " dégelé", 3)
+	end
+end)
+createBtn(pages.Player, "👻  Invisible Target", currentTheme.Button, 17, function()
+	if not targetPlayer or not targetPlayer.Character then return end
+	local char = targetPlayer.Character
+	-- Save originals before making invisible
+	targetInvisStorage[targetPlayer.UserId] = {}
+	for _, part in ipairs(char:GetDescendants()) do
+		if part:IsA("BasePart") then
+			targetInvisStorage[targetPlayer.UserId][part] = { Transparency = part.Transparency, LTM = part.LocalTransparencyModifier, CanCollide = part.CanCollide }
+			pcall(function()
+				part.Transparency = 1
+				part.LocalTransparencyModifier = 1
+				part.CanCollide = false
+			end)
+		end
+		if part:IsA("Decal") then
+			pcall(function() part.Transparency = 1 end)
+		end
+	end
+	showNotification("👻  " .. targetPlayer.Name .. " rendu invisible", 3)
+end)
+createBtn(pages.Player, "👁  Uninvisible Target", currentTheme.Button, 17.5, function()
+	if not targetPlayer or not targetPlayer.Character then return end
+	local saved = targetInvisStorage[targetPlayer.UserId]
+	if saved then
+		for part, data in pairs(saved) do
+			if part and part.Parent then
+				pcall(function()
+					part.Transparency = data.Transparency
+					part.LocalTransparencyModifier = data.LTM
+					part.CanCollide = data.CanCollide
+				end)
+			end
+		end
+		targetInvisStorage[targetPlayer.UserId] = nil
+	end
+	showNotification("👁  " .. targetPlayer.Name .. " rendu visible", 3)
+end)
+createBtn(pages.Player, "🚀  Fling Target", currentTheme.Danger, 18, function()
+	if not hasPlayerCollisions() then
+		showNotification("⚠  Collisions désactivées dans ce jeu — Fling impossible", 3)
+		return
+	end
+	if not targetPlayer or not targetPlayer.Character then return end
+	local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+	local hum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+	if hrp and hum then
+		pcall(function()
+			hrp.Anchored = false
+			hrp.AssemblyLinearVelocity = Vector3.new(0, 250, 0)
+			hrp.AssemblyAngularVelocity = Vector3.new(9999, 9999, 9999)
+		end)
+		showNotification("🚀  " .. targetPlayer.Name .. " flingué", 3)
+	end
+end)
+createBtn(pages.Player, "🛑  Stop Fling", currentTheme.Button, 19, function()
+	if not targetPlayer or not targetPlayer.Character then return end
+	local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		pcall(function()
+			hrp.Anchored = false
+			hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+			hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+		end)
+		showNotification("🛑  Fling arrêté sur " .. targetPlayer.Name, 3)
 	end
 end)
 
@@ -2608,14 +2723,33 @@ local function setInvisible(char, on)
 	for _, part in ipairs(char:GetDescendants()) do
 		if part:IsA("BasePart") then
 			if on then
-				if not invisibleParts[part] then invisibleParts[part] = part.Transparency end
+				-- Store original values
+				if not invisibleParts[part] then
+					invisibleParts[part] = { Transparency = part.Transparency, LTM = part.LocalTransparencyModifier }
+				end
 				part.Transparency = 1
+				part.LocalTransparencyModifier = 1
+				-- Also hide accessories/meshes
+				for _, child in ipairs(part:GetChildren()) do
+					if child:IsA("Accessory") or child:IsA("ShirtGraphic") then
+						child:FindFirstChildOfClass("Part").LocalTransparencyModifier = 1
+					end
+				end
 			else
 				if invisibleParts[part] then
-					pcall(function() part.Transparency = invisibleParts[part] end)
+					pcall(function()
+						part.Transparency = invisibleParts[part].Transparency
+						part.LocalTransparencyModifier = invisibleParts[part].LTM
+					end)
 					invisibleParts[part] = nil
 				end
 			end
+		end
+		-- Also handle Decals/Textures on mesh faces
+		if on and part:IsA("Decal") then
+			part.Transparency = 1
+		elseif not on and part:IsA("Decal") and part.Name == "face" then
+			part.Transparency = 0
 		end
 	end
 end
@@ -2689,34 +2823,6 @@ createSlider(pages.Personal, "⏱  Fire Interval (ms)", 50, 500, 100, 26, functi
 	rapidFireInterval = val / 1000
 end)
 
-jerkToolsEnabled = false
-jerkToolsConn = nil
-
-createToggle(pages.Personal, "🌀  Jerk Tools", 32, function(state)
-	jerkToolsEnabled = state
-	if state then
-		jerkToolsConn = RunService.Stepped:Connect(function()
-			if not jerkToolsEnabled then return end
-			local char = player.Character
-			if not char then return end
-			for _, tool in ipairs(char:GetChildren()) do
-				if tool:IsA("Tool") then
-					pcall(function()
-						local handle = tool:FindFirstChild("Handle")
-						if not handle then return end
-						local t = os.clock()
-						-- Rapid up/down "jerking" motion (relative to the handle so the weld keeps it in hand)
-						local pump = math.sin(t * 24) * 0.55
-						local tilt = math.sin(t * 24 + 1) * 0.4
-						handle.CFrame = handle.CFrame * CFrame.new(0, pump, 0) * CFrame.Angles(tilt, 0, 0)
-					end)
-				end
-			end
-		end)
-	else
-		if jerkToolsConn then jerkToolsConn:Disconnect(); jerkToolsConn = nil end
-	end
-end, "jerkTools")
 
 
 autoParryEnabled = false
@@ -5791,7 +5897,7 @@ featLabel = Instance.new("TextLabel", verFrame)
 featLabel.Size = UDim2.new(1, -12, 0, 16)
 featLabel.Position = UDim2.new(0, 0, 0, 58)
 featLabel.BackgroundTransparency = 1
-featLabel.Text = "🔥 Rapid Fire • Jerk Tools • Invisible • Shader HD"
+featLabel.Text = "🔥 Rapid Fire • Invisible • Shader HD • Server Freeze"
 featLabel.TextColor3 = currentTheme.SubText
 featLabel.Font = Enum.Font.Gotham
 featLabel.TextSize = 10

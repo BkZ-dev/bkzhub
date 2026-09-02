@@ -6,7 +6,7 @@
 
 **v7** • Build 2026.09
 
-> 🔥 Rapid Fire • Jerk Tools • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix + Zoom fix • ESP HD per Category • Aimbot + FOV Circle + Team Check + Wall Check • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects • Animated Themes • New Loading Screen
+> 🔥 Rapid Fire • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix + Zoom fix • ESP HD per Category • Aimbot + FOV Circle + Team Check + Wall Check • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects • Animated Themes • New Loading Screen
 
 </div>
 
@@ -79,7 +79,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 | Section | Features |
 |:---|:---|
 | **Targeting** | Search bar to find any player by name or display name, with live refresh dropdown — click a selected player again to **deselect** |
-| **Actions** | Spectate, Stop Spectate, TP Player to Me, TP Me to Player, Chat Spy (targeted or all players) — auto-stops spectate + notifies when your target leaves, and re-spectates them if they rejoin |
+| **Actions** | Spectate, Stop Spectate, TP Player to Me, TP Me to Player, **Freeze Target**, **Unfreeze Target**, **Invisible Target**, **Fling Target**, Chat Spy — auto-spectate switches to new target, auto-stops + notifies when target leaves |
 | **🎤 Voice Chat** | Activate VC Anti-Ban + custom mute keybind (keyboard or mouse) |
 
 </details>
@@ -100,7 +100,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 | **👁 Collision & Visual** | Noclip — walk through walls (rewritten in v6: no more platform glitch) |
 | **🛡 Survival** | God Mode (invincible), Anti-Kick Bypass, No Fall Damage, Anti-Tool Grab, Anti-Cheat Bypass, Infinite Jump |
 | **🎯 Combat** | Unlimited Ammo, Instant Reload, No Recoil (camera + tool values), Auto Parry |
-| **🧪 Extra** | **Invisible**, **Rapid Fire** (with interval slider), **Jerk Tools** animation |
+| **🧪 Extra** | **Invisible** (server-side), **Rapid Fire** (with interval slider) |
 | **📐 Appearance** | Character Size adjustable (scale up/down) |
 | **💥 Chaos & Fun** | NUKE MODE (propulsion + explosion), Explode in Place, Reset Character |
 
@@ -337,9 +337,13 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 |:---|:---|
 | **🎨 Animated Themes** | The menu now breathes with your theme — animated color-shifting gradient, pulsing border, header shimmer, and a glowing logo badge, all recoloring live when you switch themes |
 | **⚡ New Loading Screen** | Redesigned with an animated ⚡ logo + pulsing halo, version badge, title shimmer, rotating spinner, and dynamic emoji status messages |
-| **🎯 Targeting rework** | Click a selected player again to **deselect**; deselecting stops spectate; when your target leaves you get a notification, auto-deselect, and auto re-spectate/re-select if they rejoin |
+| **🎯 Targeting rework** | Click a selected player again to **deselect**; deselecting stops spectate; when your target leaves you get a notification, auto-deselect, and auto re-spectate/re-select if they rejoin; **auto-spectate switches** to new target |
+| **🧊 Server Freeze Target** | Anchor any player's character (replicated to server) |
+| **👻 Invisible Target** | Make any targeted player invisible (uses `LocalTransparencyModifier`) |
+| **🚀 Fling Target** | Launch a targeted player into the sky with angular velocity |
+| **👻 Invisible improved** | Now uses `LocalTransparencyModifier` (replicated to server — others can't see you either) |
 | **🗑 Local Visual Fun removed** | The client-side "visual only" buttons (Sit/Kill/Freeze/TP All) have been removed |
-| **🌀 Jerk Tools fix** | Now uses relative motion in `Stepped` so the tool actually jerks in your hand instead of fighting the weld |
+| **🗑 Jerk Tools removed** | Removed — was broken and could not be fixed properly |
 | **💾 Toggle auto-save** | Toggling any option now saves the config immediately — Goku TP / Infinite Jump no longer come back ON after re-injecting |
 
 ---
@@ -451,7 +455,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 - ✅ Rapid fire interval
 - ✅ **Emotes**: animation speed, all emote toggle states
 - ✅ Background animation state
-- ✅ All toggle states (God Mode, Fly, Noclip, Invisible, Rapid Fire, Jerk Tools, Advanced Shader, ESP types, Menu Effects, Auto Save All, etc.)
+- ✅ All toggle states (God Mode, Fly, Noclip, Invisible, Rapid Fire, Advanced Shader, ESP types, Menu Effects, Auto Save All, etc.)
 
 ---
 
