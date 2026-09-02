@@ -717,12 +717,8 @@ mainGradAnim.Transparency = NumberSequence.new({
 	NumberSequenceKeypoint.new(0.5, 0.92),
 	NumberSequenceKeypoint.new(1, 1)
 })
-TweenService:Create(mainGradAnim, TweenInfo.new(3.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-	Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 1),
-		NumberSequenceKeypoint.new(0.5, 0.85),
-		NumberSequenceKeypoint.new(1, 1)
-	})
+TweenService:Create(mainGradAnim, TweenInfo.new(4.0, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1), {
+	Rotation = 270
 }):Play()
 
 
