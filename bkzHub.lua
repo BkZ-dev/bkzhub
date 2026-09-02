@@ -2567,18 +2567,20 @@ createToggle(pages.Personal, "🌀  Jerk Tools", 32, function(state)
 			if not jerkToolsEnabled then return end
 			local char = player.Character
 			if not char then return end
+			local hrp = char:FindFirstChild("HumanoidRootPart")
 			for _, tool in ipairs(char:GetChildren()) do
 				if tool:IsA("Tool") then
 					pcall(function()
 						local handle = tool:FindFirstChild("Handle")
 						if not handle then return end
 						local t = os.clock()
-						local pos = handle.Position
-						local rot = CFrame.Angles(
-							math.sin(t * 40) * 0.12,
-							math.sin(t * 40 + 1) * 0.12,
-							math.sin(t * 40 + 2) * 0.12
-						)
+						-- Rapid up/down "jerking" motion along the character's up axis
+						local pump = math.sin(t * 22) * 0.9
+						local base = hrp and hrp.Position or handle.Position
+						local pos = base + Vector3.new(0, 1.2 + pump, 0)
+						-- Slight tilt back and forth for a natural jerk feel
+						local tilt = math.sin(t * 22 + 1) * 0.35
+						local rot = CFrame.Angles(tilt, 0, 0)
 						handle.CFrame = CFrame.new(pos) * rot
 					end)
 				end
@@ -4820,13 +4822,8 @@ espState = {
 	botSnaplines = false,
 	botHeadDot   = false,
 	selfESP       = false,
+	selfCham      = false,
 }
-espObjects      = {}
-espBotObjects   = {}
-espSelfObjects  = {}
-espConns        = {}
-espBotConns     = {}
-espSelfConns    = {}
 
 ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
 ESP_COLOR_ENEMY = Color3.fromRGB(255, 40, 50)
@@ -4841,38 +4838,115 @@ ESP_BOX_STYLE = "corners"
 ESP_SKELETON_WIDTH = 0.15
 ESP_HEAD_DOT = false
 
+-- ============================================================
+--  ESP ENGINE (native Drawing API — performant & discreet)
+--  No instances are created in the workspace; everything is
+--  drawn on screen via Drawing objects updated each frame.
+-- ============================================================
 
-function clearESPFor(p)
-	if espObjects[p] then
-		for _, obj in ipairs(espObjects[p]) do
-			pcall(function() if obj and obj.Parent then obj:Destroy() end end)
-		end
-		espObjects[p] = nil
+local ESP_RENDER = Enum.RenderPriority.Camera.Value
+
+local SKEL_R15 = {
+	{"Head", "UpperTorso"},
+	{"UpperTorso", "LowerTorso"},
+	{"LowerTorso", "LeftUpperLeg"},
+	{"LeftUpperLeg", "LeftLowerLeg"},
+	{"LeftLowerLeg", "LeftFoot"},
+	{"LowerTorso", "RightUpperLeg"},
+	{"RightUpperLeg", "RightLowerLeg"},
+	{"RightLowerLeg", "RightFoot"},
+	{"UpperTorso", "LeftUpperArm"},
+	{"LeftUpperArm", "LeftLowerArm"},
+	{"LeftLowerArm", "LeftHand"},
+	{"UpperTorso", "RightUpperArm"},
+	{"RightUpperArm", "RightLowerArm"},
+	{"RightLowerArm", "RightHand"},
+}
+local SKEL_R6 = {
+	{"Head", "Torso"},
+	{"Torso", "Left Arm"},
+	{"Torso", "Right Arm"},
+	{"Torso", "Left Leg"},
+	{"Torso", "Right Leg"},
+}
+
+local espDraw  = {}   -- [player]  -> draw set
+local espBotDraw = {} -- [model]   -> draw set
+local espSelfDraw = nil
+
+local function newDrawSet()
+	local set = {
+		box      = Drawing.new("Square"),
+		boxFill  = Drawing.new("Square"),
+		name     = Drawing.new("Text"),
+		hpText   = Drawing.new("Text"),
+		hpBg     = Drawing.new("Square"),
+		hpBar    = Drawing.new("Square"),
+		tracer   = Drawing.new("Line"),
+		headDot  = Drawing.new("Circle"),
+		corners  = {},
+		skeleton = {},
+	}
+	set.box.Thickness = 1.5
+	set.box.Filled = false
+	set.box.Visible = false
+
+	set.boxFill.Filled = true
+	set.boxFill.Visible = false
+
+	set.name.Size = 13
+	set.name.Center = true
+	set.name.Outline = true
+	set.name.OutlineColor = Color3.new(0, 0, 0)
+	set.name.Visible = false
+
+	set.hpText.Size = 11
+	set.hpText.Center = true
+	set.hpText.Outline = true
+	set.hpText.OutlineColor = Color3.new(0, 0, 0)
+	set.hpText.Visible = false
+
+	set.hpBg.Filled = true
+	set.hpBg.Color = Color3.fromRGB(15, 15, 15)
+	set.hpBg.Visible = false
+
+	set.hpBar.Filled = true
+	set.hpBar.Visible = false
+
+	set.tracer.Thickness = 1.5
+	set.tracer.Visible = false
+
+	set.headDot.Thickness = 1
+	set.headDot.NumSides = 24
+	set.headDot.Visible = false
+
+	for i = 1, 8 do
+		local l = Drawing.new("Line")
+		l.Thickness = 3
+		l.Visible = false
+		set.corners[i] = l
 	end
-	if espConns[p] then
-		for _, c in ipairs(espConns[p]) do
-			pcall(function() c:Disconnect() end)
-		end
-		espConns[p] = nil
+	for i = 1, 14 do
+		local l = Drawing.new("Line")
+		l.Thickness = 1.5
+		l.Visible = false
+		set.skeleton[i] = l
 	end
+	return set
 end
 
-
-function clearAllBotESP()
-	for model, objs in pairs(espBotObjects) do
-		for _, obj in ipairs(objs) do
-			pcall(function() if obj and obj.Parent then obj:Destroy() end end)
-		end
+local function removeDrawSet(set)
+	if not set then return end
+	for _, d in ipairs({set.box, set.boxFill, set.name, set.hpText, set.hpBg, set.hpBar, set.tracer, set.headDot}) do
+		pcall(function() d:Remove() end)
 	end
-	espBotObjects = {}
-	for model, conns in pairs(espBotConns) do
-		for _, c in ipairs(conns) do
-			pcall(function() c:Disconnect() end)
-		end
+	for _, l in ipairs(set.corners) do
+		pcall(function() l:Remove() end)
 	end
-	espBotConns = {}
+	for _, l in ipairs(set.skeleton) do
+		pcall(function() l:Remove() end)
+	end
 end
-
 
 function isBot(model)
 	if not model:IsA("Model") then return false end
@@ -4880,252 +4954,70 @@ function isBot(model)
 	if not hum then return false end
 	local hrp = model:FindFirstChild("HumanoidRootPart")
 	if not hrp then return false end
-	
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p.Character == model then return false end
 	end
 	return true
 end
 
-
-function buildHealthBar(hrp, hum, bbName, objs, guardKey, conns)
-	local bb = mkBB(hrp, bbName, 5, 54, 0)
-	bb.StudsOffset = Vector3.new(-1.3, 0, 0)
-	local bg = Instance.new("Frame", bb)
-	bg.Size                  = UDim2.new(1,0,1,0)
-	bg.BackgroundColor3      = Color3.fromRGB(20,20,20)
-	bg.BackgroundTransparency = 0.15
-	bg.BorderSizePixel       = 0
-	Instance.new("UICorner", bg).CornerRadius = UDim.new(1,0)
-	local fill = Instance.new("Frame", bg)
-	fill.AnchorPoint = Vector2.new(0,1)
-	fill.Position    = UDim2.new(0,0,1,0)
-	local p0 = math.clamp(hum.Health / math.max(hum.MaxHealth,1), 0, 1)
-	fill.Size             = UDim2.new(1,0,p0,0)
-	fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-p0)), math.floor(220*p0+35), 40)
-	fill.BorderSizePixel  = 0
-	Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
-	local c = hum.HealthChanged:Connect(function(h)
-		if guardKey and not espState[guardKey] then return end
-		local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
-		fill.Size             = UDim2.new(1,0,pct,0)
-		fill.BackgroundColor3 = Color3.fromRGB(math.floor(255*(1-pct)), math.floor(220*pct+35), 40)
-	end)
-	if conns then table.insert(conns, c) end
-	table.insert(objs, bb)
-	return c
+function clearESPFor(p)
+	local set = espDraw[p]
+	if set then removeDrawSet(set); espDraw[p] = nil end
+	clearChamsFor(p)
 end
 
+function clearAllBotESP()
+	for model, set in pairs(espBotDraw) do
+		removeDrawSet(set)
+	end
+	espBotDraw = {}
+	clearAllBotChams()
+end
+
+function clearSelfESP()
+	if espSelfDraw then removeDrawSet(espSelfDraw); espSelfDraw = nil end
+	clearSelfCham()
+end
+
+-- Build (or refresh) the draw set for a player
+function buildESPFor(p)
+	clearESPFor(p)
+	if p == player then return end
+	local char = p.Character
+	if not char then return end
+	if not char:FindFirstChildOfClass("Humanoid") then return end
+	if not (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")) then return end
+	espDraw[p] = newDrawSet()
+end
 
 function buildESPBot(model)
-	if espBotObjects[model] then return end
+	if espBotDraw[model] then return end
 	local hum = model:FindFirstChildOfClass("Humanoid")
-	local hrp = model:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
-
-	local color = ESP_COLOR_BOT
-	local objs  = {}
-	local conns = {}
-
-	if espState.botChams then
-		local old = model:FindFirstChild("ESP_BotHL")
-		if old then old:Destroy() end
-		local hl = Instance.new("Highlight", model)
-		hl.Name = "ESP_BotHL"
-		hl.FillColor = color
-		hl.OutlineColor = color
-		hl.FillTransparency = 0.7
-		hl.OutlineTransparency = 0
-		hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		table.insert(objs, hl)
-	end
-
-	if espState.botBoxes then
-		local bb = mkBB(hrp, "ESP_BotBox", 70, 100, 0)
-		bb.StudsOffset = Vector3.new(0, 0.3, 0)
-		bb.AlwaysOnTop = true
-		local bg = Instance.new("Frame", bb)
-		bg.Size = UDim2.new(1,0,1,0)
-		bg.BackgroundColor3 = color
-		bg.BackgroundTransparency = ESP_FILL_TRANSPARENCY
-		bg.BorderSizePixel = 0
-		Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 4)
-		local outline = Instance.new("UIStroke", bg)
-		outline.Color = color
-		outline.Thickness = 1.5
-		outline.Transparency = 0.15
-		if ESP_BOX_STYLE ~= "corners" then
-			outline.Thickness = 2
-		end
-		table.insert(objs, bb)
-	end
-
-	if espState.botHeadDot then
-		local head = model:FindFirstChild("Head")
-		if head then
-			local bb = mkBB(head, "ESP_BotHeadDot", 6, 6, 0)
-			local dot = Instance.new("Frame", bb)
-			dot.Size = UDim2.new(1,0,1,0)
-			dot.BackgroundColor3 = color
-			dot.BorderSizePixel = 0
-			Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
-			local glow = Instance.new("UIStroke", dot)
-			glow.Color = color
-			glow.Thickness = 1
-			glow.Transparency = 0.3
-			table.insert(objs, bb)
-		end
-	end
-
-	if espState.botNames then
-		local bb = mkBB(hrp, "ESP_BotName", 120, 18, 3.4)
-		mkLbl(bb, "[BOT] " .. model.Name, 10, color)
-		table.insert(objs, bb)
-	end
-
-if espState.botHealth and hum then
-		local bb  = mkBB(hrp, "ESP_BotHP", 90, 13, 2.7)
-		local lbl = mkLbl(bb, math.floor(hum.Health) .. " hp", 9,
-			Color3.fromRGB(80 + math.floor(175*(1 - hum.Health/math.max(hum.MaxHealth,1))),
-				200 - math.floor(150*(1 - hum.Health/math.max(hum.MaxHealth,1))), 50))
-		local c = hum.HealthChanged:Connect(function(h)
-			if not espState.botHealth then return end
-			local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
-			lbl.Text       = math.floor(h) .. " hp"
-			lbl.TextColor3 = Color3.fromRGB(80+math.floor(175*(1-pct)), 200-math.floor(150*(1-pct)), 50)
-		end)
-		table.insert(conns, c)
-		table.insert(objs, bb)
-	end
-
-	if espState.botHealthBar and hum then
-		buildHealthBar(hrp, hum, "ESP_BotBar", objs, "botHealthBar", conns)
-	end
-
-	if espState.botDistance then
-		local bb = mkBB(hrp, "ESP_BotDist", 70, 12, 2.1)
-		mkLbl(bb, "?m", 9, Color3.fromRGB(180,180,255))
-		table.insert(objs, bb)
-	end
-
-	if espState.botSkeletons then
-		local isR15 = model:FindFirstChild("UpperTorso") ~= nil
-		local skelFolder = Instance.new("Folder", workspace.Terrain)
-		skelFolder.Name = "ESP_BotSkel_" .. model.Name
-
-		local function makeBeam(part0, part1, attName)
-			local a0 = part0:FindFirstChild(attName) or Instance.new("Attachment", part0)
-			a0.Name = attName
-			local a1 = part1:FindFirstChild(attName) or Instance.new("Attachment", part1)
-			a1.Name = attName
-			local beam = Instance.new("Beam", skelFolder)
-			beam.Attachment0 = a0
-			beam.Attachment1 = a1
-			beam.FaceCamera = true
-			beam.Width0 = ESP_SKELETON_WIDTH
-			beam.Width1 = ESP_SKELETON_WIDTH
-			beam.Color = ColorSequence.new(color)
-			beam.Transparency = NumberSequence.new(0)
-			beam.LightEmission = 1
-			beam.LightInfluence = 0
-			beam.Brightness = 2
-			beam.ZIndex = 100
-			table.insert(objs, beam)
-		end
-
-		local function getPart(name) return model:FindFirstChild(name) end
-
-		if isR15 then
-			local head = getPart("Head")
-			local ut = getPart("UpperTorso")
-			local lt = getPart("LowerTorso")
-			local rua = getPart("RightUpperArm")
-			local rla = getPart("RightLowerArm")
-			local rh = getPart("RightHand")
-			local lua = getPart("LeftUpperArm")
-			local lla = getPart("LeftLowerArm")
-			local lh = getPart("LeftHand")
-			local rul = getPart("RightUpperLeg")
-			local rll = getPart("RightLowerLeg")
-			local rf = getPart("RightFoot")
-			local lul = getPart("LeftUpperLeg")
-			local lll = getPart("LeftLowerLeg")
-			local lf = getPart("LeftFoot")
-			if head and ut then makeBeam(head, ut, "ESP_BotSkel_Att") end
-			if ut and lt then makeBeam(ut, lt, "ESP_BotSkel_Att") end
-			if ut and rua then makeBeam(ut, rua, "ESP_BotSkel_Att") end
-			if rua and rla then makeBeam(rua, rla, "ESP_BotSkel_Att") end
-			if rla and rh then makeBeam(rla, rh, "ESP_BotSkel_Att") end
-			if ut and lua then makeBeam(ut, lua, "ESP_BotSkel_Att") end
-			if lua and lla then makeBeam(lua, lla, "ESP_BotSkel_Att") end
-			if lla and lh then makeBeam(lla, lh, "ESP_BotSkel_Att") end
-			if lt and rul then makeBeam(lt, rul, "ESP_BotSkel_Att") end
-			if rul and rll then makeBeam(rul, rll, "ESP_BotSkel_Att") end
-			if rll and rf then makeBeam(rll, rf, "ESP_BotSkel_Att") end
-			if lt and lul then makeBeam(lt, lul, "ESP_BotSkel_Att") end
-			if lul and lll then makeBeam(lul, lll, "ESP_BotSkel_Att") end
-			if lll and lf then makeBeam(lll, lf, "ESP_BotSkel_Att") end
-		else
-			local head = getPart("Head")
-			local torso = getPart("Torso")
-			local la = getPart("Left Arm")
-			local ra = getPart("Right Arm")
-			local ll = getPart("Left Leg")
-			local rl = getPart("Right Leg")
-			if head and torso then makeBeam(head, torso, "ESP_BotSkel_Att") end
-			if torso and la then makeBeam(torso, la, "ESP_BotSkel_Att") end
-			if torso and ra then makeBeam(torso, ra, "ESP_BotSkel_Att") end
-			if torso and ll then makeBeam(torso, ll, "ESP_BotSkel_Att") end
-			if torso and rl then makeBeam(torso, rl, "ESP_BotSkel_Att") end
-		end
-		table.insert(objs, skelFolder)
-	end
-
-	if espState.botSnaplines then
-		local attTop = Instance.new("Attachment", hrp)
-		attTop.Name = "ESP_BotSnapTop"
-		attTop.Position = Vector3.new(0, -0.5, 0)
-		local attBot = Instance.new("Attachment", hrp)
-		attBot.Name = "ESP_BotSnapBot"
-		attBot.Position = Vector3.new(0, -6, 0)
-		local beam = Instance.new("Beam", workspace.Terrain)
-		beam.Attachment0 = attTop
-		beam.Attachment1 = attBot
-		beam.FaceCamera = false
-		beam.Width0 = 1.5
-		beam.Width1 = 0.3
-		beam.Color = ColorSequence.new(color)
-		beam.Transparency = NumberSequence.new(0.3)
-		beam.LightEmission = 1
-		beam.LightInfluence = 0
-		beam.Brightness = 2
-		beam.ZIndex = 100
-		table.insert(objs, attTop)
-		table.insert(objs, attBot)
-		table.insert(objs, beam)
-	end
-
-	espBotObjects[model] = objs
-	espBotConns[model]   = conns
-
-	model.AncestryChanged:Connect(function()
-		if not model.Parent then
-			for _, obj in ipairs(espBotObjects[model] or {}) do
-				pcall(function() if obj and obj.Parent then obj:Destroy() end end)
-			end
-			espBotObjects[model] = nil
-			for _, c in ipairs(espBotConns[model] or {}) do
-				pcall(function() c:Disconnect() end)
-			end
-			espBotConns[model] = nil
-		end
-	end)
+	if not hum then return end
+	if not (model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Torso")) then return end
+	espBotDraw[model] = newDrawSet()
 end
 
+function buildSelfESP()
+	clearSelfESP()
+	if not espState.selfESP then return end
+	local char = player.Character
+	if not char then return end
+	if not char:FindFirstChildOfClass("Humanoid") then return end
+	if not (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")) then return end
+	espSelfDraw = newDrawSet()
+end
+
+function refreshAllESP()
+	for _, p in ipairs(Players:GetPlayers()) do buildESPFor(p) end
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
+	if anyBot then refreshBotESP() end
+	buildSelfESP()
+end
 
 function refreshBotESP()
 	clearAllBotESP()
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
 	if not anyBot then return end
 	for _, model in ipairs(workspace:GetDescendants()) do
 		if isBot(model) then
@@ -5133,358 +5025,6 @@ function refreshBotESP()
 		end
 	end
 end
-
-
-function mkBB(parent, name, w, h, offsetY)
-	local bb = Instance.new("BillboardGui", parent)
-	bb.Name          = name
-	bb.AlwaysOnTop   = true
-	bb.Size          = UDim2.new(0, w, 0, h)
-	bb.StudsOffset   = Vector3.new(0, offsetY, 0)
-	bb.MaxDistance   = 0        
-	bb.LightInfluence = 0
-	bb.ResetOnSpawn  = false
-	return bb
-end
-
-
-function mkLbl(parent, txt, size, color)
-	local l = Instance.new("TextLabel", parent)
-	l.Size                  = UDim2.new(1,0,1,0)
-	l.BackgroundTransparency = 1
-	l.Text                  = txt
-	l.TextColor3            = color or Color3.new(1,1,1)
-	l.Font                  = Enum.Font.GothamBold
-	l.TextSize              = size or 10
-	l.TextStrokeTransparency = 0.1
-	l.TextStrokeColor3      = Color3.new(0,0,0)
-	l.TextScaled            = false
-	return l
-end
-
-function buildESPFor(p)
-	clearESPFor(p)
-	if p == player then return end
-	local char = p.Character
-	if not char then return end
-
-	local hum  = char:FindFirstChildOfClass("Humanoid")
-	local hrp  = char:FindFirstChild("HumanoidRootPart")
-	local head = char:FindFirstChild("Head")
-	if not hrp then return end
-
-	local isAlly = (player.Team ~= nil) and (p.Team == player.Team)
-	local color  = isAlly and ESP_COLOR_ALLY or ESP_COLOR_ENEMY
-	local objs   = {}
-	local conns  = {}
-
-	for _, part in ipairs(char:GetDescendants()) do
-		if part:IsA("BasePart") and part.Transparency >= 0.9 then
-			part.LocalTransparencyModifier = 0
-		end
-	end
-
-	
-	if espState.playerChams then
-		local old = char:FindFirstChild("ESP_Highlight")
-		if old then old:Destroy() end
-		local hl = Instance.new("Highlight", char)
-		hl.Name              = "ESP_Highlight"
-		hl.FillColor         = color
-		hl.OutlineColor      = Color3.new(1,1,1)
-		hl.FillTransparency  = 0.55
-		hl.OutlineTransparency = 0.2
-		hl.DepthMode         = Enum.HighlightDepthMode.AlwaysOnTop
-		
-		local hl2 = Instance.new("Highlight", char)
-		hl2.Name             = "ESP_Highlight2"
-		hl2.FillColor        = color
-		hl2.OutlineColor     = color
-		hl2.FillTransparency = 1
-		hl2.OutlineTransparency = 0.35
-		hl2.DepthMode        = Enum.HighlightDepthMode.AlwaysOnTop
-		table.insert(objs, hl)
-		table.insert(objs, hl2)
-	end
-
-	
-	if espState.playerBoxes then
-		local bb = mkBB(hrp, "ESP_Box", 70, 100, 0)
-		bb.StudsOffset = Vector3.new(0, 0.3, 0)
-		bb.AlwaysOnTop = true
-
-		local bg = Instance.new("Frame", bb)
-		bg.Size = UDim2.new(1,0,1,0)
-		bg.BackgroundColor3 = color
-		bg.BackgroundTransparency = ESP_FILL_TRANSPARENCY
-		bg.BorderSizePixel = 0
-		Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 4)
-
-		local outline = Instance.new("UIStroke", bg)
-		outline.Color = color
-		outline.Thickness = 1.5
-		outline.Transparency = 0.15
-
-		if ESP_BOX_STYLE == "corners" then
-			local CORNER = 18
-			local THICK  = 3.5
-			local corners = {
-				{x=0, y=0, w=CORNER, h=THICK},
-				{x=0, y=0, w=THICK,  h=CORNER},
-				{x=1, y=0, ox=-CORNER, w=CORNER, h=THICK},
-				{x=1, y=0, ox=-THICK,  w=THICK,  h=CORNER},
-				{x=0, y=1, oy=-THICK,  w=CORNER, h=THICK},
-				{x=0, y=1, oy=-CORNER, w=THICK,  h=CORNER},
-				{x=1, y=1, ox=-CORNER, oy=-THICK,  w=CORNER, h=THICK},
-				{x=1, y=1, ox=-THICK,  oy=-CORNER, w=THICK,  h=CORNER},
-			}
-			for _, c in ipairs(corners) do
-				local f = Instance.new("Frame", bb)
-				f.BorderSizePixel = 0
-				f.BackgroundColor3 = color
-				f.AnchorPoint = Vector2.new(c.x or 0, c.y or 0)
-				f.Position = UDim2.new(c.x or 0, c.ox or 0, c.y or 0, c.oy or 0)
-				f.Size = UDim2.new(0, c.w, 0, c.h)
-				Instance.new("UICorner", f).CornerRadius = UDim.new(0, 2)
-				local sh = Instance.new("UIStroke", f)
-				sh.Color = Color3.new(0,0,0)
-				sh.Thickness = 1.5
-				sh.Transparency = 0.4
-			end
-		else
-			outline.Thickness = 2
-		end
-
-		table.insert(objs, bb)
-	end
-
-	if espState.playerHeadDot and head then
-		local bb = mkBB(head, "ESP_HeadDot", 6, 6, 0)
-		local dot = Instance.new("Frame", bb)
-		dot.Size = UDim2.new(1,0,1,0)
-		dot.BackgroundColor3 = color
-		dot.BorderSizePixel = 0
-		Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
-		local glow = Instance.new("UIStroke", dot)
-		glow.Color = color
-		glow.Thickness = 1
-		glow.Transparency = 0.3
-		table.insert(objs, bb)
-	end
-
-	
-	if espState.playerNames then
-		local bb  = mkBB(hrp, "ESP_Name", 120, 18, 3.4)
-		local lbl = mkLbl(bb, (isAlly and "[A] " or "[E] ") .. p.Name, 10, color)
-		lbl.Text = (isAlly and "[A] " or "[E] ") .. p.Name
-		table.insert(objs, bb)
-	end
-
-	
-	if espState.playerHealth and hum then
-		local bb  = mkBB(hrp, "ESP_HP", 90, 13, 2.7)
-local lbl = mkLbl(bb, math.floor(hum.Health) .. " hp", 9,
-			Color3.fromRGB(80 + math.floor(175*(1 - hum.Health/math.max(hum.MaxHealth,1))),
-				200 - math.floor(150*(1 - hum.Health/math.max(hum.MaxHealth,1))), 50))
-		local c = hum.HealthChanged:Connect(function(h)
-			if not espState.playerHealth then return end
-			local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
-			lbl.Text       = math.floor(h) .. " hp"
-			lbl.TextColor3 = Color3.fromRGB(80+math.floor(175*(1-pct)), 200-math.floor(150*(1-pct)), 50)
-		end)
-		table.insert(conns, c)
-		table.insert(objs, bb)
-	end
-
-	
-	if espState.playerHealthBar and hum then
-		buildHealthBar(hrp, hum, "ESP_Bar", objs, "playerHealthBar", conns)
-	end
-
-	
-	if espState.playerDistance then
-		local bb = mkBB(hrp, "ESP_Dist", 70, 12, 2.1)
-		mkLbl(bb, "?m", 9, Color3.fromRGB(180,180,255))
-		table.insert(objs, bb)
-	end
-
-	
-	if espState.playerSkeletons then
-		local isR15 = char:FindFirstChild("UpperTorso") ~= nil
-
-		local skelFolder = Instance.new("Folder", workspace.Terrain)
-		skelFolder.Name = "ESP_Skel_" .. p.Name
-
-		local function makeBeam(part0, part1, attName)
-			local a0 = part0:FindFirstChild(attName) or Instance.new("Attachment", part0)
-			a0.Name = attName
-			local a1 = part1:FindFirstChild(attName) or Instance.new("Attachment", part1)
-			a1.Name = attName
-			local beam = Instance.new("Beam", skelFolder)
-			beam.Attachment0 = a0
-			beam.Attachment1 = a1
-			beam.FaceCamera = true
-			beam.Width0 = ESP_SKELETON_WIDTH
-			beam.Width1 = ESP_SKELETON_WIDTH
-			beam.Color = ColorSequence.new(color)
-			beam.Transparency = NumberSequence.new(0)
-			beam.LightEmission = 1
-			beam.LightInfluence = 0
-			beam.Brightness = 2
-			beam.ZIndex = 100
-			table.insert(objs, beam)
-		end
-
-		local function getPart(name)
-			return char:FindFirstChild(name)
-		end
-
-		if isR15 then
-			local head = getPart("Head")
-			local ut = getPart("UpperTorso")
-			local lt = getPart("LowerTorso")
-			local rua = getPart("RightUpperArm")
-			local rla = getPart("RightLowerArm")
-			local rh = getPart("RightHand")
-			local lua = getPart("LeftUpperArm")
-			local lla = getPart("LeftLowerArm")
-			local lh = getPart("LeftHand")
-			local rul = getPart("RightUpperLeg")
-			local rll = getPart("RightLowerLeg")
-			local rf = getPart("RightFoot")
-			local lul = getPart("LeftUpperLeg")
-			local lll = getPart("LeftLowerLeg")
-			local lf = getPart("LeftFoot")
-
-			if head and ut then makeBeam(head, ut, "ESP_Skel_Att") end
-			if ut and lt then makeBeam(ut, lt, "ESP_Skel_Att") end
-			if ut and rua then makeBeam(ut, rua, "ESP_Skel_Att") end
-			if rua and rla then makeBeam(rua, rla, "ESP_Skel_Att") end
-			if rla and rh then makeBeam(rla, rh, "ESP_Skel_Att") end
-			if ut and lua then makeBeam(ut, lua, "ESP_Skel_Att") end
-			if lua and lla then makeBeam(lua, lla, "ESP_Skel_Att") end
-			if lla and lh then makeBeam(lla, lh, "ESP_Skel_Att") end
-			if lt and rul then makeBeam(lt, rul, "ESP_Skel_Att") end
-			if rul and rll then makeBeam(rul, rll, "ESP_Skel_Att") end
-			if rll and rf then makeBeam(rll, rf, "ESP_Skel_Att") end
-			if lt and lul then makeBeam(lt, lul, "ESP_Skel_Att") end
-			if lul and lll then makeBeam(lul, lll, "ESP_Skel_Att") end
-			if lll and lf then makeBeam(lll, lf, "ESP_Skel_Att") end
-		else
-			local head = getPart("Head")
-			local torso = getPart("Torso")
-			local la = getPart("Left Arm")
-			local ra = getPart("Right Arm")
-			local ll = getPart("Left Leg")
-			local rl = getPart("Right Leg")
-
-			if head and torso then makeBeam(head, torso, "ESP_Skel_Att") end
-			if torso and la then makeBeam(torso, la, "ESP_Skel_Att") end
-			if torso and ra then makeBeam(torso, ra, "ESP_Skel_Att") end
-			if torso and ll then makeBeam(torso, ll, "ESP_Skel_Att") end
-			if torso and rl then makeBeam(torso, rl, "ESP_Skel_Att") end
-		end
-
-		table.insert(objs, skelFolder)
-
-		local hl2 = Instance.new("Highlight", char)
-		hl2.Name = "ESP_SkelHL"
-		hl2.FillTransparency = 1
-		hl2.OutlineColor = color
-		hl2.OutlineTransparency = 0.5
-		hl2.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		table.insert(objs, hl2)
-	end
-
-	if espState.playerSnaplines then
-		local attTop = Instance.new("Attachment", hrp)
-		attTop.Name = "ESP_SnapTop"
-		attTop.Position = Vector3.new(0, -0.5, 0)
-		local attBot = Instance.new("Attachment", hrp)
-		attBot.Name = "ESP_SnapBot"
-		attBot.Position = Vector3.new(0, -6, 0)
-		local beam = Instance.new("Beam", workspace.Terrain)
-		beam.Attachment0 = attTop
-		beam.Attachment1 = attBot
-		beam.FaceCamera = false
-		beam.Width0 = 1.5
-		beam.Width1 = 0.3
-		beam.Color = ColorSequence.new(color)
-		beam.Transparency = NumberSequence.new(0.3)
-		beam.LightEmission = 1
-		beam.LightInfluence = 0
-		beam.Brightness = 2
-		beam.ZIndex = 100
-		table.insert(objs, attTop)
-		table.insert(objs, attBot)
-		table.insert(objs, beam)
-	end
-
-	espObjects[p] = objs
-	espConns[p]   = conns
-end
-
-
-function updateDistances()
-	local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-	if not myHRP then return end
-
-	
-	for p, objs in pairs(espObjects) do
-		if p.Character then
-			local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-			if hrp then
-				local dist = math.floor((hrp.Position - myHRP.Position).Magnitude)
-				local visible = (ESP_MAX_DIST_PLAYER == 0) or (dist <= ESP_MAX_DIST_PLAYER)
-				for _, obj in ipairs(objs) do
-					if obj:IsA("BillboardGui") then
-						obj.Enabled = visible
-						if obj.Name == "ESP_Dist" then
-							local lbl = obj:FindFirstChildOfClass("TextLabel")
-							if lbl then lbl.Text = dist .. "m" end
-						end
-					elseif obj:IsA("Highlight") then
-						obj.Enabled = visible
-					end
-				end
-			end
-		end
-	end
-
-	
-	for model, objs in pairs(espBotObjects) do
-		if model and model.Parent then
-			local hrp = model:FindFirstChild("HumanoidRootPart")
-			if hrp then
-				local dist = math.floor((hrp.Position - myHRP.Position).Magnitude)
-				local visible = (ESP_MAX_DIST_BOT == 0) or (dist <= ESP_MAX_DIST_BOT)
-				for _, obj in ipairs(objs) do
-					if obj:IsA("BillboardGui") then
-						obj.Enabled = visible
-						if obj.Name == "ESP_BotDist" then
-							local lbl = obj:FindFirstChildOfClass("TextLabel")
-							if lbl then lbl.Text = dist .. "m" end
-						end
-					elseif obj:IsA("Highlight") then
-						obj.Enabled = visible
-					end
-				end
-			end
-		end
-	end
-end
-
-
-function refreshAllESP()
-	for _, p in ipairs(Players:GetPlayers()) do
-		buildESPFor(p)
-	end
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
-	if anyBot then refreshBotESP() end
-	buildSelfESP()
-end
-
-
 
 function toggleESP(key, state)
 	espState[key] = state
@@ -5497,59 +5037,330 @@ function toggleESP(key, state)
 	end
 end
 
-
-function clearSelfESP()
-	for _, obj in ipairs(espSelfObjects) do
-		pcall(function() if obj and obj.Parent then obj:Destroy() end end)
-	end
-	espSelfObjects = {}
-	for _, c in ipairs(espSelfConns) do
-		pcall(function() c:Disconnect() end)
-	end
-	espSelfConns = {}
+function updateDistances()
+	-- no-op in Drawing engine (distance computed live each frame)
 end
 
+-- ============================================================
+--  Per-frame ESP renderer
+-- ============================================================
 
-function buildSelfESP()
-	clearSelfESP()
-	if not espState.selfESP then return end
-	local char = player.Character
-	if not char then return end
-	local hum  = char:FindFirstChildOfClass("Humanoid")
-	local hrp  = char:FindFirstChild("HumanoidRootPart")
-	if not hrp or not hum then return end
+local function worldToScreen(pos)
+	local v, onScreen = workspace.CurrentCamera:WorldToViewportPoint(pos)
+	return Vector2.new(v.X, v.Y), onScreen and v.Z > 0
+end
 
-	local color = ESP_COLOR_SELF
-	local objs  = {}
-	local conns = {}
+local function drawTarget(set, root, head, hum, color, isSelf, name, isAlly, maxDist, state)
+	if not set then return end
 
-	local bb = mkBB(hrp, "ESP_SelfName", 140, 18, -2.5)
-	mkLbl(bb, player.Name .. " (You)", 10, color)
-	table.insert(objs, bb)
+	local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	local dist = 0
+	if myHRP and root then
+		dist = (root.Position - myHRP.Position).Magnitude
+	end
+	local inRange = (maxDist == 0) or (dist <= maxDist)
 
-	local hpBB = mkBB(hrp, "ESP_SelfHP", 90, 13, -3.2)
-	local hpLbl = mkLbl(hpBB, math.floor(hum.Health) .. " hp", 9, color)
-	local c = hum.HealthChanged:Connect(function(h)
-		if not espState.selfESP then return end
-		local pct = math.clamp(h / math.max(hum.MaxHealth,1), 0, 1)
-		hpLbl.Text       = math.floor(h) .. " hp"
-		hpLbl.TextColor3 = Color3.fromRGB(80+math.floor(175*(1-pct)), 200-math.floor(150*(1-pct)), 50)
-	end)
-	table.insert(conns, c)
-	table.insert(objs, hpBB)
+	local rootPos, rootOn = worldToScreen(root.Position)
+	local headPos, headOn = worldToScreen(head.Position + Vector3.new(0, 0.6, 0))
+	local legPos, legOn = worldToScreen(root.Position - Vector3.new(0, 3.2, 0))
 
-	local hl = Instance.new("Highlight", char)
-	hl.Name = "ESP_SelfHL"
+	local visible = rootOn and headOn and legOn and inRange
+	local h = math.abs(headPos.Y - legPos.Y)
+	local w = h * 0.6
+	local topLeft = Vector2.new(rootPos.X - w / 2, headPos.Y)
+
+	-- Box
+	if state.boxes and visible then
+		if ESP_BOX_STYLE == "corners" then
+			set.box.Visible = false
+			set.boxFill.Visible = false
+			local c = 14
+			local t = 3
+			local segs = {
+				{topLeft, topLeft + Vector2.new(c, 0)},
+				{topLeft, topLeft + Vector2.new(0, c)},
+				{Vector2.new(topLeft.X + w, topLeft.Y), Vector2.new(topLeft.X + w - c, topLeft.Y)},
+				{Vector2.new(topLeft.X + w, topLeft.Y), Vector2.new(topLeft.X + w, topLeft.Y + c)},
+				{Vector2.new(topLeft.X, topLeft.Y + h), Vector2.new(topLeft.X + c, topLeft.Y + h)},
+				{Vector2.new(topLeft.X, topLeft.Y + h), Vector2.new(topLeft.X, topLeft.Y + h - c)},
+				{Vector2.new(topLeft.X + w, topLeft.Y + h), Vector2.new(topLeft.X + w - c, topLeft.Y + h)},
+				{Vector2.new(topLeft.X + w, topLeft.Y + h), Vector2.new(topLeft.X + w, topLeft.Y + h - c)},
+			}
+			for i, seg in ipairs(segs) do
+				local l = set.corners[i]
+				if l then
+					l.From = seg[1]
+					l.To = seg[2]
+					l.Color = color
+					l.Thickness = t
+					l.Visible = true
+				end
+			end
+		else
+			set.box.Size = Vector2.new(w, h)
+			set.box.Position = topLeft
+			set.box.Color = color
+			set.box.Visible = true
+			set.boxFill.Size = Vector2.new(w, h)
+			set.boxFill.Position = topLeft
+			set.boxFill.Color = color
+			set.boxFill.Transparency = ESP_FILL_TRANSPARENCY
+			set.boxFill.Visible = true
+		end
+	else
+		set.box.Visible = false
+		set.boxFill.Visible = false
+		for _, l in ipairs(set.corners) do l.Visible = false end
+	end
+
+	-- Name (+ distance appended)
+	if state.names and visible then
+		local txt = (isSelf and "" or (isAlly and "[A] " or "[E] ")) .. name
+		if state.distance then txt = txt .. " [" .. math.floor(dist) .. "m]" end
+		set.name.Text = txt
+		set.name.Position = Vector2.new(rootPos.X, headPos.Y - 18)
+		set.name.Color = color
+		set.name.Visible = true
+	else
+		set.name.Visible = false
+	end
+
+	-- Health text
+	if state.health and visible and hum then
+		local pct = math.clamp(hum.Health / math.max(hum.MaxHealth, 1), 0, 1)
+		set.hpText.Text = math.floor(hum.Health) .. " hp"
+		set.hpText.Position = Vector2.new(rootPos.X, headPos.Y - 4)
+		set.hpText.Color = Color3.fromRGB(80 + math.floor(175 * (1 - pct)), 200 - math.floor(150 * (1 - pct)), 50)
+		set.hpText.Visible = true
+	else
+		set.hpText.Visible = false
+	end
+
+	-- Health bar
+	if state.healthBar and visible and hum then
+		local pct = math.clamp(hum.Health / math.max(hum.MaxHealth, 1), 0, 1)
+		local x = rootPos.X - w * 0.5 - 6
+		set.hpBg.Size = Vector2.new(4, h)
+		set.hpBg.Position = Vector2.new(x, headPos.Y)
+		set.hpBg.Visible = true
+		set.hpBar.Size = Vector2.new(4, h * pct)
+		set.hpBar.Position = Vector2.new(x, headPos.Y + h * (1 - pct))
+		set.hpBar.Color = Color3.fromRGB(math.floor(255 * (1 - pct)), math.floor(220 * pct + 35), 40)
+		set.hpBar.Visible = true
+	else
+		set.hpBg.Visible = false
+		set.hpBar.Visible = false
+	end
+
+	-- Head dot
+	if state.headDot and visible and head then
+		local hp, hon = worldToScreen(head.Position)
+		if hon then
+			set.headDot.Position = hp
+			set.headDot.Radius = 4
+			set.headDot.Color = color
+			set.headDot.Visible = true
+		else
+			set.headDot.Visible = false
+		end
+	else
+		set.headDot.Visible = false
+	end
+
+	-- Tracer / snapline
+	if state.snaplines and visible then
+		local vp = workspace.CurrentCamera.ViewportSize
+		set.tracer.From = Vector2.new(vp.X / 2, vp.Y)
+		set.tracer.To = Vector2.new(rootPos.X, rootPos.Y)
+		set.tracer.Color = color
+		set.tracer.Visible = true
+	else
+		set.tracer.Visible = false
+	end
+
+	-- Skeleton
+	if state.skeletons and visible then
+		local rig = hum and hum.RigType == Enum.HumanoidRigType.R15 and SKEL_R15 or SKEL_R6
+		local char = root.Parent
+		for i, pair in ipairs(rig) do
+			local l = set.skeleton[i]
+			if not l then break end
+			local a = char and char:FindFirstChild(pair[1])
+			local b = char and char:FindFirstChild(pair[2])
+			if a and b then
+				local pa, oa = worldToScreen(a.Position)
+				local pb, ob = worldToScreen(b.Position)
+				if oa and ob then
+					l.From = pa
+					l.To = pb
+					l.Color = color
+					l.Thickness = 1.5
+					l.Visible = true
+				else
+					l.Visible = false
+				end
+			else
+				l.Visible = false
+			end
+		end
+		for i = #rig + 1, #set.skeleton do
+			set.skeleton[i].Visible = false
+		end
+	else
+		for _, l in ipairs(set.skeleton) do l.Visible = false end
+	end
+end
+
+RunService:BindToRenderStep("ESP_Draw", ESP_RENDER, function()
+	local cam = workspace.CurrentCamera
+	if not cam then return end
+
+	-- Players
+	local anyPlayer = espState.playerBoxes or espState.playerNames or espState.playerHealth or espState.playerHealthBar or espState.playerDistance or espState.playerSkeletons or espState.playerHeadDot or espState.playerSnaplines
+	if anyPlayer then
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= player then
+				local set = espDraw[p]
+				local char = p.Character
+				local root = char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso"))
+				local head = char and char:FindFirstChild("Head")
+				local hum = char and char:FindFirstChildOfClass("Humanoid")
+				if set and root and head and hum and hum.Health > 0 then
+					local isAlly = (player.Team ~= nil) and (p.Team == player.Team)
+					local color = isAlly and ESP_COLOR_ALLY or ESP_COLOR_ENEMY
+					drawTarget(set, root, head, hum, color, false, p.Name, isAlly, ESP_MAX_DIST_PLAYER, {
+						boxes = espState.playerBoxes,
+						names = espState.playerNames,
+						health = espState.playerHealth,
+						healthBar = espState.playerHealthBar,
+						distance = espState.playerDistance,
+						skeletons = espState.playerSkeletons,
+						headDot = espState.playerHeadDot,
+						snaplines = espState.playerSnaplines,
+					})
+				elseif set then
+					removeDrawSet(set); espDraw[p] = nil
+				end
+			end
+		end
+	end
+
+	-- Bots
+	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botHealthBar or espState.botDistance or espState.botSkeletons or espState.botHeadDot or espState.botSnaplines
+	if anyBot then
+		for model, set in pairs(espBotDraw) do
+			if model and model.Parent then
+				local root = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Torso")
+				local head = model:FindFirstChild("Head")
+				local hum = model:FindFirstChildOfClass("Humanoid")
+				if root and head and hum and hum.Health > 0 then
+					drawTarget(set, root, head, hum, ESP_COLOR_BOT, false, model.Name, false, ESP_MAX_DIST_BOT, {
+						boxes = espState.botBoxes,
+						names = espState.botNames,
+						health = espState.botHealth,
+						healthBar = espState.botHealthBar,
+						distance = espState.botDistance,
+						skeletons = espState.botSkeletons,
+						headDot = espState.botHeadDot,
+						snaplines = espState.botSnaplines,
+					})
+				end
+			end
+		end
+	end
+
+	-- Self
+	if espState.selfESP and espSelfDraw then
+		local char = player.Character
+		local root = char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso"))
+		local head = char and char:FindFirstChild("Head")
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		if root and head and hum and hum.Health > 0 then
+			drawTarget(espSelfDraw, root, head, hum, ESP_COLOR_SELF, true, player.Name, false, 0, {
+				boxes = false,
+				names = true,
+				health = true,
+				healthBar = false,
+				distance = false,
+				skeletons = false,
+				headDot = false,
+				snaplines = false,
+			})
+		end
+	end
+end)
+
+-- ============================================================
+--  Chams (Highlight) — only when enabled, cleaned up on toggle
+-- ============================================================
+
+local espChams = {}    -- [player] = highlight
+local espBotChams = {} -- [model]  = highlight
+local espSelfCham = nil
+
+local function applyChams(char, color)
+	local hl = char:FindFirstChild("ESP_Highlight")
+	if not hl then
+		hl = Instance.new("Highlight", char)
+		hl.Name = "ESP_Highlight"
+	end
 	hl.FillColor = color
-	hl.OutlineColor = color
-	hl.FillTransparency = 0.7
-	hl.OutlineTransparency = 0.3
+	hl.OutlineColor = Color3.new(1, 1, 1)
+	hl.FillTransparency = 0.55
+	hl.OutlineTransparency = 0.2
 	hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-	table.insert(objs, hl)
-
-	espSelfObjects = objs
-	espSelfConns   = conns
+	return hl
 end
+
+function clearChamsFor(p)
+	local hl = espChams[p]
+	if hl and hl.Parent then hl:Destroy() end
+	espChams[p] = nil
+end
+
+function clearAllBotChams()
+	for model, hl in pairs(espBotChams) do
+		if hl and hl.Parent then hl:Destroy() end
+	end
+	espBotChams = {}
+end
+
+function clearSelfCham()
+	if espSelfCham and espSelfCham.Parent then espSelfCham:Destroy() end
+	espSelfCham = nil
+end
+
+-- chams sync loop (cheap, runs every 0.5s)
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		if espState.playerChams then
+			for _, p in ipairs(Players:GetPlayers()) do
+				if p ~= player and p.Character then
+					local isAlly = (player.Team ~= nil) and (p.Team == player.Team)
+					local color = isAlly and ESP_COLOR_ALLY or ESP_COLOR_ENEMY
+					espChams[p] = applyChams(p.Character, color)
+				end
+			end
+		else
+			for p in pairs(espChams) do clearChamsFor(p) end
+		end
+		if espState.botChams then
+			for model in pairs(espBotDraw) do
+				if model and model.Parent then
+					espBotChams[model] = applyChams(model, ESP_COLOR_BOT)
+				end
+			end
+		else
+			clearAllBotChams()
+		end
+		if espState.selfESP and espState.selfCham and player.Character then
+			espSelfCham = applyChams(player.Character, ESP_COLOR_SELF)
+		else
+			clearSelfCham()
+		end
+	end
+end)
 
 
 function createColorDropdown(parent, label, order, defaultColor, onChange)
