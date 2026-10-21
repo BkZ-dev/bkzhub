@@ -3,7 +3,7 @@
 
 print("")
 print("==================================================")
-print("   bkz HUB  v7   |   by bkz")
+print("   bkz HUB  v7.1   |   by bkz")
 print("   Loading ...")
 print("==================================================")
 print("")
@@ -22,6 +22,8 @@ Debris = game:GetService("Debris")
 HttpService = game:GetService("HttpService")
 
 showNotification = nil
+notifyCount = 0      -- compteur de notifications (evite les toasts doublons)
+uiRefs = {}          -- references UI tardives (boutons/dropdowns mis a jour par applyConfig)
 
 player = nil
 mouse = nil
@@ -39,8 +41,15 @@ for i = 1, 30 do
 end
 if not player then error("Players.LocalPlayer nil after 15s - retry injection") end
 if not playerGui then
-	playerGui = Instance.new("ScreenGui", player)
-	playerGui.Name = "PlayerGui_Fallback"
+	pcall(function() playerGui = player:FindFirstChildOfClass("PlayerGui") or player:WaitForChild("PlayerGui", 5) end)
+end
+if not playerGui then
+	-- Dernier recours : CoreGui (un ScreenGui y est rendu correctement).
+	-- L'ancien code creait un ScreenGui parente au Player -> jamais rendu.
+	local okCG = pcall(function() playerGui = game:GetService("CoreGui") end)
+	if not okCG or not playerGui then
+		error("PlayerGui indisponible - re-injecte le script apres le chargement du jeu")
+	end
 end
 
 for _, oldGui in ipairs({"AdminMenu", "PlayerInfo", "BkzLoader", "AdminToast", "PlayerInfoToast", "AdminMenuBtn", "PlayerInfoBtn"}) do
@@ -266,7 +275,7 @@ Instance.new("UICorner", lsBadge).CornerRadius = UDim.new(1, 0)
 local lsBadgeTxt = Instance.new("TextLabel", lsBadge)
 lsBadgeTxt.Size = UDim2.new(1, 0, 1, 0)
 lsBadgeTxt.BackgroundTransparency = 1
-lsBadgeTxt.Text = "⚡  v7  •  ULTIMATE"
+lsBadgeTxt.Text = "⚡  v7.1  •  ULTIMATE"
 lsBadgeTxt.TextColor3 = Color3.new(1, 1, 1)
 lsBadgeTxt.Font = Enum.Font.GothamBold
 lsBadgeTxt.TextSize = 10
@@ -278,7 +287,7 @@ local lsSub = Instance.new("TextLabel", lsBg)
 lsSub.Size = UDim2.new(1, 0, 0, 18)
 lsSub.Position = UDim2.new(0, 0, 0.5, -40)
 lsSub.BackgroundTransparency = 1
-lsSub.Text = "Loading  •  v7"
+lsSub.Text = "Loading  •  v7.1"
 lsSub.TextColor3 = Color3.fromRGB(168, 158, 218)
 lsSub.Font = Enum.Font.Gotham
 lsSub.TextSize = 12
@@ -660,6 +669,16 @@ function onThemeChanged(fn)
 	return themeListenerNextId
 end
 
+-- Melange deux Color3 (utilise pour les nuances "glass" du menu)
+function mixColor(a, b, t)
+	t = math.clamp(t or 0.5, 0, 1)
+	return Color3.fromRGB(
+		math.floor(a.R * 255 + (b.R - a.R) * 255 * t + 0.5),
+		math.floor(a.G * 255 + (b.G - a.G) * 255 * t + 0.5),
+		math.floor(a.B * 255 + (b.B - a.B) * 255 * t + 0.5)
+	)
+end
+
 gui = Instance.new("ScreenGui", playerGui)
 gui.Name = "PlayerInfo"
 gui.Enabled = false
@@ -826,7 +845,7 @@ title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v7  •  " .. player.Name
+subtitle.Text = "v7.1  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -100, 0, 14)
 subtitle.Position = UDim2.new(0, 58, 0, 33)
 subtitle.BackgroundTransparency = 1
@@ -852,10 +871,8 @@ lockBtn.MouseButton1Click:Connect(function()
 	interfaceLocked = not interfaceLocked
 	lockBtn.Text = interfaceLocked and "🔒" or "🔓"
 	lockBtn.BackgroundColor3 = interfaceLocked and currentTheme.Success or currentTheme.Button
-	-- Toggle dragging
-	if main then
-		main.Draggable = not interfaceLocked
-	end
+	-- Glisser/resize deja blockes via interfaceLocked dans startDrag/bouton de redimensionnement.
+	-- (ancien code : main.Draggable = ... propriete Roblox retiree -> erreur a chaque clic)
 	showNotification(interfaceLocked and "🔒 Interface locked" or "🔓 Interface unlocked", 1.5)
 end)
 
@@ -897,6 +914,17 @@ tabLayout.Padding = UDim.new(0, 4)
 tabPad = Instance.new("UIPadding", tabBar)
 tabPad.PaddingLeft = UDim.new(0, 4); tabPad.PaddingRight = UDim.new(0, 4)
 tabPad.PaddingTop = UDim.new(0, 4); tabPad.PaddingBottom = UDim.new(0, 4)
+
+-- Indicateur glissant sous l'onglet actif (positionne via le layout, mis a jour au clic)
+tabIndicator = Instance.new("Frame", tabBar)
+tabIndicator.Name = "TabIndicator"
+tabIndicator.AnchorPoint = Vector2.new(0, 1)
+tabIndicator.Size = UDim2.new(0, 0, 0, 3)
+tabIndicator.Position = UDim2.new(0, 0, 1, -2)
+tabIndicator.BackgroundColor3 = currentTheme.Accent
+tabIndicator.BorderSizePixel = 0
+tabIndicator.ZIndex = 0
+Instance.new("UICorner", tabIndicator).CornerRadius = UDim.new(1, 0)
 
 
 
@@ -980,9 +1008,31 @@ for _, def in ipairs(tabDefs) do
 			b.BackgroundColor3 = (n == def.name) and currentTheme.TabActive or currentTheme.Tab
 			b.TextColor3 = (n == def.name) and Color3.new(1,1,1) or currentTheme.SubText
 		end
+		if moveTabIndicator then moveTabIndicator(def.name) end
 	end)
 	tabBtns[def.name] = tb
 end
+
+-- Glisse l'indicateur sous l'onglet actif (calcule depuis la position du bouton)
+function moveTabIndicator(tabName)
+	local btn = tabBtns[tabName]
+	if not btn or not tabIndicator then return end
+	local ok = pcall(function()
+		local relX = btn.AbsolutePosition.X - tabBar.AbsolutePosition.X
+		TweenService:Create(tabIndicator, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = UDim2.new(0, relX + 2, 1, -2),
+			Size = UDim2.new(0, math.max(btn.AbsoluteSize.X - 4, 0), 0, 3),
+		}):Play()
+	end)
+	if not ok then
+		-- Absolu non calcule encore : on reessaie apres le prochain rendu
+		task.defer(function() pcall(moveTabIndicator, tabName) end)
+	end
+end
+
+-- Positionne l'indicateur une fois les boutons geometriques
+task.defer(function() moveTabIndicator("Player") end)
+task.delay(0.5, function() moveTabIndicator(activeTab) end)
 
 
 
@@ -1001,13 +1051,43 @@ function createSection(parent, title, order)
 
 	local lbl = Instance.new("TextLabel", frame)
 	lbl.Text = "  " .. string.upper(title)
-	lbl.Size = UDim2.new(1, -6, 1, 0)
-	lbl.Position = UDim2.new(0, 6, 0, 0)
+	lbl.TextAutoResize = Enum.TextAutoResize.X
+	lbl.Size = UDim2.new(0, 10, 0, 16)
+	lbl.AnchorPoint = Vector2.new(0, 0.5)
+	lbl.Position = UDim2.new(0, 8, 0.5, 0)
 	lbl.BackgroundTransparency = 1
 	lbl.TextColor3 = currentTheme.Accent
 	lbl.Font = Enum.Font.GothamBold
 	lbl.TextSize = 11
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+	-- Filet fin a droite du titre (style moderne, largeur calculee apres rendu)
+	local line = Instance.new("Frame", frame)
+	line.BackgroundColor3 = currentTheme.Accent
+	line.BackgroundTransparency = 0.85
+	line.BorderSizePixel = 0
+	line.Size = UDim2.new(1, -30, 0, 1)
+	line.Position = UDim2.new(0, 30, 0.5, 0)
+	line.Visible = false
+	Instance.new("UICorner", line).CornerRadius = UDim.new(1, 0)
+
+	local function placeLine()
+		local w = lbl.TextBounds and lbl.TextBounds.X or 0
+		if w > 0 then
+			local x = 8 + w + 10
+			line.Position = UDim2.new(0, x, 0.5, 0)
+			line.Size = UDim2.new(1, -x - 6, 0, 1)
+			line.Visible = true
+		end
+	end
+	task.defer(placeLine)
+	task.delay(0.4, placeLine)
+
+	onThemeChanged(function(t)
+		bar.BackgroundColor3 = t.Accent
+		lbl.TextColor3 = t.Accent
+		line.BackgroundColor3 = t.Accent
+	end)
 end
 
 function createBtn(parent, text, color, order, func)
@@ -1015,15 +1095,34 @@ function createBtn(parent, text, color, order, func)
 	local colorKey = nil
 	for k, v in pairs(currentTheme) do if v == color then colorKey = k; break end end
 	local frame = Instance.new("Frame", parent)
-	frame.Size = UDim2.new(1, 0, 0, 40)
+	frame.Size = UDim2.new(1, 0, 0, 42)
 	frame.BackgroundColor3 = color
 	frame.BorderSizePixel = 0
 	frame.LayoutOrder = order or 1
-	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+
+	-- Lumiere douce en haut -> effet glass
+	local sheen = Instance.new("UIGradient", frame)
+	sheen.Rotation = 90
+	sheen.Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(1,1,1))
+	sheen.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.90),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+
 	local stroke2 = Instance.new("UIStroke", frame)
 	stroke2.Color = Color3.new(1,1,1)
 	stroke2.Transparency = 0.93
 	stroke2.Thickness = 1
+
+	-- Halo de survol (interne : plus de changement de hauteur -> plus de saut de mise en page)
+	local hoverGlow = Instance.new("Frame", frame)
+	hoverGlow.Name = "HoverGlow"
+	hoverGlow.Size = UDim2.new(1, 0, 1, 0)
+	hoverGlow.BackgroundColor3 = currentTheme.Accent
+	hoverGlow.BackgroundTransparency = 1
+	hoverGlow.BorderSizePixel = 0
+	Instance.new("UICorner", hoverGlow).CornerRadius = UDim.new(0, 12)
 
 	local btn = Instance.new("TextButton", frame)
 	btn.Text = text
@@ -1033,29 +1132,40 @@ function createBtn(parent, text, color, order, func)
 	btn.Font = Enum.Font.GothamSemibold
 	btn.TextSize = 13
 	btn.BorderSizePixel = 0
+	btn.AutoButtonColor = false
+	btn.ZIndex = 2
 
 	btn.MouseEnter:Connect(function()
 		TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundColor3 = currentTheme.ButtonHov}):Play()
-		TweenService:Create(stroke2, TweenInfo.new(0.2), {Transparency = 0.75, Color = currentTheme.Accent}):Play()
-		TweenService:Create(frame, TweenInfo.new(0.15), {Size = UDim2.new(1, 0, 0, 42)}):Play()
+		TweenService:Create(stroke2, TweenInfo.new(0.2), {Transparency = 0.6, Color = currentTheme.Accent}):Play()
+		TweenService:Create(hoverGlow, TweenInfo.new(0.2), {BackgroundTransparency = 0.93}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
-		TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundColor3 = colorKey and currentTheme[colorKey] or color, Size = UDim2.new(1, 0, 0, 40)}):Play()
+		TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundColor3 = colorKey and currentTheme[colorKey] or color}):Play()
 		TweenService:Create(stroke2, TweenInfo.new(0.2), {Transparency = 0.93, Color = Color3.new(1,1,1)}):Play()
+		TweenService:Create(hoverGlow, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
 	end)
 	btn.MouseButton1Click:Connect(function()
-		local label = text:gsub("[^%w%s]","")
-		showNotification("👉 " .. label, 1.5)
-		TweenService:Create(frame, TweenInfo.new(0.04), {BackgroundColor3 = currentTheme.Accent, Size = UDim2.new(1, 0, 0, 38)}):Play()
-		task.delay(0.06, function()
-			TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.ButtonHov, Size = UDim2.new(1, 0, 0, 40)}):Play()
+		-- Flash d'appui sans modifier la taille (l'ancien tween 40->42/38 decalait toute la page)
+		TweenService:Create(frame, TweenInfo.new(0.05), {BackgroundColor3 = currentTheme.Accent}):Play()
+		TweenService:Create(hoverGlow, TweenInfo.new(0.05), {BackgroundTransparency = 0.75}):Play()
+		task.delay(0.1, function()
+			TweenService:Create(frame, TweenInfo.new(0.18), {BackgroundColor3 = currentTheme.ButtonHov}):Play()
+			TweenService:Create(hoverGlow, TweenInfo.new(0.18), {BackgroundTransparency = 0.93}):Play()
 		end)
+		-- Toast general UNIQUEMENT si l'action n'a pas deja notifie (supprime les doublons)
+		local before = notifyCount or 0
 		func(btn)
+		if (notifyCount or 0) == before then
+			local label = text:gsub("[^%w%s]","")
+			showNotification("👉 " .. label, 1.5)
+		end
 	end)
 
 	onThemeChanged(function(t)
 		if colorKey then frame.BackgroundColor3 = t[colorKey] end
 		btn.TextColor3 = t.Text
+		hoverGlow.BackgroundColor3 = t.Accent
 	end)
 
 	return frame, btn
@@ -1067,11 +1177,19 @@ toggleApply = {}
 
 function createToggle(parent, text, order, func, configKey)
 	local frame = Instance.new("Frame", parent)
-	frame.Size = UDim2.new(1, 0, 0, 40)
+	frame.Size = UDim2.new(1, 0, 0, 42)
 	frame.BackgroundColor3 = currentTheme.Button
 	frame.BorderSizePixel = 0
 	frame.LayoutOrder = order or 1
-	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+
+	local sheenT = Instance.new("UIGradient", frame)
+	sheenT.Rotation = 90
+	sheenT.Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(1,1,1))
+	sheenT.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.92),
+		NumberSequenceKeypoint.new(1, 1),
+	})
 
 	local strokeT = Instance.new("UIStroke", frame)
 	strokeT.Color = Color3.new(1,1,1)
@@ -1080,7 +1198,7 @@ function createToggle(parent, text, order, func, configKey)
 
 	local lbl = Instance.new("TextLabel", frame)
 	lbl.Text = text
-	lbl.Size = UDim2.new(1, -56, 1, 0)
+	lbl.Size = UDim2.new(1, -66, 1, 0)
 	lbl.Position = UDim2.new(0, 12, 0, 0)
 	lbl.BackgroundTransparency = 1
 	lbl.TextColor3 = currentTheme.Text
@@ -1088,12 +1206,18 @@ function createToggle(parent, text, order, func, configKey)
 	lbl.TextSize = 13
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
 
+	-- Switch moderne : piste encastré + dégradé d'accent quand activé
 	local track = Instance.new("Frame", frame)
-	track.Size = UDim2.new(0, 42, 0, 24)
-	track.Position = UDim2.new(1, -52, 0.5, -12)
-	track.BackgroundColor3 = Color3.fromRGB(60,60,80)
+	track.Size = UDim2.new(0, 44, 0, 24)
+	track.Position = UDim2.new(1, -56, 0.5, -12)
+	track.BackgroundColor3 = mixColor(currentTheme.Button, currentTheme.BG, 0.45)
 	track.BorderSizePixel = 0
+	track.ClipsDescendants = true
 	Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+	local trackGrad = Instance.new("UIGradient", track)
+	trackGrad.Rotation = 90
+	trackGrad.Color = ColorSequence.new(currentTheme.Accent, currentTheme.AccentHov)
+	trackGrad.Transparency = NumberSequence.new(1, 1)
 
 	local knob = Instance.new("Frame", track)
 	knob.Size = UDim2.new(0, 18, 0, 18)
@@ -1101,43 +1225,66 @@ function createToggle(parent, text, order, func, configKey)
 	knob.BackgroundColor3 = Color3.new(1,1,1)
 	knob.BorderSizePixel = 0
 	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+	local knobStroke = Instance.new("UIStroke", knob)
+	knobStroke.Color = Color3.new(0,0,0)
+	knobStroke.Transparency = 0.75
+	knobStroke.Thickness = 1
 
 	local state = false
 	if configKey and toggleStates[configKey] ~= nil then state = toggleStates[configKey] end
 
-	
+	local function offColor(t)
+		return mixColor(t.Button, t.BG, 0.45)
+	end
+
+	-- Applique le visuel du switch (animé ou instantané)
+	local function applySwitch(newState, animate)
+		local dur = animate and 0.28 or 0
+		local info = TweenInfo.new(dur, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		TweenService:Create(track, info, {
+			BackgroundColor3 = newState and currentTheme.Accent or offColor(currentTheme),
+		}):Play()
+		TweenService:Create(knob, info, {
+			Position = newState and UDim2.new(1,-21,0.5,-9) or UDim2.new(0,3,0.5,-9),
+			Size = newState and UDim2.new(0, 20, 0, 20) or UDim2.new(0, 18, 0, 18),
+		}):Play()
+		TweenService:Create(trackGrad, TweenInfo.new(dur), {
+			Transparency = newState and 0 or 1,
+		}):Play()
+	end
+
 	if state then
 		track.BackgroundColor3 = currentTheme.Accent
+		trackGrad.Transparency = 0
 		knob.Position = UDim2.new(1,-21,0.5,-9)
+		knob.Size = UDim2.new(0, 20, 0, 20)
 	end
 
 	local hitbox = Instance.new("TextButton", frame)
 	hitbox.Size = UDim2.new(1, 0, 1, 0)
 	hitbox.BackgroundTransparency = 1
 	hitbox.Text = ""
+	hitbox.AutoButtonColor = false
 
-	hitbox.MouseEnter:Connect(playHover)
+	hitbox.MouseEnter:Connect(function()
+		playHover()
+		TweenService:Create(strokeT, TweenInfo.new(0.18), {Transparency = 0.7, Color = currentTheme.Accent}):Play()
+	end)
+	hitbox.MouseLeave:Connect(function()
+		TweenService:Create(strokeT, TweenInfo.new(0.18), {Transparency = 0.93, Color = Color3.new(1,1,1)}):Play()
+	end)
 	hitbox.MouseButton1Click:Connect(function()
 		state = not state
 		if configKey then toggleStates[configKey] = state end
-		TweenService:Create(track, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			BackgroundColor3 = state and currentTheme.Accent or currentTheme.Button
-		}):Play()
-		TweenService:Create(knob, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Position = state and UDim2.new(1,-21,0.5,-9) or UDim2.new(0,3,0.5,-9),
-			Size = state and UDim2.new(0, 20, 0, 20) or UDim2.new(0, 18, 0, 18)
-		}):Play()
-		local label = text:gsub("[^%w%s]","")
+		applySwitch(state, true)
 		func(state)
 		if configKey and autoSave then autoSave() end
 	end)
 
-	
 	if configKey then
 		toggleApply[configKey] = function(newState)
 			state = newState
-			track.BackgroundColor3 = state and currentTheme.Accent or currentTheme.Button
-			knob.Position = state and UDim2.new(1,-21,0.5,-9) or UDim2.new(0,3,0.5,-9)
+			applySwitch(newState, true)
 			func(state)
 		end
 		if state then task.spawn(function() toggleApply[configKey](true) end) end
@@ -1146,120 +1293,385 @@ function createToggle(parent, text, order, func, configKey)
 	onThemeChanged(function(t)
 		frame.BackgroundColor3 = t.Button
 		lbl.TextColor3 = t.Text
-		track.BackgroundColor3 = state and t.Accent or t.Button
+		track.BackgroundColor3 = state and t.Accent or offColor(t)
+		trackGrad.Color = ColorSequence.new(t.Accent, t.AccentHov)
+		trackGrad.Transparency = state and 0 or 1
 	end)
 
 	return frame, lbl
 end
 
-function createSlider(parent, text, min, max, default, order, func)
+sliderValues = {}
+sliderDefaults = {}
+sliderApply = {}
+
+
+
+function createSlider(parent, text, min, max, default, order, func, configKey)
+
 	local frame = Instance.new("Frame", parent)
+
 	frame.Size = UDim2.new(1, 0, 0, 58)
+
 	frame.BackgroundColor3 = currentTheme.Button
+
 	frame.BorderSizePixel = 0
+
 	frame.LayoutOrder = order or 1
-	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+
+
+
+	-- Lumiere douce en haut -> effet glass
+
+	local sheenS = Instance.new("UIGradient", frame)
+
+	sheenS.Rotation = 90
+
+	sheenS.Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(1,1,1))
+
+	sheenS.Transparency = NumberSequence.new({
+
+		NumberSequenceKeypoint.new(0, 0.92),
+
+		NumberSequenceKeypoint.new(1, 1),
+
+	})
+
+
+
+	local strokeS = Instance.new("UIStroke", frame)
+
+	strokeS.Color = Color3.new(1,1,1)
+
+	strokeS.Transparency = 0.93
+
+	strokeS.Thickness = 1
+
+
 
 	local lbl = Instance.new("TextLabel", frame)
+
 	lbl.Text = text
+
 	lbl.Size = UDim2.new(1, -110, 0, 24)
-	lbl.Position = UDim2.new(0, 12, 0, 4)
+
+	lbl.Position = UDim2.new(0, 12, 0, 6)
+
 	lbl.BackgroundTransparency = 1
+
 	lbl.TextColor3 = currentTheme.Text
+
 	lbl.Font = Enum.Font.GothamSemibold
+
 	lbl.TextSize = 12
+
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
 
-	
+
+
 	local inputBox = Instance.new("TextBox", frame)
+
 	inputBox.Size = UDim2.new(0, 56, 0, 20)
-	inputBox.Position = UDim2.new(1, -68, 0, 5)
-	inputBox.BackgroundColor3 = currentTheme.Panel
+
+	inputBox.Position = UDim2.new(1, -68, 0, 6)
+
+	inputBox.BackgroundColor3 = mixColor(currentTheme.Panel, currentTheme.BG, 0.35)
+
 	inputBox.BorderSizePixel = 0
+
 	inputBox.TextColor3 = currentTheme.Accent
+
 	inputBox.Font = Enum.Font.GothamBold
+
 	inputBox.TextSize = 12
+
 	inputBox.Text = tostring(default)
+
 	inputBox.ClearTextOnFocus = false
+
 	inputBox.PlaceholderText = tostring(default)
+
 	Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0, 6)
 
+	local inputStroke = Instance.new("UIStroke", inputBox)
+
+	inputStroke.Color = Color3.new(1,1,1)
+
+	inputStroke.Transparency = 0.88
+
+	inputStroke.Thickness = 1
+
+
+
 	local track = Instance.new("Frame", frame)
+
 	track.Size = UDim2.new(1, -24, 0, 6)
+
 	track.Position = UDim2.new(0, 12, 0, 42)
-	track.BackgroundColor3 = currentTheme.Button
+
+	track.BackgroundColor3 = mixColor(currentTheme.Button, currentTheme.BG, 0.45)
+
 	track.BorderSizePixel = 0
+
+	track.ClipsDescendants = true
+
 	Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
+
+
 	local fill = Instance.new("Frame", track)
-	local pct = (default - min) / (max - min)
+
+	local pct = math.clamp((default - min) / (max - min), 0, 1)
+
 	fill.Size = UDim2.new(pct, 0, 1, 0)
+
 	fill.BackgroundColor3 = currentTheme.Accent
+
 	fill.BorderSizePixel = 0
+
 	Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
 
+	local fillGrad = Instance.new("UIGradient", fill)
+
+	fillGrad.Rotation = 90
+
+	fillGrad.Color = ColorSequence.new(currentTheme.Accent, currentTheme.AccentHov)
+
+	fillGrad.Transparency = NumberSequence.new({
+
+		NumberSequenceKeypoint.new(0, 0.65),
+
+		NumberSequenceKeypoint.new(0.5, 0),
+
+		NumberSequenceKeypoint.new(1, 0.3),
+
+	})
+
+
+
 	local knob = Instance.new("Frame", track)
+
 	knob.Size = UDim2.new(0, 14, 0, 14)
-	knob.Position = UDim2.new(pct, -7, 0.5, -7)
+
+	knob.AnchorPoint = Vector2.new(0.5, 0.5)
+
+	knob.Position = UDim2.new(pct, 0, 0.5, 0)
+
 	knob.BackgroundColor3 = Color3.new(1,1,1)
+
 	knob.BorderSizePixel = 0
+
+	knob.ZIndex = 3
+
 	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+	local knobStroke = Instance.new("UIStroke", knob)
+
+	knobStroke.Color = Color3.new(0,0,0)
+
+	knobStroke.Transparency = 0.75
+
+	knobStroke.Thickness = 1
+
+
 
 	local currentVal = default
 
-	local function setVal(val, fromSlider)
-		local display = math.floor(val)
-		if fromSlider then
+
+
+	local function setVal(val, fromSlider, silent)
+
+		local display = math.floor(val + 0.5)
+
+		if fromSlider or display > max or display < min then
+
 			display = math.clamp(display, min, max)
+
 		end
+
 		currentVal = display
+
 		local rel = math.clamp((display - min) / (max - min), 0, 1)
+
 		fill.Size = UDim2.new(rel, 0, 1, 0)
-		knob.Position = UDim2.new(rel, -7, 0.5, -7)
+
+		knob.Position = UDim2.new(rel, 0, 0.5, 0)
+
 		inputBox.Text = tostring(display)
-		func(display)
+
+		if configKey then sliderValues[configKey] = display end
+
+		if not silent then func(display) end
+
+		return display
+
 	end
 
-	
+
+
 	inputBox.FocusLost:Connect(function()
+
 		local num = tonumber(inputBox.Text)
+
 		if num then
+
 			setVal(num, false)
+
+			if autoSave then autoSave() end
+
 		else
+
 			inputBox.Text = tostring(currentVal)
+
 		end
+
 	end)
+
+
 
 	local draggingSlider = false
-	local hitbox = Instance.new("TextButton", track)
-	hitbox.Size = UDim2.new(1, 0, 0, 20)
-	hitbox.Position = UDim2.new(0, 0, 0.5, -10)
-	hitbox.BackgroundTransparency = 1
-	hitbox.Text = ""
 
-	local function updateSlider(input)
-		local trackPos = track.AbsolutePosition.X
-		local trackSize = track.AbsoluteSize.X
-		local rel = math.clamp((input.Position.X - trackPos) / trackSize, 0, 1)
-		setVal(min + (max - min) * rel, true)
+	local connIn, connEnd
+
+
+
+	local function stopDrag()
+
+		draggingSlider = false
+
+		if connIn then connIn:Disconnect() connIn = nil end
+
+		if connEnd then connEnd:Disconnect() connEnd = nil end
+
+		if autoSave then autoSave() end
+
 	end
 
-	hitbox.MouseButton1Down:Connect(function(x,y)
-		draggingSlider = true
-		updateSlider({Position = Vector3.new(x,y,0)})
+
+
+	local function updateSlider(input)
+
+		local trackSize = math.max(track.AbsoluteSize.X, 1)
+
+		local rel = math.clamp((input.Position.X - track.AbsolutePosition.X) / trackSize, 0, 1)
+
+		setVal(min + (max - min) * rel, true)
+
+	end
+
+
+
+	local hitbox = Instance.new("TextButton", track)
+
+	hitbox.Size = UDim2.new(1, 0, 0, 20)
+
+	hitbox.Position = UDim2.new(0, 0, 0.5, -10)
+
+	hitbox.BackgroundTransparency = 1
+
+	hitbox.Text = ""
+
+	hitbox.AutoButtonColor = false
+
+	hitbox.ZIndex = 4
+
+
+
+	hitbox.MouseEnter:Connect(function()
+
+		TweenService:Create(knob, TweenInfo.new(0.15), {Size = UDim2.new(0, 17, 0, 17)}):Play()
+
+		TweenService:Create(inputStroke, TweenInfo.new(0.15), {Transparency = 0.6, Color = currentTheme.Accent}):Play()
+
 	end)
-	UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then draggingSlider = false end end)
-	UIS.InputChanged:Connect(function(i) if draggingSlider and i.UserInputType == Enum.UserInputType.MouseMovement then updateSlider(i) end end)
+
+	hitbox.MouseLeave:Connect(function()
+
+		if not draggingSlider then
+
+			TweenService:Create(knob, TweenInfo.new(0.15), {Size = UDim2.new(0, 14, 0, 14)}):Play()
+
+		end
+
+		TweenService:Create(inputStroke, TweenInfo.new(0.15), {Transparency = 0.88, Color = Color3.new(1,1,1)}):Play()
+
+	end)
+
+
+
+	-- Connexions globales branchees uniquement pendant le drag : 0 connexion fuitee par slider
+
+	hitbox.MouseButton1Down:Connect(function(x, y)
+
+		if draggingSlider then return end
+
+		draggingSlider = true
+
+		updateSlider({Position = Vector3.new(x, y, 0)})
+
+		connIn = UIS.InputChanged:Connect(function(i)
+
+			if draggingSlider and i.UserInputType == Enum.UserInputType.MouseMovement then
+
+				updateSlider(i)
+
+			end
+
+		end)
+
+		connEnd = UIS.InputEnded:Connect(function(i)
+
+			if i.UserInputType == Enum.UserInputType.MouseButton1 then
+
+				stopDrag()
+
+			end
+
+		end)
+
+	end)
+
+
 
 	onThemeChanged(function(t)
+
 		frame.BackgroundColor3 = t.Button
+
 		lbl.TextColor3 = t.Text
+
 		fill.BackgroundColor3 = t.Accent
+
+		fillGrad.Color = ColorSequence.new(t.Accent, t.AccentHov)
+
+		track.BackgroundColor3 = mixColor(t.Button, t.BG, 0.45)
+
 		inputBox.TextColor3 = t.Accent
+
+		inputBox.BackgroundColor3 = mixColor(t.Panel, t.BG, 0.35)
+
 	end)
 
+
+
+	if configKey then
+		sliderValues[configKey] = currentVal
+		sliderDefaults[configKey] = default
+		-- Permet a applyConfig de repousser la valeur enregistree dans l'UI
+		sliderApply[configKey] = function(v)
+			if type(v) ~= "number" then return end
+			setVal(v, false, true)
+		end
+	end
+
+
+
 	return frame
+
 end
+
+
 
 numberInputApply = {}
 
@@ -1702,6 +2114,8 @@ function updateDD(filter)
 	for _, p in ipairs(results) do
 		local pb = Instance.new("TextButton", ddList)
 		pb.Text = "  " .. p.Name .. (p.DisplayName ~= p.Name and " (" .. p.DisplayName .. ")" or "")
+		-- Reference fiable au joueur (le Text peut contenir un DisplayName)
+		pb:SetAttribute("PlayerUserId", p.UserId)
 		pb.Size = UDim2.new(1, 0, 0, 30)
 		pb.BackgroundColor3 = Color3.fromRGB(0,0,0)
 		pb.BackgroundTransparency = 1
@@ -1732,30 +2146,45 @@ searchBox:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 
+-- Selectionne le premier resultat de la liste (Enter / Tab).
+-- Le joueur est stocke via un attribut : on ne reparsle plus le Text
+-- (cassait des qu'un DisplayName different du Name etait affiche).
+function selectFirstResult()
+	local first = nil
+	for _, c in pairs(ddList:GetChildren()) do
+		if c:IsA("TextButton") then
+			first = c
+			break
+		end
+	end
+	if not first then return false end
+	local uid = first:GetAttribute("PlayerUserId")
+	local p = uid and Players:GetPlayerByUserId(uid)
+	if p then
+		selectPlayer(p)
+		return true
+	end
+	-- Repli sur l'ancien comportement (parsage du texte)
+	local name = first.Text:gsub("^%s+", "")
+	local p2 = Players:FindFirstChild(name)
+	if p2 then
+		selectPlayer(p2)
+		return true
+	end
+	return false
+end
+
+
 searchBox.FocusLost:Connect(function(enterPressed)
 	if enterPressed then
-		for _, c in pairs(ddList:GetChildren()) do
-			if c:IsA("TextButton") then
-				local name = c.Text:gsub("^%s+", "")
-				local p = Players:FindFirstChild(name)
-				if p then selectPlayer(p) end
-				return
-			end
-		end
+		selectFirstResult()
 	end
 end)
 
 UIS.InputBegan:Connect(function(input, gpe)
 	if gpe then return end
 	if input.KeyCode == Enum.KeyCode.Tab and searchBox:IsFocused() then
-		for _, c in pairs(ddList:GetChildren()) do
-			if c:IsA("TextButton") then
-				local name = c.Text:gsub("^%s+", "")
-				local p = Players:FindFirstChild(name)
-				if p then selectPlayer(p) end
-				return
-			end
-		end
+		selectFirstResult()
 	end
 end)
 
@@ -1912,7 +2341,7 @@ createBtn(pages.Player, "👻  Invisible Target", currentTheme.Button, 17, funct
 	end
 	showNotification("👻  " .. targetPlayer.Name .. " rendu invisible", 3)
 end)
-createBtn(pages.Player, "👁  Uninvisible Target", currentTheme.Button, 17.5, function()
+createBtn(pages.Player, "👁  Uninvisible Target", currentTheme.Button, 18, function()
 	if not targetPlayer or not targetPlayer.Character then return end
 	local saved = targetInvisStorage[targetPlayer.UserId]
 	if saved then
@@ -1929,7 +2358,7 @@ createBtn(pages.Player, "👁  Uninvisible Target", currentTheme.Button, 17.5, f
 	end
 	showNotification("👁  " .. targetPlayer.Name .. " rendu visible", 3)
 end)
-createBtn(pages.Player, "🚀  Fling Target", currentTheme.Danger, 18, function()
+createBtn(pages.Player, "🚀  Fling Target", currentTheme.Danger, 19, function()
 	if not hasPlayerCollisions() then
 		showNotification("⚠  Collisions désactivées dans ce jeu — Fling impossible", 3)
 		return
@@ -1946,7 +2375,7 @@ createBtn(pages.Player, "🚀  Fling Target", currentTheme.Danger, 18, function(
 		showNotification("🚀  " .. targetPlayer.Name .. " flingué", 3)
 	end
 end)
-createBtn(pages.Player, "🛑  Stop Fling", currentTheme.Button, 19, function()
+createBtn(pages.Player, "🛑  Stop Fling", currentTheme.Button, 20, function()
 	if not targetPlayer or not targetPlayer.Character then return end
 	local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 	if hrp then
@@ -2011,7 +2440,7 @@ function startChatSpy(filterPlayer)
 	table.insert(chatSpyConns, cAdd)
 end
 
-createBtn(pages.Player, "💬  Chat Spy (joueur ciblé)", currentTheme.Button, 15, function()
+createBtn(pages.Player, "💬  Chat Spy (joueur ciblé)", currentTheme.Button, 21, function()
 	if chatSpyActive then
 		stopChatSpy()
 		showNotification("👁  Chat Spy OFF", 2)
@@ -2024,7 +2453,7 @@ createBtn(pages.Player, "💬  Chat Spy (joueur ciblé)", currentTheme.Button, 1
 		end
 	end
 end)
-createBtn(pages.Player, "💬  Chat Spy (tous les joueurs)", currentTheme.Button, 16, function()
+createBtn(pages.Player, "💬  Chat Spy (tous les joueurs)", currentTheme.Button, 22, function()
 	if chatSpyActive then
 		stopChatSpy()
 		showNotification("👁  Chat Spy OFF", 2)
@@ -2185,6 +2614,7 @@ createSection(pages.Personal, "🦅  Fly", 5)
 
 flyEnabled = false
 flySpeed = 40
+local flyBound = false
 
 function enableFly()
 	local char = player.Character
@@ -2195,6 +2625,9 @@ function enableFly()
 
 	hum:ChangeState(Enum.HumanoidStateType.Physics)
 
+	-- Un seul bind : un double BindToRenderStep sur le meme nom deplace l'ancien
+	-- au lieu de le remplacer, ce qui pouvait laisser un callback orphelin.
+	if flyBound then pcall(function() RunService:UnbindFromRenderStep("Fly") end) end
 	RunService:BindToRenderStep("Fly", Enum.RenderPriority.Character.Value + 1, function(dt)
 		if not flyEnabled then return end
 		local cam = workspace.CurrentCamera
@@ -2212,10 +2645,15 @@ function enableFly()
 
 		hrp.CFrame = hrp.CFrame + (dir * flySpeed * dt)
 	end)
+	flyBound = true
 end
 
 function disableFly()
-	RunService:UnbindFromRenderStep("Fly")
+	-- pcall : UnbindFromRenderStep leve une erreur si le bind n'existe pas
+	if flyBound then
+		pcall(function() RunService:UnbindFromRenderStep("Fly") end)
+		flyBound = false
+	end
 	local char = player.Character
 	if char then
 		local hum = char:FindFirstChildOfClass("Humanoid")
@@ -2236,27 +2674,43 @@ createSection(pages.Personal, "👁  Collision & Visual", 8)
 
 local noclipEnabled = false
 local noclipConn = nil
+-- Memoire des CanCollide d'origine : on ne force PAS "true" a la sortie
+-- (imposer CanCollide=true sur le HumanoidRootPart fait glitcher le personnage)
+local noclipOriginalCollide = nil
+
+local function restoreNoClipCollide()
+	local char = player.Character
+	if not char then noclipOriginalCollide = nil; return end
+	for part, orig in pairs(noclipOriginalCollide or {}) do
+		if part.Parent then
+			pcall(function() part.CanCollide = orig end)
+		end
+	end
+	noclipOriginalCollide = nil
+end
 
 createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(state)
 	noclipEnabled = state
 	if state then
 		if noclipConn then noclipConn:Disconnect() end
+		noclipOriginalCollide = noclipOriginalCollide or {}
 		noclipConn = RunService.Stepped:Connect(function()
 			local char = player.Character
 			if char then
 				for _, part in ipairs(char:GetDescendants()) do
-					if part:IsA("BasePart") then part.CanCollide = false end
+					if part:IsA("BasePart") then
+						-- On memorise la 1ere valeur vue pour pouvoir la restaurer
+						if noclipOriginalCollide[part] == nil then
+							noclipOriginalCollide[part] = part.CanCollide
+						end
+						part.CanCollide = false
+					end
 				end
 			end
 		end)
 	else
 		if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
-		local char = player.Character
-		if char then
-			for _, part in ipairs(char:GetDescendants()) do
-				if part:IsA("BasePart") then part.CanCollide = true end
-			end
-		end
+		restoreNoClipCollide()
 	end
 end, "noclip")
 
@@ -2594,8 +3048,15 @@ createToggle(pages.Personal, "⚡  Instant Reload", 22, function(state)
 	if reloadLoopConn then reloadLoopConn:Disconnect(); reloadLoopConn = nil end
 	if not state then return end
 
+	-- Throttle : avant, le remote etait envoye a CHAQUE frame (~60/s) -> kick / spam serveur
+	local RELOAD_INTERVAL = 0.25
+	local lastFire = 0
+
 	reloadLoopConn = RunService.RenderStepped:Connect(function()
 		if not reloadEnabled then return end
+		local now = os.clock()
+		if now - lastFire < RELOAD_INTERVAL then return end
+		lastFire = now
 		local char = player.Character
 		if not char then return end
 		for _, t in ipairs(char:GetChildren()) do
@@ -2821,7 +3282,7 @@ end, "rapidFire")
 
 createSlider(pages.Personal, "⏱  Fire Interval (ms)", 50, 500, 100, 26, function(val)
 	rapidFireInterval = val / 1000
-end)
+end, "fireInterval")
 
 
 
@@ -3270,6 +3731,10 @@ createSection(pages.Personal, "📐  Appearance", 40)
 
 currentScale = 1.0
 
+-- Tailles de base memorisees : evite que le scale s'accumule a chaque appel
+local lastScaledChar = nil
+local originalPartSizes = {}
+
 function applyScale(val)
 	currentScale = val / 100
 	local char = player.Character
@@ -3278,42 +3743,45 @@ function applyScale(val)
 	if not hum then return end
 
 	local function setScale()
-		
 		local bd = hum:FindFirstChild("BodyDepthScale")
 		local bh = hum:FindFirstChild("BodyHeightScale")
 		local bw = hum:FindFirstChild("BodyWidthScale")
 		local hs = hum:FindFirstChild("HeadScale")
-		if bd then bd.Value = currentScale end
-		if bh then bh.Value = currentScale end
-		if bw then bw.Value = currentScale end
-		if hs then hs.Value = currentScale end
-
-		
 		local bt = hum:FindFirstChild("BodyTypeScale")
-		if bt then bt.Value = math.clamp(currentScale, 0, 1) end
 
-		
-		local hrp = char:FindFirstChild("HumanoidRootPart")
-		if hrp and not bd then  
-			for _, part in ipairs(char:GetDescendants()) do
-				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-					pcall(function()
-						part.Size = part.Size * currentScale
-					end)
+		if bd or bh or bw or hs then
+			-- R15 : pilotage par les NumberValues (valeur absolue, pas d'accumulation)
+			if bd then bd.Value = currentScale end
+			if bh then bh.Value = currentScale end
+			if bw then bw.Value = currentScale end
+			if hs then hs.Value = currentScale end
+			if bt then bt.Value = math.clamp(currentScale, 0, 1) end
+		elseif char.ScaleTo then
+			-- Repli propre : ScaleTo prend une echelle ABSOLUE
+			pcall(function() char:ScaleTo(currentScale) end)
+		else
+			-- Dernier repli : resize manuel depuis les tailles D'ORIGINE
+			if lastScaledChar ~= char then
+				lastScaledChar = char
+				originalPartSizes = {}
+				for _, part in ipairs(char:GetDescendants()) do
+					if part:IsA("BasePart") then
+						originalPartSizes[part] = part.Size
+					end
+				end
+			end
+			for part, baseSize in pairs(originalPartSizes) do
+				if part.Parent then
+					pcall(function() part.Size = baseSize * currentScale end)
+				else
+					originalPartSizes[part] = nil
 				end
 			end
 		end
-
-		
-		pcall(function()
-			if char.ScaleTo then
-				char:ScaleTo(currentScale)
-			end
-		end)
 	end
 
 	setScale()
-	
+	-- Le serveur ecrase parfois la synchro : on re-applique (sans accumulation)
 	task.delay(0.3, setScale)
 	task.delay(1.0, setScale)
 end
@@ -3362,7 +3830,7 @@ createSection(pages.Aim, "⚙️  Settings", 10)
 createSlider(pages.Aim, "🎚  Smooth (aim speed)", 1, 30, 8, 11, function(val)
 	aimSmooth = val / 100
 	updateAimStatus()
-end)
+end, "aimSmooth")
 
 
 createNumberInput(pages.Aim, "🔵  FOV (radius pixels)", 250, 12, function(val)
@@ -3372,7 +3840,7 @@ end, "aimFOV")
 
 createSlider(pages.Aim, "🎯  Prediction (lead)", 0, 50, 15, 13, function(val)
 	aimPrediction = val / 100
-end)
+end, "aimPrediction")
 
 createToggle(pages.Aim, "👥  Team Check", 14, function(state)
 	aimTeamCheck = state
@@ -3386,16 +3854,29 @@ function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 	local selIdx = defaultIdx
 	local open   = false
 
-	local hdr = Instance.new("Frame", parent)
-	hdr.Size = UDim2.new(1,0,0,34)
+	local hdr = Instance.new("TextButton", parent)
+	hdr.Size = UDim2.new(1,0,0,38)
 	hdr.BackgroundColor3 = currentTheme.Button
 	hdr.BorderSizePixel  = 0
+	hdr.AutoButtonColor = false
+	hdr.Text = ""
 	hdr.LayoutOrder      = order
-	Instance.new("UICorner", hdr).CornerRadius = UDim.new(0, 8)
+	Instance.new("UICorner", hdr).CornerRadius = UDim.new(0, 12)
+	local sheenD = Instance.new("UIGradient", hdr)
+	sheenD.Rotation = 90
+	sheenD.Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(1,1,1))
+	sheenD.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.92),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	local strokeD = Instance.new("UIStroke", hdr)
+	strokeD.Color = Color3.new(1,1,1)
+	strokeD.Transparency = 0.93
+	strokeD.Thickness = 1
 
 	local htxt = Instance.new("TextLabel", hdr)
-	htxt.Size = UDim2.new(1,-28,1,0)
-	htxt.Position = UDim2.new(0,10,0,0)
+	htxt.Size = UDim2.new(1,-32,1,0)
+	htxt.Position = UDim2.new(0,12,0,0)
 	htxt.BackgroundTransparency = 1
 	htxt.Text = label .. " : " .. items[selIdx]
 	htxt.TextColor3 = currentTheme.Text
@@ -3404,7 +3885,8 @@ function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 
 	local arrw = Instance.new("TextLabel", hdr)
 	arrw.Size = UDim2.new(0,24,1,0)
-	arrw.Position = UDim2.new(1,-26,0,0)
+	arrw.AnchorPoint = Vector2.new(0,0.5)
+	arrw.Position = UDim2.new(1,-28,0.5,0)
 	arrw.BackgroundTransparency = 1
 	arrw.Text = "▾"; arrw.TextColor3 = currentTheme.SubText
 	arrw.Font = Enum.Font.GothamBold; arrw.TextSize = 14
@@ -3413,14 +3895,20 @@ function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 	list.Size = UDim2.new(1,0,0,0)
 	list.CanvasSize = UDim2.new(0,0,0,0)
 	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	list.BackgroundColor3 = currentTheme.Panel
+	list.BackgroundColor3 = mixColor(currentTheme.Panel, currentTheme.BG, 0.3)
 	list.BorderSizePixel  = 0
 	list.ScrollBarThickness = 3
 	list.ClipsDescendants = true
 	list.Visible = false
 	list.LayoutOrder = order
-	Instance.new("UICorner", list).CornerRadius = UDim.new(0, 8)
+	Instance.new("UICorner", list).CornerRadius = UDim.new(0, 12)
+	local listStrokeD = Instance.new("UIStroke", list)
+	listStrokeD.Color = currentTheme.Accent
+	listStrokeD.Transparency = 0.8
+	listStrokeD.Thickness = 1
 	Instance.new("UIListLayout", list).Padding = UDim.new(0, 1)
+
+	local rowLabels = {}
 
 	for i, item in ipairs(items) do
 		local row = Instance.new("TextButton", list)
@@ -3431,6 +3919,8 @@ function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 		row.Font = Enum.Font.Gotham; row.TextSize = 12
 		row.TextXAlignment = Enum.TextXAlignment.Left
 		row.BorderSizePixel = 0
+		row.AutoButtonColor = false
+		rowLabels[i] = row
 		row.MouseEnter:Connect(function() playHover(); row.BackgroundTransparency = 0.8 end)
 		row.MouseLeave:Connect(function() row.BackgroundTransparency = 1 end)
 		row.MouseButton1Click:Connect(function()
@@ -3439,22 +3929,42 @@ function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 			htxt.Text = label .. " : " .. items[selIdx]
 			onPick(items[selIdx])
 			open = false
-			TweenService:Create(list, TweenInfo.new(0.14), {Size=UDim2.new(1,0,0,0)}):Play()
-			task.delay(0.15, function() list.Visible = false end)
+			TweenService:Create(list, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size=UDim2.new(1,0,0,0)}):Play()
+			TweenService:Create(arrw, TweenInfo.new(0.16), {Rotation = 0}):Play()
+			task.delay(0.17, function() if not open then list.Visible = false end end)
 		end)
 	end
 
-	local hbtn = Instance.new("TextButton", hdr)
-	hbtn.Size = UDim2.new(1,0,1,0)
-	hbtn.BackgroundTransparency = 1; hbtn.Text = ""
-	hbtn.MouseEnter:Connect(playHover)
-	hbtn.MouseButton1Click:Connect(function()
-		playHover()
-		open = not open
+	local function setOpen(state)
+		open = state
 		list.Visible = true
 		local h = open and math.min(#items * 27, 216) or 0
-		TweenService:Create(list, TweenInfo.new(0.14), {Size=UDim2.new(1,0,0,h)}):Play()
-		if not open then task.delay(0.15, function() list.Visible = false end) end
+		TweenService:Create(list, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size=UDim2.new(1,0,0,h)}):Play()
+		-- Chevron qui pivote a l'ouverture
+		TweenService:Create(arrw, TweenInfo.new(0.18), {Rotation = open and 180 or 0}):Play()
+		if not open then task.delay(0.19, function() if not open then list.Visible = false end end) end
+	end
+
+	hdr.MouseEnter:Connect(function()
+		playHover()
+		TweenService:Create(strokeD, TweenInfo.new(0.18), {Transparency = 0.6, Color = currentTheme.Accent}):Play()
+	end)
+	hdr.MouseLeave:Connect(function()
+		TweenService:Create(strokeD, TweenInfo.new(0.18), {Transparency = 0.93, Color = Color3.new(1,1,1)}):Play()
+	end)
+	hdr.MouseButton1Click:Connect(function()
+		playHover()
+		setOpen(not open)
+	end)
+
+	onThemeChanged(function(t)
+		hdr.BackgroundColor3 = t.Button
+		htxt.TextColor3 = t.Text
+		arrw.TextColor3 = t.SubText
+		list.BackgroundColor3 = mixColor(t.Panel, t.BG, 0.3)
+		for _, r in ipairs(rowLabels) do
+			r.TextColor3 = t.Text
+		end
 	end)
 
 	return {
@@ -3531,7 +4041,7 @@ end, "aimShowCircle")
 
 createSlider(pages.Aim, "📏  Max Distance (0 = infinite)", 0, 500, 0, 42, function(val)
 	aimDistance = val
-end)
+end, "aimDistance")
 
 
 createSection(pages.World, "☀  Environment", 0)
@@ -3877,7 +4387,7 @@ createSlider(pages.World, "⏩  Time Speed (x)", 0, 5, 0, 42, function(val)
 			Lighting.ClockTime = (Lighting.ClockTime + dt * val) % 24
 		end)
 	end
-end)
+end, "timeSpeed")
 
 createSection(pages.World, "⚙  Physics", 50)
 
@@ -4335,7 +4845,6 @@ createToggle(fxContainer, "❄  Menu Snow", 1, function(state)
 		stopFxLoop("snow")
 		clearFx("snow")
 	end
-	autoSave()
 end, "menuSnow")
 
 createToggle(fxContainer, "🌧  Menu Rain", 2, function(state)
@@ -4346,7 +4855,6 @@ createToggle(fxContainer, "🌧  Menu Rain", 2, function(state)
 		stopFxLoop("rain")
 		clearFx("rain")
 	end
-	autoSave()
 end, "menuRain")
 
 createToggle(fxContainer, "🔥  Menu Fire", 3, function(state)
@@ -4357,7 +4865,6 @@ createToggle(fxContainer, "🔥  Menu Fire", 3, function(state)
 		stopFxLoop("fire")
 		clearFx("fire")
 	end
-	autoSave()
 end, "menuFire")
 
 createToggle(fxContainer, "🚀  Menu Rocket", 4, function(state)
@@ -4368,7 +4875,6 @@ createToggle(fxContainer, "🚀  Menu Rocket", 4, function(state)
 		stopFxLoop("rocket")
 		clearFx("rocket")
 	end
-	autoSave()
 end, "menuRocket")
 
 createToggle(fxContainer, "🧑  Steve Head", 5, function(state)
@@ -4379,12 +4885,10 @@ createToggle(fxContainer, "🧑  Steve Head", 5, function(state)
 		stopFxLoop("steve")
 		clearFx("steve")
 	end
-	autoSave()
 end, "menuSteve")
 
 createToggle(fxContainer, "⬛  Black Background", 6, function(state)
 	if state then enableBlackBg() else disableBlackBg() end
-	autoSave()
 end, "menuBlackBg")
 
 createToggle(fxContainer, "🌐  Matrix Rain", 7, function(state)
@@ -4395,18 +4899,15 @@ createToggle(fxContainer, "🌐  Matrix Rain", 7, function(state)
 		stopFxLoop("matrixRain")
 		clearFx("matrixRain")
 	end
-	autoSave()
 end, "menuMatrixRain")
 
 createToggle(fxContainer, "✨  Background Animation", 8, function(state)
 	bgAnimEnabled = state
 	if state then enableBgAnim() else disableBgAnim() end
-	autoSave()
 end, "bgAnim")
 
 createToggle(fxContainer, "🖼  Menu Border Glow", 9, function(state)
 	if state then enableMenuBorderGlow() else disableMenuBorderGlow() end
-	autoSave()
 end, "menuBorderGlow")
 
 createSection(pages.Settings, "📐  Menu & Lock", 80)
@@ -4420,8 +4921,7 @@ end, "lockInterface")
 createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 82, function(val)
 	savedOpacity = val
 	main.BackgroundTransparency = 1 - (val / 100)
-	autoSave()
-end)
+end, "menuOpacity")
 createBtn(pages.Settings, "↩  Reset Size",  currentTheme.Button, 83, function() applyMenuSize(380, 500) autoSave() end)
 createBtn(pages.Settings, "🏠  Recenter Menu", currentTheme.Button, 84, function()
 	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
@@ -4431,7 +4931,7 @@ createSection(pages.Settings, "👁  Camera", 90)
 createSlider(pages.Settings, "👁  FOV", 30, 120, 70, 91, function(val)
 	local cam = workspace.CurrentCamera
 	if cam then cam.FieldOfView = val end
-end)
+end, "camFov")
 
 createSection(pages.Settings, "💾  Configuration", 100)
 
@@ -4446,8 +4946,22 @@ local function writeConfigData()
 	return ok, err
 end
 
-function autoSave()
-	pcall(writeConfigData)
+-- autoSave debonce : plusieurs changements rapproches (ex: drag de slider,
+-- toggle+config) ne produisent plus qu'UNE ecriture disque au lieu de N.
+autoSavePending = false
+
+function autoSave(immediate)
+	if immediate then
+		autoSavePending = false
+		pcall(writeConfigData)
+		return
+	end
+	if autoSavePending then return end
+	autoSavePending = true
+	task.delay(0.4, function()
+		autoSavePending = false
+		pcall(writeConfigData)
+	end)
 end
 
 
@@ -4520,6 +5034,8 @@ end
 function getConfig()
 	local toggles = {}
 	for k, v in pairs(toggleStates) do toggles[k] = v end
+	local sliders = {}
+	for k, v in pairs(sliderValues) do sliders[k] = v end
 	return {
 		theme     = (function()
 			for name, t in pairs(Themes) do if t == currentTheme then return name end end
@@ -4572,6 +5088,7 @@ function getConfig()
 		rapidFireInterval = rapidFireInterval,
 		autoSaveAll = autoSaveAllEnabled,
 		toggles   = toggles,
+		sliders   = sliders,
 	}
 end
 
@@ -4593,7 +5110,12 @@ function applyConfig(cfg)
 		savedOpacity = cfg.opacity
 		main.BackgroundTransparency = 1 - (cfg.opacity / 100)
 	end
-	if cfg.keyLayout then keyLayout = cfg.keyLayout end
+	if cfg.keyLayout then
+		keyLayout = cfg.keyLayout
+		if uiRefs.keysLabel then
+			pcall(function() uiRefs.keysLabel.Text = "⌨  Keys: " .. keyLayout end)
+		end
+	end
 	if cfg.aimKey   then aimKey   = cfg.aimKey   end
 	if cfg.aimMode  then aimMode  = cfg.aimMode  end
 	if cfg.aimMethod then aimMethod = cfg.aimMethod end
@@ -4641,6 +5163,13 @@ function applyConfig(cfg)
 		local c2 = deserializeColor(cfg.espColors.ally);  if c2 then ESP_COLOR_ALLY  = c2 end
 		local c3 = deserializeColor(cfg.espColors.bot);   if c3 then ESP_COLOR_BOT   = c3 end
 		local c4 = deserializeColor(cfg.espColors.self);  if c4 then ESP_COLOR_SELF  = c4 end
+		-- Resynchronise les pastilles de couleur de l'UI
+		pcall(function()
+			if colorDropdowns.espColorEnemy then colorDropdowns.espColorEnemy.set(ESP_COLOR_ENEMY, true) end
+			if colorDropdowns.espColorAlly  then colorDropdowns.espColorAlly.set(ESP_COLOR_ALLY, true) end
+			if colorDropdowns.espColorBot   then colorDropdowns.espColorBot.set(ESP_COLOR_BOT, true) end
+			if colorDropdowns.espColorSelf  then colorDropdowns.espColorSelf.set(ESP_COLOR_SELF, true) end
+		end)
 	end
 	if cfg.espMaxDist then
 		if cfg.espMaxDist.player then ESP_MAX_DIST_PLAYER = cfg.espMaxDist.player end
@@ -4650,6 +5179,9 @@ function applyConfig(cfg)
 		if cfg.espStyle.fillTransparency then ESP_FILL_TRANSPARENCY = cfg.espStyle.fillTransparency end
 		if cfg.espStyle.boxStyle then ESP_BOX_STYLE = cfg.espStyle.boxStyle end
 		if cfg.espStyle.skeletonWidth then ESP_SKELETON_WIDTH = cfg.espStyle.skeletonWidth end
+		if uiRefs.boxStyleLabel then
+			pcall(function() uiRefs.boxStyleLabel.Text = "📦  Box Style: " .. ESP_BOX_STYLE end)
+		end
 	end
 	if cfg.rapidFireInterval then rapidFireInterval = cfg.rapidFireInterval end
 	if cfg.toggles then
@@ -4663,11 +5195,23 @@ function applyConfig(cfg)
 			end
 		end
 	end
+	-- Repousse les valeurs des sliders dans l'UI (et donc dans les variables cibles)
+	if cfg.sliders then
+		for k, v in pairs(cfg.sliders) do
+			sliderValues[k] = v
+			if sliderApply[k] then
+				pcall(sliderApply[k], v)
+			end
+		end
+	end
 	updateAimStatus()
+	pcall(refreshAllESP)
 end
 
 function saveConfig()
+	-- Ecriture IMMEDiate (autoSave est debonce)
 	local ok, err = writeConfigData()
+	autoSavePending = false
 	if ok then
 		showNotification("✅  Config saved!", 3)
 	else
@@ -4714,6 +5258,7 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  104, funct
 	if themeDropdown then themeDropdown.set(themeKeyToLabel["Dark"]) end
 	applyMenuSize(380, 500)
 	keyLayout = "QWERTY"
+	if uiRefs.keysLabel then pcall(function() uiRefs.keysLabel.Text = "⌨  Keys: " .. keyLayout end) end
 	local cam = workspace.CurrentCamera
 	if cam then cam.FieldOfView = 70 end
 	aimKey = "Mouse2"; aimMode = "hold"; flySpeed = 40
@@ -4737,10 +5282,22 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  104, funct
 	ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
 	ESP_COLOR_BOT   = Color3.fromRGB(255, 200, 0)
 	ESP_COLOR_SELF  = Color3.fromRGB(80, 160, 255)
+	pcall(function()
+		if colorDropdowns.espColorEnemy then colorDropdowns.espColorEnemy.set(ESP_COLOR_ENEMY, true) end
+		if colorDropdowns.espColorAlly  then colorDropdowns.espColorAlly.set(ESP_COLOR_ALLY, true) end
+		if colorDropdowns.espColorBot   then colorDropdowns.espColorBot.set(ESP_COLOR_BOT, true) end
+		if colorDropdowns.espColorSelf  then colorDropdowns.espColorSelf.set(ESP_COLOR_SELF, true) end
+	end)
 	ESP_MAX_DIST_PLAYER = 0; ESP_MAX_DIST_BOT = 0
 	ESP_FILL_TRANSPARENCY = 0.85; ESP_BOX_STYLE = "corners"
 	ESP_SKELETON_WIDTH = 0.15; ESP_HEAD_DOT = false
+	if uiRefs.boxStyleLabel then pcall(function() uiRefs.boxStyleLabel.Text = "📦  Box Style: " .. ESP_BOX_STYLE end) end
 	rapidFireInterval = 0.1
+	-- Remet chaque slider a sa valeur par defaut (et donc la variable cible)
+	for k, v in pairs(sliderDefaults) do
+		if sliderApply[k] then pcall(sliderApply[k], v) end
+		sliderValues[k] = v
+	end
 	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
 	applyMovement(player.Character)
 	updateAimStatus()
@@ -4756,6 +5313,7 @@ local activeToasts = {}
 
 showNotification = function(message, duration)
 	duration = duration or 4
+	notifyCount = (notifyCount or 0) + 1
 
 	if not toastGui or not toastGui.Parent then
 		toastGui = Instance.new("ScreenGui", playerGui)
@@ -4771,32 +5329,46 @@ showNotification = function(message, duration)
 		toastContainer.BorderSizePixel = 0
 		onThemeChanged(function(t)
 			for _, tf in ipairs(activeToasts) do
+				local card = tf:FindFirstChild("ToastCard")
 				local ic = tf:FindFirstChild("ToastIcon")
 				if ic then ic.BackgroundColor3 = t.Accent end
 				local pg = tf:FindFirstChild("ToastProgress")
 				if pg then pg.BackgroundColor3 = t.Accent end
 				local st = tf:FindFirstChildOfClass("UIStroke")
 				if st then st.Color = t.Accent end
+				local lb = tf:FindFirstChild("ToastLabel")
+				if lb then lb.TextColor3 = t.Text end
+				if card then
+					card.BackgroundColor3 = mixColor(t.Panel, t.BG, 0.35)
+					local g = card:FindFirstChild("ToastGrad")
+					if g then g.Color = ColorSequence.new(mixColor(t.Panel, Color3.new(1,1,1), 0.06), t.Panel) end
+				end
 			end
 		end)
 	end
 
 	local toast = Instance.new("Frame", toastContainer)
+	toast.Name = "ToastCard"
 	toast.Size = UDim2.new(1, 0, 0, 50)
-	toast.BackgroundColor3 = Color3.fromRGB(16, 16, 26)
+	toast.BackgroundColor3 = mixColor(currentTheme.Panel, currentTheme.BG, 0.35)
 	toast.BorderSizePixel = 0
 	toast.AnchorPoint = Vector2.new(0, 1)
 	toast.Position = UDim2.new(0, 0, 1, 0)
 	toast.ZIndex = 10
 	Instance.new("UICorner", toast).CornerRadius = UDim.new(0, 12)
 	local toastGrad = Instance.new("UIGradient", toast)
+	toastGrad.Name = "ToastGrad"
 	toastGrad.Rotation = 90
-	toastGrad.Color = ColorSequence.new(Color3.fromRGB(26, 26, 40), Color3.fromRGB(12, 12, 20))
+	toastGrad.Color = ColorSequence.new(mixColor(currentTheme.Panel, Color3.new(1,1,1), 0.06), currentTheme.Panel)
+	toastGrad.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.9),
+		NumberSequenceKeypoint.new(1, 1),
+	})
 
 	local toastStroke = Instance.new("UIStroke", toast)
 	toastStroke.Color = currentTheme.Accent
-	toastStroke.Thickness = 1.5
-	toastStroke.Transparency = 0.35
+	toastStroke.Thickness = 1
+	toastStroke.Transparency = 0.45
 
 	local icon = Instance.new("Frame", toast)
 	icon.Name = "ToastIcon"
@@ -4808,11 +5380,12 @@ showNotification = function(message, duration)
 	Instance.new("UICorner", icon).CornerRadius = UDim.new(1, 0)
 
 	local toastLabel = Instance.new("TextLabel", toast)
+	toastLabel.Name = "ToastLabel"
 	toastLabel.Text = message
 	toastLabel.Size = UDim2.new(1, -30, 1, 0)
 	toastLabel.Position = UDim2.new(0, 26, 0, 0)
 	toastLabel.BackgroundTransparency = 1
-	toastLabel.TextColor3 = Color3.fromRGB(230, 230, 248)
+	toastLabel.TextColor3 = currentTheme.Text
 	toastLabel.Font = Enum.Font.GothamSemibold
 	toastLabel.TextSize = 12
 	toastLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -4839,11 +5412,9 @@ showNotification = function(message, duration)
 		Size = UDim2.new(0, 0, 0, 3)
 	}):Play()
 
+	-- Empilement : le plus recent est en bas (0), les precedents remontent de 56 px
 	for i, t in ipairs(activeToasts) do
-		local targetY = 0
-		for j = i, #activeToasts do
-			targetY = targetY - 56
-		end
+		local targetY = -56 * (#activeToasts - i)
 		TweenService:Create(t, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			Position = UDim2.new(0, 0, 1, targetY)
 		}):Play()
@@ -4861,6 +5432,12 @@ showNotification = function(message, duration)
 			end
 		end
 		toast:Destroy()
+		-- Redescend les toasts restants pour combler le trou
+		for i, t in ipairs(activeToasts) do
+			TweenService:Create(t, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Position = UDim2.new(0, 0, 1, -56 * (#activeToasts - i))
+			}):Play()
+		end
 	end)
 end
 
@@ -5075,6 +5652,25 @@ espState = {
 	selfCham      = false,
 }
 
+-- Helpers : une seule source de verite pour "y a-t-il un ESP actif ?"
+-- (remplace les 8 expressions dupliquees, incoherentes sur chams/healthBar)
+local BOT_ESP_KEYS = {"botBoxes","botNames","botHealth","botDistance","botSkeletons","botChams","botHealthBar","botSnaplines","botHeadDot"}
+local PLAYER_ESP_KEYS = {"playerBoxes","playerNames","playerHealth","playerHealthBar","playerDistance","playerSkeletons","playerChams","playerHeadDot","playerSnaplines"}
+
+function anyBotActive()
+	for _, k in ipairs(BOT_ESP_KEYS) do
+		if espState[k] then return true end
+	end
+	return false
+end
+
+function anyPlayerActive()
+	for _, k in ipairs(PLAYER_ESP_KEYS) do
+		if espState[k] then return true end
+	end
+	return false
+end
+
 ESP_COLOR_ALLY  = Color3.fromRGB(50, 200, 100)
 ESP_COLOR_ENEMY = Color3.fromRGB(255, 40, 50)
 ESP_COLOR_BOT   = Color3.fromRGB(255, 200, 0)
@@ -5260,15 +5856,13 @@ end
 
 function refreshAllESP()
 	for _, p in ipairs(Players:GetPlayers()) do buildESPFor(p) end
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
-	if anyBot then refreshBotESP() end
+	if anyBotActive() then refreshBotESP() end
 	buildSelfESP()
 end
 
 function refreshBotESP()
 	clearAllBotESP()
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
-	if not anyBot then return end
+	if not anyBotActive() then return end
 	for _, model in ipairs(workspace:GetDescendants()) do
 		if isBot(model) then
 			pcall(function() buildESPBot(model) end)
@@ -5315,6 +5909,8 @@ local function drawTarget(set, root, head, hum, color, isSelf, name, isAlly, max
 	local legPos, legOn = worldToScreen(root.Position - Vector3.new(0, 3.2, 0))
 
 	local visible = rootOn and headOn and legOn and inRange
+	-- Les textes (nom / distance) n'ont pas besoin d'avoir les jambes a l'ecran
+	local textVisible = rootOn and headOn and inRange
 	local h = math.abs(headPos.Y - legPos.Y)
 	local w = h * 0.6
 	local topLeft = Vector2.new(rootPos.X - w / 2, headPos.Y)
@@ -5364,10 +5960,16 @@ local function drawTarget(set, root, head, hum, color, isSelf, name, isAlly, max
 	end
 
 	-- Name (+ distance appended)
-	if state.names and visible then
+	if state.names and textVisible then
 		local txt = (isSelf and "" or (isAlly and "[A] " or "[E] ")) .. name
 		if state.distance then txt = txt .. " [" .. math.floor(dist) .. "m]" end
 		set.name.Text = txt
+		set.name.Position = Vector2.new(rootPos.X, headPos.Y - 18)
+		set.name.Color = color
+		set.name.Visible = true
+	elseif state.distance and textVisible then
+		-- Distance seule : le module n'affichait rien avant (bug)
+		set.name.Text = "[" .. math.floor(dist) .. "m]"
 		set.name.Position = Vector2.new(rootPos.X, headPos.Y - 18)
 		set.name.Color = color
 		set.name.Visible = true
@@ -5376,7 +5978,7 @@ local function drawTarget(set, root, head, hum, color, isSelf, name, isAlly, max
 	end
 
 	-- Health text
-	if state.health and visible and hum then
+	if state.health and textVisible and hum then
 		local pct = math.clamp(hum.Health / math.max(hum.MaxHealth, 1), 0, 1)
 		set.hpText.Text = math.floor(hum.Health) .. " hp"
 		set.hpText.Position = Vector2.new(rootPos.X, headPos.Y - 4)
@@ -5444,7 +6046,8 @@ local function drawTarget(set, root, head, hum, color, isSelf, name, isAlly, max
 					l.From = pa
 					l.To = pb
 					l.Color = color
-					l.Thickness = 1.5
+					-- L'epaisseur suit maintenant le slider (0.05-0.5 -> 0.5-5 px)
+					l.Thickness = math.clamp(ESP_SKELETON_WIDTH * 10, 0.5, 5)
 					l.Visible = true
 				else
 					l.Visible = false
@@ -5466,8 +6069,7 @@ RunService:BindToRenderStep("ESP_Draw", ESP_RENDER, function()
 	if not cam then return end
 
 	-- Players
-	local anyPlayer = espState.playerBoxes or espState.playerNames or espState.playerHealth or espState.playerHealthBar or espState.playerDistance or espState.playerSkeletons or espState.playerHeadDot or espState.playerSnaplines
-	if anyPlayer then
+	if anyPlayerActive() then
 		for _, p in ipairs(Players:GetPlayers()) do
 			if p ~= player then
 				local set = espDraw[p]
@@ -5496,8 +6098,7 @@ RunService:BindToRenderStep("ESP_Draw", ESP_RENDER, function()
 	end
 
 	-- Bots
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botHealthBar or espState.botDistance or espState.botSkeletons or espState.botHeadDot or espState.botSnaplines
-	if anyBot then
+	if anyBotActive() then
 		for model, set in pairs(espBotDraw) do
 			if model and model.Parent then
 				local root = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Torso")
@@ -5613,114 +6214,341 @@ task.spawn(function()
 end)
 
 
-function createColorDropdown(parent, label, order, defaultColor, onChange)
+colorDropdowns = {}
+
+
+
+function createColorDropdown(parent, label, order, defaultColor, onChange, configKey)
+
 	local colors = {
+
 		{"Red",    Color3.fromRGB(255,60,60)},
+
 		{"Orange", Color3.fromRGB(255,140,30)},
+
 		{"Yellow", Color3.fromRGB(255,220,50)},
+
 		{"Green",  Color3.fromRGB(50,220,100)},
+
 		{"Cyan",   Color3.fromRGB(0,210,255)},
+
 		{"Blue",   Color3.fromRGB(80,160,255)},
+
 		{"Purple", Color3.fromRGB(180,80,255)},
+
 		{"White",  Color3.fromRGB(240,240,240)},
+
 		{"Pink",   Color3.fromRGB(255,100,180)},
+
 	}
+
 	local selected = defaultColor
+
 	local open = false
 
-	
-	local headerF = Instance.new("Frame", parent)
-	headerF.Size = UDim2.new(1,0,0,34)
+
+
+	local headerF = Instance.new("TextButton", parent)
+
+	headerF.Size = UDim2.new(1,0,0,38)
+
 	headerF.BackgroundColor3 = currentTheme.Button
+
 	headerF.BorderSizePixel = 0
+
+	headerF.AutoButtonColor = false
+
+	headerF.Text = ""
+
 	headerF.LayoutOrder = order
-	Instance.new("UICorner", headerF).CornerRadius = UDim.new(0,8)
+
+	Instance.new("UICorner", headerF).CornerRadius = UDim.new(0,12)
+
+	local sheenC = Instance.new("UIGradient", headerF)
+
+	sheenC.Rotation = 90
+
+	sheenC.Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(1,1,1))
+
+	sheenC.Transparency = NumberSequence.new({
+
+		NumberSequenceKeypoint.new(0, 0.92),
+
+		NumberSequenceKeypoint.new(1, 1),
+
+	})
+
+	local strokeC = Instance.new("UIStroke", headerF)
+
+	strokeC.Color = Color3.new(1,1,1)
+
+	strokeC.Transparency = 0.93
+
+	strokeC.Thickness = 1
+
+
 
 	local swatch = Instance.new("Frame", headerF)
-	swatch.Size = UDim2.new(0,14,0,14)
-	swatch.Position = UDim2.new(0,10,0.5,-7)
+
+	swatch.Size = UDim2.new(0,16,0,16)
+
+	swatch.Position = UDim2.new(0,11,0.5,-8)
+
 	swatch.BackgroundColor3 = selected
+
 	swatch.BorderSizePixel = 0
+
 	Instance.new("UICorner", swatch).CornerRadius = UDim.new(1,0)
 
+	local swatchStroke = Instance.new("UIStroke", swatch)
+
+	swatchStroke.Color = Color3.new(0,0,0)
+
+	swatchStroke.Transparency = 0.7
+
+	swatchStroke.Thickness = 1
+
+
+
 	local lbl = Instance.new("TextLabel", headerF)
-	lbl.Size = UDim2.new(1,-60,1,0)
-	lbl.Position = UDim2.new(0,30,0,0)
+
+	lbl.Size = UDim2.new(1,-62,1,0)
+
+	lbl.Position = UDim2.new(0,34,0,0)
+
 	lbl.BackgroundTransparency = 1
+
 	lbl.Text = label
+
 	lbl.TextColor3 = currentTheme.Text
+
 	lbl.Font = Enum.Font.Gotham; lbl.TextSize = 12
+
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
 
+
+
 	local arrow = Instance.new("TextLabel", headerF)
+
 	arrow.Size = UDim2.new(0,24,1,0)
-	arrow.Position = UDim2.new(1,-28,0,0)
+
+	arrow.AnchorPoint = Vector2.new(0,0.5)
+
+	arrow.Position = UDim2.new(1,-28,0.5,0)
+
 	arrow.BackgroundTransparency = 1
+
 	arrow.Text = "▾"; arrow.TextColor3 = currentTheme.SubText
+
 	arrow.Font = Enum.Font.GothamBold; arrow.TextSize = 13
 
-	
+
+
 	local listF = Instance.new("Frame", parent)
+
 	listF.Size = UDim2.new(1,0,0,0)
-	listF.BackgroundColor3 = currentTheme.Panel
+
+	listF.BackgroundColor3 = mixColor(currentTheme.Panel, currentTheme.BG, 0.3)
+
 	listF.BorderSizePixel = 0
+
 	listF.ClipsDescendants = true
+
+	listF.Visible = false
+
 	listF.LayoutOrder = order
-	Instance.new("UICorner", listF).CornerRadius = UDim.new(0,8)
+
+	Instance.new("UICorner", listF).CornerRadius = UDim.new(0,12)
+
+	local listStroke = Instance.new("UIStroke", listF)
+
+	listStroke.Color = currentTheme.Accent
+
+	listStroke.Transparency = 0.8
+
+	listStroke.Thickness = 1
+
 	local ll = Instance.new("UIListLayout", listF)
+
 	ll.Padding = UDim.new(0,2)
 
-	for _, pair in ipairs(colors) do
-		local cname, cval = pair[1], pair[2]
-		local row = Instance.new("TextButton", listF)
-		row.Size = UDim2.new(1,0,0,28)
-		row.BackgroundTransparency = 1
-		row.Text = ""
-		row.BorderSizePixel = 0
 
-		local dot = Instance.new("Frame", row)
-		dot.Size = UDim2.new(0,12,0,12)
-		dot.Position = UDim2.new(0,10,0.5,-6)
-		dot.BackgroundColor3 = cval
-		dot.BorderSizePixel = 0
-		Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
 
-		local rl = Instance.new("TextLabel", row)
-		rl.Size = UDim2.new(1,-30,1,0)
-		rl.Position = UDim2.new(0,28,0,0)
-		rl.BackgroundTransparency = 1
-		rl.Text = cname
-		rl.TextColor3 = currentTheme.Text
-		rl.Font = Enum.Font.Gotham; rl.TextSize = 11
-		rl.TextXAlignment = Enum.TextXAlignment.Left
+	local rows = {}
 
-		row.MouseEnter:Connect(function() playHover(); row.BackgroundTransparency = 0.8 end)
-		row.MouseLeave:Connect(function() row.BackgroundTransparency = 1 end)
-		row.MouseButton1Click:Connect(function()
-			playHover()
-			selected = cval
-			swatch.BackgroundColor3 = cval
-			onChange(cval)
-			open = false
-			TweenService:Create(listF, TweenInfo.new(0.15), {Size=UDim2.new(1,0,0,0)}):Play()
-			task.wait(0.15); listF.Visible = false
-		end)
+
+
+	local function setOpen(state)
+
+		open = state
+
+		listF.Visible = true
+
+		local h = open and (#colors * 30 + 6) or 0
+
+		TweenService:Create(listF, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1,0,0,h)}):Play()
+
+		TweenService:Create(arrow, TweenInfo.new(0.18), {Rotation = open and 180 or 0}):Play()
+
+		if not open then
+
+			task.delay(0.18, function()
+
+				if not open then listF.Visible = false end
+
+			end)
+
+		end
+
 	end
 
-	local headerBtn = Instance.new("TextButton", headerF)
-	headerBtn.Size = UDim2.new(1,0,1,0)
-	headerBtn.BackgroundTransparency = 1
-	headerBtn.Text = ""
-	headerBtn.MouseEnter:Connect(playHover)
-	headerBtn.MouseButton1Click:Connect(function()
+
+
+	for _, pair in ipairs(colors) do
+
+		local cname, cval = pair[1], pair[2]
+
+		local row = Instance.new("TextButton", listF)
+
+		row.Size = UDim2.new(1,0,0,28)
+
+		row.BackgroundTransparency = 1
+
+		row.Text = ""
+
+		row.BorderSizePixel = 0
+
+		row.AutoButtonColor = false
+
+
+
+		local dot = Instance.new("Frame", row)
+
+		dot.Size = UDim2.new(0,12,0,12)
+
+		dot.Position = UDim2.new(0,10,0.5,-6)
+
+		dot.BackgroundColor3 = cval
+
+		dot.BorderSizePixel = 0
+
+		Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
+
+
+
+		local rl = Instance.new("TextLabel", row)
+
+		rl.Size = UDim2.new(1,-30,1,0)
+
+		rl.Position = UDim2.new(0,28,0,0)
+
+		rl.BackgroundTransparency = 1
+
+		rl.Text = cname
+
+		rl.TextColor3 = currentTheme.Text
+
+		rl.Font = Enum.Font.Gotham; rl.TextSize = 11
+
+		rl.TextXAlignment = Enum.TextXAlignment.Left
+
+
+
+		rows[cname] = {row = row, dot = dot, label = rl, color = cval}
+
+
+
+		row.MouseEnter:Connect(function() playHover(); row.BackgroundTransparency = 0.8 end)
+
+		row.MouseLeave:Connect(function() row.BackgroundTransparency = 1 end)
+
+		row.MouseButton1Click:Connect(function()
+
+			playHover()
+
+			selected = cval
+
+			swatch.BackgroundColor3 = cval
+
+			onChange(cval)
+
+			setOpen(false)
+
+			if autoSave then autoSave() end
+
+		end)
+
+	end
+
+
+
+	-- Met a jour la selection SANS rappeler onChange (utilise par applyConfig/Reset)
+
+	local function set(color, silent)
+
+		selected = color
+
+		swatch.BackgroundColor3 = color
+
+		if not silent then onChange(color) end
+
+	end
+
+
+
+	headerF.MouseEnter:Connect(function()
+
 		playHover()
-		open = not open
-		listF.Visible = true
-		local h = open and (#colors * 30 + 4) or 0
-		TweenService:Create(listF, TweenInfo.new(0.15), {Size=UDim2.new(1,0,0,h)}):Play()
-		if not open then task.wait(0.15); listF.Visible = false end
+
+		TweenService:Create(strokeC, TweenInfo.new(0.18), {Transparency = 0.6, Color = currentTheme.Accent}):Play()
+
 	end)
+
+	headerF.MouseLeave:Connect(function()
+
+		TweenService:Create(strokeC, TweenInfo.new(0.18), {Transparency = 0.93, Color = Color3.new(1,1,1)}):Play()
+
+	end)
+
+	headerF.MouseButton1Click:Connect(function()
+
+		playHover()
+
+		setOpen(not open)
+
+	end)
+
+
+
+	onThemeChanged(function(t)
+
+		headerF.BackgroundColor3 = t.Button
+
+		lbl.TextColor3 = t.Text
+
+		arrow.TextColor3 = t.SubText
+
+		listF.BackgroundColor3 = mixColor(t.Panel, t.BG, 0.3)
+
+		for _, r in pairs(rows) do
+
+			r.label.TextColor3 = t.Text
+
+		end
+
+	end)
+
+
+
+	local api = { set = set, GetColor = function() return selected end }
+
+	if configKey then colorDropdowns[configKey] = api end
+
+	return api
+
 end
+
+
 
 
 createSection(pages.ESP, "👤  Players", 0)
@@ -5759,8 +6587,7 @@ createToggle(pages.ESP, "💀  Bot Skeleton", 36, function(s) toggleESP("botSkel
 createToggle(pages.ESP, "🔆  Bot Chams", 37, function(s) toggleESP("botChams", s) end, "espBotChams")
 createToggle(pages.ESP, "📐  Bot Snaplines", 38, function(s) toggleESP("botSnaplines", s) end, "espBotSnaplines")
 createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 39, function()
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
-	if anyBot then refreshBotESP()
+	if anyBotActive() then refreshBotESP()
 	else showNotification("⚠  Active un toggle Bot ESP d'abord", 2) end
 end)
 
@@ -5770,47 +6597,52 @@ createToggle(pages.ESP, "👻  Show Self ESP", 41, function(s) toggleESP("selfES
 createSection(pages.ESP, "🎨  Couleurs", 50)
 createColorDropdown(pages.ESP, "🔴  Enemy", 51,
 	Color3.fromRGB(255,60,60),
-	function(c) ESP_COLOR_ENEMY = c; refreshAllESP() end
+	function(c) ESP_COLOR_ENEMY = c; refreshAllESP() end,
+	"espColorEnemy"
 )
 createColorDropdown(pages.ESP, "🔵  Ally", 52,
 	Color3.fromRGB(80,160,255),
-	function(c) ESP_COLOR_ALLY = c; refreshAllESP() end
+	function(c) ESP_COLOR_ALLY = c; refreshAllESP() end,
+	"espColorAlly"
 )
 createColorDropdown(pages.ESP, "🟡  Bot", 53,
 	Color3.fromRGB(255,200,0),
-	function(c) ESP_COLOR_BOT = c; local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot; if anyBot then refreshBotESP() end end
+	function(c) ESP_COLOR_BOT = c; if anyBotActive() then refreshBotESP() end end,
+	"espColorBot"
 )
 createColorDropdown(pages.ESP, "🔷  Self", 54,
 	Color3.fromRGB(80,160,255),
-	function(c) ESP_COLOR_SELF = c; buildSelfESP() end
+	function(c) ESP_COLOR_SELF = c; buildSelfESP() end,
+	"espColorSelf"
 )
 
 createSection(pages.ESP, "⚙  Style", 60)
 createSlider(pages.ESP, "🔲  Fill Transparence", 0, 100, 85, 61, function(val)
 	ESP_FILL_TRANSPARENCY = val / 100
 	refreshAllESP()
-end)
+end, "espFill")
 local boxStyleBtn = nil
-boxStyleBtn = createBtn(pages.ESP, "📦  Box Style: " .. ESP_BOX_STYLE, currentTheme.Button, 62, function(btn)
+local _, boxStyleLbl = createBtn(pages.ESP, "📦  Box Style: " .. ESP_BOX_STYLE, currentTheme.Button, 62, function(btn)
 	ESP_BOX_STYLE = (ESP_BOX_STYLE == "corners") and "full" or "corners"
 	btn.Text = "📦  Box Style: " .. ESP_BOX_STYLE
 	refreshAllESP()
 end)
+boxStyleBtn = boxStyleLbl
+uiRefs.boxStyleLabel = boxStyleLbl
 createSlider(pages.ESP, "💀  Epaisseur Skeleton", 5, 50, 15, 63, function(val)
 	ESP_SKELETON_WIDTH = val / 100
 	refreshAllESP()
-end)
+end, "espSkeleton")
 
 createSection(pages.ESP, "📏  Distance Max", 70)
 createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 71, function(val)
 	ESP_MAX_DIST_PLAYER = val
 	refreshAllESP()
-end)
+end, "espDistPlayer")
 createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 72, function(val)
 	ESP_MAX_DIST_BOT = val
-	local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
-	if anyBot then refreshBotESP() end
-end)
+	if anyBotActive() then refreshBotESP() end
+end, "espDistBot")
 
 createSection(pages.Other, "👑  Credits", 60)
 
@@ -5876,7 +6708,7 @@ verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
 verLabel = Instance.new("TextLabel", verFrame)
 verLabel.Size = UDim2.new(1, -12, 0, 16)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v7"
+verLabel.Text = "🌐 bkz HUB  v7.1"
 verLabel.TextColor3 = currentTheme.Accent
 verLabel.Font = Enum.Font.GothamBold
 verLabel.TextSize = 14
@@ -6074,20 +6906,7 @@ function tpToFreecam()
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 	hrp.CFrame = CFrame.new(freecamCamPos + Vector3.new(0, 3, 0))
-	for part, data in pairs(freecamFrozenParts) do
-		pcall(function()
-			part.Anchored = data.Anchored
-			part.Velocity = data.Velocity
-			part.RotVelocity = data.RotVelocity
-		end)
-	end
-	freecamFrozenParts = {}
-	local hum = char:FindFirstChildOfClass("Humanoid")
-	if hum then
-		hum.PlatformStand = false
-		hum.WalkSpeed = savedWalkSpeed or 16
-		hum.JumpPower = savedJumpPower or 50
-	end
+	unfreezeCharacter()
 end
 
 function stopFreecam()
@@ -6112,7 +6931,7 @@ createToggle(pages.Other, "📷  Freecam (Right Click)", 51, function(state)
 end, "freecamEnabled")
 createSlider(pages.Other, "⚡  Speed Freecam", 10, 500, 50, 52, function(val)
 	freecamSpeed = val
-end)
+end, "freecamSpeed")
 createBtn(pages.Other, "📍  TP Joueur → Freecam", currentTheme.Accent, 53, function()
 	if freecamActive then
 		tpToFreecam()
@@ -6121,7 +6940,7 @@ createBtn(pages.Other, "📍  TP Joueur → Freecam", currentTheme.Accent, 53, f
 		showNotification("⚠  Active la freecam d'abord", 2)
 	end
 end)
-createBtn(pages.Other, "⌨  Keys: " .. keyLayout, currentTheme.Button, 54, function(btn)
+local _, keysLbl = createBtn(pages.Other, "⌨  Keys: " .. keyLayout, currentTheme.Button, 54, function(btn)
 	local layouts = {"QWERTY", "AZERTY"}
 	for i, l in ipairs(layouts) do
 		if l == keyLayout then
@@ -6133,6 +6952,7 @@ createBtn(pages.Other, "⌨  Keys: " .. keyLayout, currentTheme.Button, 54, func
 	autoSave()
 	showNotification("⌨  Layout: " .. keyLayout, 2)
 end)
+uiRefs.keysLabel = keysLbl
 
 
 
@@ -6153,8 +6973,7 @@ function startESP()
 	RunService:BindToRenderStep("ESP_Update", Enum.RenderPriority.Last.Value, function()
 		espUpdateTick = espUpdateTick + 1
 		if espUpdateTick % 15 ~= 0 then return end
-		local anyPlayer = espState.playerDistance or espState.playerHealthBar or espState.playerHealth or espState.playerSkeletons or espState.playerBoxes or espState.playerChams or espState.playerNames or espState.playerHeadDot or espState.playerSnaplines
-		local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar or espState.botSnaplines or espState.botHeadDot
+		local anyPlayer = anyPlayerActive()
 		if anyPlayer then
 			for _, p in ipairs(Players:GetPlayers()) do
 				if p ~= player and p.Character then
@@ -6166,7 +6985,7 @@ function startESP()
 				end
 			end
 		end
-		if anyPlayer or anyBot or espState.selfESP then
+		if anyPlayer or anyBotActive() or espState.selfESP then
 			if ESP_MAX_DIST_PLAYER > 0 or ESP_MAX_DIST_BOT > 0 or espState.playerDistance or espState.botDistance then
 				updateDistances()
 			end
@@ -6177,15 +6996,13 @@ function startESP()
 	task.spawn(function()
 		while true do
 			task.wait(5)
-			local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
-			if anyBot then refreshBotESP() end
+			if anyBotActive() then refreshBotESP() end
 		end
 	end)
 
 	
 	workspace.DescendantAdded:Connect(function(obj)
-		local anyBot = espState.botBoxes or espState.botNames or espState.botHealth or espState.botDistance or espState.botSkeletons or espState.botChams or espState.botHealthBar
-		if anyBot and obj:IsA("Model") then
+		if anyBotActive() and obj:IsA("Model") then
 			task.wait(0.5)
 			if isBot(obj) then
 				pcall(function() buildESPBot(obj) end)
@@ -6251,7 +7068,7 @@ end
 
 if scrSuccess then
 	collectgarbage("collect")
-	print("✅  bkz HUB v7 chargé avec succès  (" .. player.Name .. ")")
+	print("✅  bkz HUB v7.1 chargé avec succès  (" .. player.Name .. ")")
 	task.spawn(function()
 		task.wait(1.7)
 		pcall(function() if loadingScreen then loadingScreen:Destroy() end end)

@@ -4,9 +4,9 @@
 
 ### The All-in-One Roblox Admin & Utility Hub
 
-**v7** • Build 2026.09
+**v7.1** • Build 2026.09
 
-> 🔥 Rapid Fire • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix + Zoom fix • ESP HD per Category • Aimbot + FOV Circle + Team Check + Wall Check • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects • Animated Themes • New Loading Screen
+> 🔥 Rapid Fire • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix + Zoom fix • ESP HD per Category • Aimbot + FOV Circle + Team Check + Wall Check • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects • Animated Themes • New Loading Screen • Modern Glass UI
 
 </div>
 
@@ -22,7 +22,6 @@
   - [🎯 Aim](#-aim)
   - [👁 ESP](#-esp)
   - [🌍 World](#-world)
-  - [💃 Emotes](#-emotes)
   - [⚙ Settings](#-settings)
   - [ℹ Other](#-other)
 - [🎤 VC Anti-Ban](#-vc-anti-ban)
@@ -38,7 +37,7 @@
 ## 🚀 Injection
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/BkZ-dev/bkzhub/refs/heads/main/bkzHub.lua", true))()
+loadstring(game:HttpGet("https://cdn.jsdelivr.net/gh/BkZ-dev/bkzhub@main/bkzHub.lua", true))()
 ```
 
 > ⚠️ Paste the full script into your executor. Requires a **Lua 5.1 compatible executor** (Synapse, ScriptWare, Krnl, Fluxus, Matcha, etc.).
@@ -67,7 +66,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/BkZ-dev/bkzhub/refs/h
 
 ## 📋 Tabs Overview
 
-The menu is organized into **8 tabs**, each focused on a specific category of features.
+The menu is organized into **7 tabs**, each focused on a specific category of features.
 
 ### 👤 Player
 
@@ -214,34 +213,6 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ---
 
-### 💃 Emotes
-
-> 🎬 Play animator-created animations on your character with speed control. Not Roblox defaults — animations from community creators!
-
-<details>
-<summary><b>📌 Features</b></summary>
-
-- **⏹ Stop All Emotes** — instantly stop all playing animations
-- **⚡ Speed Animation** — adjustable animation speed slider (10%–300%)
-- **🎬 Animator Packs** — 12 custom animations from community animators (not Roblox defaults):
-  - Wave, Point, Dance, Dance 2, Dance 3, Laugh, Cheer
-  - Idle, Walk Style, Run Style, Fall, Sit
-- Each toggle **forces the animation** on your character regardless of rig type (R6 or R15)
-- Animations **loop continuously** and are visible to everyone
-- Toggle off to stop individual animation
-
-### Emotes Improvements in v5.7
-
-| Feature | Before | After |
-|:---|:---|:---|
-| **Stop All** | Not available | **New!** One-click to stop all playing emotes |
-| **Speed Control** | Fixed at 100% | **Adjustable** slider (10%–300%) — slow motion or fast forward |
-| **Speed applied instantly** | N/A | Changing speed applies to all currently playing emotes |
-
-</details>
-
----
-
 ### ⚙ Settings
 
 > 🎨 Customize the look, feel, and behavior of the menu.
@@ -313,21 +284,46 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 ---
 
-## 🔥 What's New in v6
+## 🔥 What's New in v7.1
 
-| Feature | Description |
+> 🎨 A full modernization pass ("glass" style) + a deep bug-fix and de-duplication sweep. No features were removed.
+
+### 🎨 Modern Glass UI
+
+| Change | Description |
 |:---|:---|
-| **👻 Invisible** | Turn your character invisible (transparency) — restored on toggle off or respawn |
-| **🔥 Rapid Fire** | Hold click to spam the equipped tool's fire remotes, with adjustable interval (50–500 ms) |
-| **🌀 Jerk Tools** | Animation that makes the equipped tool jerk/twitch in your hand |
-| **🧰 Give Tools du jeu** | Scan the game (workspace, players, backpacks) for all tools, then give one, several, or ALL to yourself |
-| **💠 Advanced Shader HD** | Bloom + Blur + ColorCorrection stack for a cinematic look |
-| **💾 Auto Save All** | Toggle that re-saves the complete config every 5 seconds |
-| **📌 Menu Position saved** | The menu no longer snaps back to the center when you close/reopen it |
-| **🕶 Noclip fix** | Removed the buggy invisible platform — no more character glitching at launch |
-| **🎯 No Recoil fix** | Camera correction now only triggers right after firing — no more fighting your normal look movement |
-| **⚡ Instant Reload fix** | Removed the broken animation-speed hack; now actively spams reload remotes + zeroes reload values |
-| **🎨 Theme fix** | Toggle switches now recolor correctly when you change theme while toggles are ON |
+| **Unified glass styling** | Buttons, toggles, sliders, dropdowns and color pickers now share one look: rounded 12px corners, a soft top-light sheen, hairline strokes, and a subtle accent glow on hover — with **no layout jump** on hover (the old hover tween resized buttons, shifting the whole page) |
+| **Modern switches** | Toggle tracks are recessed with an accent gradient + ringed knob that animates with a slight overshoot |
+| **Redesigned sliders** | Gradient fill, ringed knob that grows on hover, and a styled value bubble; the whole row now responds to hover |
+| **Sliding tab indicator** | An accent bar slides smoothly under the active tab |
+| **Section hairlines** | Section titles get a thin accent line sized to the label |
+| **Theme-aware toasts** | Notifications now follow the active theme (previously hardcoded dark — unreadable on light themes) |
+| **Chevron rotation** | Dropdowns and color pickers rotate their arrow on open/close |
+
+### 🐛 Bug fixes
+
+| Bug | Fix |
+|:---|:---|
+| **Skeleton thickness slider ignored** | Thickness was hardcoded (`1.5`) — the slider now actually drives it |
+| **Distance-only ESP impossible** | Turning on *Distance* without *Names* showed nothing; distance now renders on its own |
+| **Toast stacking off-by-one** | The newest notification floated one slot too high; remaining toasts now also settle down when one expires |
+| **Search Enter/Tab broke with DisplayName** | Selecting a result parsed the display text — now resolved via the player's `UserId` |
+| **Character Size compounded** | Each call multiplied part sizes again (and stacked with `ScaleTo`) — now applies an absolute scale from remembered base sizes |
+| **Noclip forced all parts to `CanCollide = true`** | Now restores each part's *original* collision state (forcing `true` on the HumanoidRootPart glitched the character) |
+| **Instant Reload spammed remotes every frame** | Throttled to 4×/s |
+| **Fly unbind error** | `UnbindFromRenderStep` is now guarded so it can't error when not bound |
+| **Duplicate Player-page ordering** | Chat Spy buttons collided with Freeze/Unfreeze (`15`/`16`) and a fractional `LayoutOrder` (`17.5`) was truncated — renumbered |
+| **Config not reflected in UI** | Box Style / Keys labels and ESP color swatches now update when loading or resetting a config |
+
+### 🧹 De-duplication & performance
+
+| Change | Description |
+|:---|:---|
+| **Single notification per action** | A generic "👉 label" toast is only shown if the action itself didn't already notify — no more double toasts |
+| **One ESP-activity check** | The 8 hand-written `a or b or c...` expressions (which were inconsistent about including Chams) are replaced by `anyBotActive()` / `anyPlayerActive()` |
+| **No leaked slider connections** | Each slider's global `InputChanged`/`InputEnded` connections are now created only while dragging |
+| **Debounced auto-save** | Rapid changes (e.g. dragging a slider) produce one disk write instead of N; removed 9 redundant save calls |
+| **Sliders now persist** | All sliders are saved to config and restored into the UI on load |
 
 ---
 
@@ -360,6 +356,27 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 | **🔌 Memory leak fix** | ESP health/name connections are properly disconnected on toggle/despawn |
 
 ---
+
+## 🔥 What's New in v6
+
+| Feature | Description |
+|:---|:---|
+| **👻 Invisible** | Turn your character invisible (transparency) — restored on toggle off or respawn |
+| **🔥 Rapid Fire** | Hold click to spam the equipped tool's fire remotes, with adjustable interval (50–500 ms) |
+| **🌀 Jerk Tools** | Animation that makes the equipped tool jerk/twitch in your hand |
+| **🧰 Give Tools du jeu** | Scan the game (workspace, players, backpacks) for all tools, then give one, several, or ALL to yourself |
+| **💠 Advanced Shader HD** | Bloom + Blur + ColorCorrection stack for a cinematic look |
+| **💾 Auto Save All** | Toggle that re-saves the complete config every 5 seconds |
+| **📌 Menu Position saved** | The menu no longer snaps back to the center when you close/reopen it |
+| **🕶 Noclip fix** | Removed the buggy invisible platform — no more character glitching at launch |
+| **🎯 No Recoil fix** | Camera correction now only triggers right after firing — no more fighting your normal look movement |
+| **⚡ Instant Reload fix** | Removed the broken animation-speed hack; now actively spams reload remotes + zeroes reload values |
+| **🎨 Theme fix** | Toggle switches now recolor correctly when you change theme while toggles are ON |
+
+---
+
+---
+
 
 ## 🎤 VC Anti-Ban
 
@@ -432,14 +449,14 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 | Action | Description |
 |:---|:---|
-| **💾 Save Config** | Manually save everything — theme, menu (size + **position**), aimbot (key, mode, smooth, FOV, method, target part, prediction, target types, distance, circle), ESP (all toggles per category, colors, distances, style, fill, skeleton width, head dot), emotes (speed, states), freecam speed, rapid fire interval |
+| **💾 Save Config** | Manually save everything — theme, menu (size + **position**), aimbot (key, mode, smooth, FOV, method, target part, prediction, target types, distance, circle), ESP (all toggles per category, colors, distances, style, fill, skeleton width, head dot), freecam speed, rapid fire interval, and **all slider values** |
 | **📂 Load Config** | Manually load saved configuration |
-| **🗑 Reset Config** | Reset everything to defaults (Dark theme, 380×500, centered, 100% opacity, QWERTY, Mouse2, hold, 70 FOV, all aimbot defaults, ESP defaults, emote speed 100%) |
+| **🗑 Reset Config** | Reset everything to defaults (Dark theme, 380×500, centered, 100% opacity, QWERTY, Mouse2, hold, 70 FOV, all aimbot defaults, ESP defaults, all sliders back to default) |
 | **💾 Auto Save All** | **New in v6** — toggle that re-saves the full config every 5 seconds automatically |
-| **🔄 Auto-Save** | Automatically saves on every change (1-second debounce) |
+| **🔄 Auto-Save** | Automatically saves on every change (0.4-second debounce — rapid changes are batched into a single write) |
 | **🔄 Auto-Load** | Automatically loads config 0.5s after injection if a saved file exists |
 
-**Config file:** `AdminMenu_config.json` (stored via `writefile`/`readfile`)
+**Config file:** `PlayerInfo.json` (stored via `writefile`/`readfile`)
 
 ### What gets saved
 
@@ -453,7 +470,7 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 - ✅ Fly speed, walk speed, jump power
 - ✅ Freecam speed
 - ✅ Rapid fire interval
-- ✅ **Emotes**: animation speed, all emote toggle states
+- ✅ **All slider values** (aim smooth/prediction/distance, ESP fill/skeleton/distance, menu opacity, camera FOV, time speed, fire interval, freecam speed)
 - ✅ Background animation state
 - ✅ All toggle states (God Mode, Fly, Noclip, Invisible, Rapid Fire, Advanced Shader, ESP types, Menu Effects, Auto Save All, etc.)
 
@@ -479,7 +496,6 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 | Config not saving | Your executor doesn't support `writefile`. Auto-save is skipped silently. |
 | Menu not opening | Press `B` key. If still not working, re-inject the script after the game loads. |
 | Effects not visible | Make sure the menu is open. Effects render behind menu content — try lowering Menu Opacity for better visibility. |
-| Emotes not playing | Make sure your character is spawned. Emotes force on any rig type (R6/R15). |
 | Skeleton ESP looking flat | Skeleton uses Beams — make sure the target character has the expected body parts (R15 or R6). |
 
 ---
@@ -488,9 +504,9 @@ The menu is organized into **8 tabs**, each focused on a specific category of fe
 
 | Role | Name |
 |:---|:---|
-| 👑 **Owner** | bkz |
+| 👑 **Owner** | [BkZ-dev](https://github.com/BkZ-dev) |
 | 🤝 **Contributors** | All people who use this menu ❤️ |
-| 📦 **Version** | **7** (Build 2026.09) |
+| 📦 **Version** | **7.1** (Build 2026.09) |
 
 ---
 
