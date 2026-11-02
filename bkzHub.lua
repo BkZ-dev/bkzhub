@@ -1051,8 +1051,12 @@ function createSection(parent, title, order)
 
 	local lbl = Instance.new("TextLabel", frame)
 	lbl.Text = "  " .. string.upper(title)
-	lbl.TextAutoResize = Enum.TextAutoResize.X
-	lbl.Size = UDim2.new(0, 10, 0, 16)
+	-- NOTE: certains executeurs n'exposent pas Enum.TextAutoResize ("not a valid member of Enum").
+	-- On calcule donc la largeur via TextService pour rester compatible, avec repli sur une estimation.
+	local okW, tw = pcall(function()
+		return game:GetService("TextService"):GetTextSize(lbl.Text, 11, Enum.Font.GothamBold, Vector2.new(2000, 16)).X
+	end)
+	lbl.Size = UDim2.new(0, (okW and tw or (12 + #lbl.Text * 6)), 0, 16)
 	lbl.AnchorPoint = Vector2.new(0, 0.5)
 	lbl.Position = UDim2.new(0, 8, 0.5, 0)
 	lbl.BackgroundTransparency = 1
