@@ -4,7 +4,7 @@
 
 ### The All-in-One Roblox Admin & Utility Hub
 
-**v7.1** • Build 2026.09
+**v7.2** • Build 2026.11
 
 > 🔥 Rapid Fire • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix + Zoom fix • ESP HD per Category • Aimbot + FOV Circle + Team Check + Wall Check • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects • Animated Themes • New Loading Screen • Modern Glass UI
 
@@ -284,6 +284,14 @@ The menu is organized into **7 tabs**, each focused on a specific category of fe
 
 ---
 
+## 🔥 What's New in v7.2
+
+- ✨ **Micro-interactions** : « pop » d'appui (rebond `Back`) sur tous les boutons, apparition en cascade des cartes à l'activation d'un onglet, tooltips d'en-tête (verrouiller / fermer).
+- 🛡️ **Compat exécuteurs** : `Enum.AutomaticSize` / `AutomaticCanvasSize` blindés avec repli scrollable fixe (même famille que le bug `TextAutoResize` de v7.1) ; dernier `wait()` legacy remplacé par `task.wait()`.
+- 🪟 **Logo** : monogramme vectoriel dégradé dans la barre de titre + slot `LOGO_IMAGE_ID` pour brancher un decal uploadé (prompts de génération dans `logo-prompts.md`).
+
+---
+
 ## 🔥 What's New in v7.1
 
 > 🎨 A full modernization pass ("glass" style) + a deep bug-fix and de-duplication sweep. No features were removed.
@@ -506,7 +514,7 @@ The menu is organized into **7 tabs**, each focused on a specific category of fe
 |:---|:---|
 | 👑 **Owner** | [BkZ-dev](https://github.com/BkZ-dev) |
 | 🤝 **Contributors** | All people who use this menu ❤️ |
-| 📦 **Version** | **7.1** (Build 2026.09) |
+| 📦 **Version** | **7.2** (Build 2026.11) |
 
 ---
 

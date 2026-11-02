@@ -3,7 +3,7 @@
 
 print("")
 print("==================================================")
-print("   bkz HUB  v7.1   |   by bkz")
+print("   bkz HUB  v7.2   |   by bkz")
 print("   Loading ...")
 print("==================================================")
 print("")
@@ -11,7 +11,7 @@ print("")
 local _Instance = Instance
 local scrSuccess, scrError = pcall(function()
 if not Instance then Instance = _Instance end
-wait(1)
+task.wait(1)
 
 UIS = game:GetService("UserInputService")
 RunService = game:GetService("RunService")
@@ -24,6 +24,8 @@ HttpService = game:GetService("HttpService")
 showNotification = nil
 notifyCount = 0      -- compteur de notifications (evite les toasts doublons)
 uiRefs = {}          -- references UI tardives (boutons/dropdowns mis a jour par applyConfig)
+AUTO_CANVAS_OK = pcall(function() local _ = Enum.AutomaticSize.Y end) -- certains executeurs n'exposent pas cet enum
+LOGO_IMAGE_ID = 0     -- ID d'un decal Roblox uploade pour remplacer le monogramme du logo (0 = monogramme vectoriel)
 
 player = nil
 mouse = nil
@@ -275,7 +277,7 @@ Instance.new("UICorner", lsBadge).CornerRadius = UDim.new(1, 0)
 local lsBadgeTxt = Instance.new("TextLabel", lsBadge)
 lsBadgeTxt.Size = UDim2.new(1, 0, 1, 0)
 lsBadgeTxt.BackgroundTransparency = 1
-lsBadgeTxt.Text = "⚡  v7.1  •  ULTIMATE"
+lsBadgeTxt.Text = "⚡  v7.2  •  ULTIMATE"
 lsBadgeTxt.TextColor3 = Color3.new(1, 1, 1)
 lsBadgeTxt.Font = Enum.Font.GothamBold
 lsBadgeTxt.TextSize = 10
@@ -287,7 +289,7 @@ local lsSub = Instance.new("TextLabel", lsBg)
 lsSub.Size = UDim2.new(1, 0, 0, 18)
 lsSub.Position = UDim2.new(0, 0, 0.5, -40)
 lsSub.BackgroundTransparency = 1
-lsSub.Text = "Loading  •  v7.1"
+lsSub.Text = "Loading  •  v7.2"
 lsSub.TextColor3 = Color3.fromRGB(168, 158, 218)
 lsSub.Font = Enum.Font.Gotham
 lsSub.TextSize = 12
@@ -834,6 +836,48 @@ headerFix.Position = UDim2.new(0, 0, 1, -14)
 headerFix.BackgroundColor3 = currentTheme.Panel
 headerFix.BorderSizePixel = 0
 
+-- Logo : monogramme vectoriel degrade (aucune dependance externe, marche sur tous les executeurs).
+-- Pour brancher une vraie image : upload le decal sur Roblox puis mets son ID dans LOGO_IMAGE_ID.
+local logoBadge = Instance.new("Frame", header)
+logoBadge.Name = "LogoBadge"
+logoBadge.Size = UDim2.new(0, 34, 0, 34)
+logoBadge.Position = UDim2.new(0, 14, 0.5, -17)
+logoBadge.BackgroundColor3 = currentTheme.Accent
+logoBadge.BorderSizePixel = 0
+Instance.new("UICorner", logoBadge).CornerRadius = UDim.new(0, 10)
+local logoGrad = Instance.new("UIGradient", logoBadge)
+logoGrad.Rotation = 60
+logoGrad.Color = ColorSequence.new(
+	mixColor(currentTheme.Accent, Color3.new(1,1,1), 0.28),
+	mixColor(currentTheme.Accent, currentTheme.BG, 0.25)
+)
+local logoGlyph = Instance.new("TextLabel", logoBadge)
+logoGlyph.Size = UDim2.new(1, 0, 1, 0)
+logoGlyph.BackgroundTransparency = 1
+logoGlyph.Text = "B"
+logoGlyph.Font = Enum.Font.GothamBlack
+logoGlyph.TextSize = 17
+logoGlyph.TextColor3 = Color3.new(1,1,1)
+local logoStroke = Instance.new("UIStroke", logoBadge)
+logoStroke.Color = Color3.new(1,1,1)
+logoStroke.Transparency = 0.78
+logoStroke.Thickness = 1
+if LOGO_IMAGE_ID and tonumber(LOGO_IMAGE_ID) and tonumber(LOGO_IMAGE_ID) > 0 then
+	local img = Instance.new("ImageLabel", logoBadge)
+	img.Size = UDim2.new(1, -6, 1, -6)
+	img.Position = UDim2.new(0, 3, 0, 3)
+	img.BackgroundTransparency = 1
+	img.Image = "rbxassetid://" .. tostring(tonumber(LOGO_IMAGE_ID))
+	logoGlyph.Visible = false
+end
+onThemeChanged(function(t)
+	logoBadge.BackgroundColor3 = t.Accent
+	logoGrad.Color = ColorSequence.new(
+		mixColor(t.Accent, Color3.new(1,1,1), 0.28),
+		mixColor(t.Accent, t.BG, 0.25)
+	)
+end)
+
 title = Instance.new("TextLabel", header)
 title.Text = "🌐 bkz HUB"
 title.Size = UDim2.new(1, -100, 1, 0)
@@ -845,7 +889,7 @@ title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v7.1  •  " .. player.Name
+subtitle.Text = "v7.2  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -100, 0, 14)
 subtitle.Position = UDim2.new(0, 58, 0, 33)
 subtitle.BackgroundTransparency = 1
@@ -854,6 +898,44 @@ subtitle.Font = Enum.Font.Gotham
 subtitle.TextSize = 10
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
 
+
+-- Infobulle generique (micro-interaction : survol des boutons d'en-tete)
+tipFrame = nil
+tipLabel = nil
+function attachTip(btn, txt)
+	btn.MouseEnter:Connect(function()
+		pcall(function()
+			if not tipFrame then
+				tipFrame = Instance.new("Frame", main)
+				tipFrame.BackgroundColor3 = mixColor(currentTheme.Panel, currentTheme.BG, 0.35)
+				tipFrame.BorderSizePixel = 0
+				tipFrame.ZIndex = 50
+				Instance.new("UICorner", tipFrame).CornerRadius = UDim.new(0, 8)
+				local ts1 = Instance.new("UIStroke", tipFrame)
+				ts1.Color = Color3.new(1,1,1); ts1.Transparency = 0.88; ts1.Thickness = 1
+				tipLabel = Instance.new("TextLabel", tipFrame)
+				tipLabel.Size = UDim2.new(1, -14, 1, 0)
+				tipLabel.Position = UDim2.new(0, 7, 0, 0)
+				tipLabel.BackgroundTransparency = 1
+				tipLabel.Font = Enum.Font.Gotham
+				tipLabel.TextSize = 11
+				tipLabel.TextColor3 = currentTheme.Text
+				tipLabel.ZIndex = 50
+				tipFrame.Visible = false
+			end
+			tipLabel.Text = txt
+			tipFrame.Size = UDim2.new(0, math.max(#txt * 6.4 + 20, 90), 0, 24)
+			local ap = btn.AbsolutePosition
+			tipFrame.Position = UDim2.new(0, ap.X, 0, ap.Y - 30)
+			tipFrame.Visible = true
+			tipFrame.BackgroundTransparency = 0.25
+			tipLabel.TextTransparency = 0
+		end)
+	end)
+	btn.MouseLeave:Connect(function()
+		if tipFrame then pcall(function() tipFrame.Visible = false end) end
+	end)
+end
 
 lockBtn = Instance.new("TextButton", header)
 lockBtn.Text = "🔓"
@@ -867,6 +949,7 @@ lockBtn.BorderSizePixel = 0
 Instance.new("UICorner", lockBtn).CornerRadius = UDim.new(0, 8)
 lockBtn.MouseEnter:Connect(playHover)
 lockBtn.Name = "lockBtn"
+attachTip(lockBtn, "Verrouiller / deverrouiller l'interface")
 lockBtn.MouseButton1Click:Connect(function()
 	interfaceLocked = not interfaceLocked
 	lockBtn.Text = interfaceLocked and "🔒" or "🔓"
@@ -889,6 +972,7 @@ closeBtn.BorderSizePixel = 0
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
 closeBtn.MouseEnter:Connect(playHover)
 closeBtn.Name = "closeBtn"
+attachTip(closeBtn, "Fermer le menu")
 
 glassOverlay = Instance.new("Frame", main)
 glassOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -942,6 +1026,27 @@ pages = {}
 tabBtns = {}
 activeTab = "Player"
 
+-- Apparition en cascade des blocs visibles d'une page a son activation (micro-interaction)
+function animatePageIn(page)
+	pcall(function()
+		local i = 0
+		for _, ch in ipairs(page:GetChildren()) do
+			if ch:IsA("GuiObject") and i < 26 then
+				local target = ch.BackgroundTransparency
+				if target < 1 then
+					i = i + 1
+					local d = math.min((i - 1) * 0.026, 0.28)
+					ch.BackgroundTransparency = 1
+					task.delay(d, function()
+						if not ch.Parent then return end
+						TweenService:Create(ch, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = target}):Play()
+					end)
+				end
+			end
+		end
+	end)
+end
+
 for _, def in ipairs(tabDefs) do
 
 	local page = Instance.new("ScrollingFrame", main)
@@ -953,8 +1058,12 @@ for _, def in ipairs(tabDefs) do
 	page.ScrollBarThickness = 4
 	page.ScrollBarImageColor3 = currentTheme.Accent
 	page.Visible = (def.name == "Player")
-	page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	page.CanvasSize = UDim2.new(0,0,0,0)
+	if AUTO_CANVAS_OK then
+		page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		page.CanvasSize = UDim2.new(0,0,0,0)
+	else
+		page.CanvasSize = UDim2.new(0, 0, 0, 1600) -- repli scrollable fixe si l'enum manque chez l'executeur
+	end
 	local layout = Instance.new("UIListLayout", page)
 	layout.Padding = UDim.new(0, 6)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -995,6 +1104,7 @@ for _, def in ipairs(tabDefs) do
 		for n, p in pairs(pages) do
 			if n == def.name then
 				p.Visible = true
+				animatePageIn(p)
 				p.Position = UDim2.new(0, 10, 0, 110)
 				TweenService:Create(p, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 					Position = UDim2.new(0, 10, 0, 100),
@@ -1128,6 +1238,10 @@ function createBtn(parent, text, color, order, func)
 	hoverGlow.BorderSizePixel = 0
 	Instance.new("UICorner", hoverGlow).CornerRadius = UDim.new(0, 12)
 
+	-- Micro-pop d'appui (UIScale only: aucune modification de taille, zero decalage de layout)
+	local pressScale = Instance.new("UIScale", frame)
+	pressScale.Scale = 1
+
 	local btn = Instance.new("TextButton", frame)
 	btn.Text = text
 	btn.Size = UDim2.new(1, 0, 1, 0)
@@ -1150,6 +1264,9 @@ function createBtn(parent, text, color, order, func)
 		TweenService:Create(hoverGlow, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
 	end)
 	btn.MouseButton1Click:Connect(function()
+		-- Pop d'appui : le cadre se compresse legerement puis rebondit (easing Back)
+		pressScale.Scale = 0.97
+		TweenService:Create(pressScale, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
 		-- Flash d'appui sans modifier la taille (l'ancien tween 40->42/38 decalait toute la page)
 		TweenService:Create(frame, TweenInfo.new(0.05), {BackgroundColor3 = currentTheme.Accent}):Play()
 		TweenService:Create(hoverGlow, TweenInfo.new(0.05), {BackgroundTransparency = 0.75}):Play()
@@ -2005,8 +2122,12 @@ ddList.BorderSizePixel = 0
 ddList.ScrollBarThickness = 3
 ddList.Visible = false
 ddList.LayoutOrder = 3
-ddList.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ddList.CanvasSize = UDim2.new(0,0,0,0)
+if AUTO_CANVAS_OK then
+	ddList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	ddList.CanvasSize = UDim2.new(0,0,0,0)
+else
+	ddList.CanvasSize = UDim2.new(0,0,0,260)
+end
 Instance.new("UICorner", ddList).CornerRadius = UDim.new(0, 8)
 Instance.new("UIListLayout", ddList).Padding = UDim.new(0, 2)
 
@@ -2501,7 +2622,9 @@ do
 	list.BorderSizePixel = 0
 	list.LayoutOrder = 38
 	list.Visible = false
-	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	if AUTO_CANVAS_OK then list.AutomaticCanvasSize = Enum.AutomaticSize.Y else
+		list.CanvasSize = UDim2.new(0, 0, 0, 280)
+	end
 	list.ZIndex = 5
 	Instance.new("UIListLayout", list).SortOrder = Enum.SortOrder.LayoutOrder
 
@@ -3897,8 +4020,12 @@ function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 
 	local list = Instance.new("ScrollingFrame", parent)
 	list.Size = UDim2.new(1,0,0,0)
-	list.CanvasSize = UDim2.new(0,0,0,0)
-	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	if AUTO_CANVAS_OK then
+		list.CanvasSize = UDim2.new(0,0,0,0)
+		list.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	else
+		list.CanvasSize = UDim2.new(0, 0, 0, 220)
+	end
 	list.BackgroundColor3 = mixColor(currentTheme.Panel, currentTheme.BG, 0.3)
 	list.BorderSizePixel  = 0
 	list.ScrollBarThickness = 3
@@ -4507,7 +4634,7 @@ createSection(pages.Settings, "🎆  Menu Effects", 50)
 local fxContainer = Instance.new("Frame", pages.Settings)
 fxContainer.Name = "FxContainer"
 fxContainer.Size = UDim2.new(1, 0, 0, 0)
-fxContainer.AutomaticSize = Enum.AutomaticSize.Y
+if AUTO_CANVAS_OK then fxContainer.AutomaticSize = Enum.AutomaticSize.Y else fxContainer.ClipsDescendants = false end -- repli : contenu visible sans auto-hauteur
 fxContainer.BackgroundTransparency = 1
 fxContainer.BorderSizePixel = 0
 fxContainer.LayoutOrder = 51
@@ -6712,7 +6839,7 @@ verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
 verLabel = Instance.new("TextLabel", verFrame)
 verLabel.Size = UDim2.new(1, -12, 0, 16)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v7.1"
+verLabel.Text = "🌐 bkz HUB  v7.2"
 verLabel.TextColor3 = currentTheme.Accent
 verLabel.Font = Enum.Font.GothamBold
 verLabel.TextSize = 14
@@ -7072,7 +7199,7 @@ end
 
 if scrSuccess then
 	collectgarbage("collect")
-	print("✅  bkz HUB v7.1 chargé avec succès  (" .. player.Name .. ")")
+	print("✅  bkz HUB v7.2 chargé avec succès  (" .. player.Name .. ")")
 	task.spawn(function()
 		task.wait(1.7)
 		pcall(function() if loadingScreen then loadingScreen:Destroy() end end)
