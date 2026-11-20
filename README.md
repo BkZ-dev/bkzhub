@@ -4,9 +4,9 @@
 
 ### The All-in-One Roblox Admin & Utility Hub
 
-**v7.2** • Build 2026.11
+**v7.3** • Build 2026.11
 
-> 🔥 Rapid Fire • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix + Zoom fix • ESP HD per Category • Aimbot + FOV Circle + Team Check + Wall Check • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects • Animated Themes • New Loading Screen • Modern Glass UI
+> 🔥 Rapid Fire • Invisible • Advanced Shader HD • Give Tools • Noclip fix • Freecam AZERTY fix + Zoom fix • ESP HD per Category • Aimbot + FOV Circle + Team Check + Wall Check • Freecam • VC Anti-Ban • 13 Themes • 9 Menu Effects • Animated Themes • New Loading Screen • Modern Glass UI • Vector Icons • UI Sound Manager
 
 </div>
 
@@ -42,6 +42,8 @@ loadstring(game:HttpGet("https://cdn.jsdelivr.net/gh/BkZ-dev/bkzhub@main/bkzHub.
 
 > ⚠️ Paste the full script into your executor. Requires a **Lua 5.1 compatible executor** (Synapse, ScriptWare, Krnl, Fluxus, Matcha, etc.).
 
+> ℹ️ **CDN cache:** jsDelivr may keep an older `@main` build for a while. If the loading screen still shows `v7.2`, purge the jsDelivr cache or inject the raw GitHub URL: `https://raw.githubusercontent.com/BkZ-dev/bkzhub/main/bkzHub.lua`.
+
 <div align="center">
 
 💡 **Tip:** For the best experience, inject the script **after** the game has fully loaded.
@@ -55,6 +57,8 @@ loadstring(game:HttpGet("https://cdn.jsdelivr.net/gh/BkZ-dev/bkzhub@main/bkzHub.
 | Key / Action | Description |
 |:---:|:---|
 | `B` | Open / Close the menu (with smooth open/close animation) |
+| `Select` / `View` (gamepad) | Open / Close the menu on console |
+| Floating button (mobile) | Reopen the menu after closing it |
 | 🖱 Drag title bar | Move the menu anywhere on screen |
 | ↘ Bottom-right corner drag | Resize the menu (corner-only resize) |
 | `F` + Mouse | Goku Instant Transmission teleport (when enabled) |
@@ -284,6 +288,41 @@ The menu is organized into **7 tabs**, each focused on a specific category of fe
 
 ---
 
+## 🔥 What's New in v7.3
+
+> 🎨 <b>Full visual, audio and stability pass.</b> Every emoji is gone from the UI; icons are now drawn with Roblox primitives (or your own asset IDs); a SoundService manager drives all feedback sounds; responsive scaling and connection cleanup are built in.
+
+### 🖼 Icons & Visual States
+
+| Change | Description |
+|:---|:---|
+| **No more emojis** | 250+ emoji string literals removed from the interface. Accents, bullets and the Matrix charset are preserved. |
+| **Vector icon library** | `makeIcon()` draws line-art icons from Frames + UIStrokes (player, lock, aim, ESP, world, settings, close, search, refresh). Nothing to upload, nothing to break. |
+| **Optional asset icons** | Put your own decal IDs in `ICON_ASSETS` (e.g. `ICON_ASSETS.player = 123456789`) to swap any vector icon for an `ImageLabel`. |
+| **Consistent states** | Idle / Hover / Pressed are animated on every control; `setBtnDisabled(btn, true)` adds a real Disabled state that blocks hover and clicks. |
+| **Logo slot** | `LOGO_IMAGE_ID` replaces the "B" monogram with an uploaded decal, without duplicating the badge. |
+
+### 🔊 Audio Manager
+
+| Change | Description |
+|:---|:---|
+| **Central SFX manager** | `playSfx(name)` caches one `Sound` per action in `SoundService`: `click`, `hover`, `open`, `close`, `scroll`, `toggle`. |
+| **Balanced levels** | Short, soft "UI Click" sound (public Roblox audio `6895079853`) with per-action volume, pitch and anti-spam gap. |
+| **Replaceable** | Edit `SFX_DEFS` to plug your own IDs/volumes; everything is wrapped in `pcall` and can be muted with `SFX_ENABLED = false`. |
+| **Wired everywhere** | Buttons, tabs, switches, sliders, dropdowns, color picker, menu open/close, floating reopen button and wheel scrolling. |
+
+### 🧹 Artifacts, Responsive & Cleanup
+
+| Change | Description |
+|:---|:---|
+| **Shadow/stroke cleanup** | Removed the duplicate logo badge, the inert second `UIGradient` on the menu and header (Roblox only applies one), and re-targeted their animations to the real gradient. |
+| **PC / mobile / console scaling** | A `UIScale` on the menu is computed from `ViewportSize` (clamped 0.62–1.15), re-applied when the viewport changes, and the menu recenters on open. |
+| **Memory leaks** | New `TRACKED_CONNS` registry + `gui.Destroying` hook disconnects global UIS/camera handlers when the interface is destroyed. |
+| **UI bug fixes** | Lock icon now reflects the real lock state (header and Settings toggle stay in sync), the refresh button got its icon back, and several stripped labels were rebuilt (`› Player`, `HP:`, `Team:`…). |
+| **Responsive layout** | All new icons and states use scale-aware sizing; no hardcoded offsets were added to the layout chain. |
+
+---
+
 ## 🔥 What's New in v7.2
 
 - ✨ **Micro-interactions** : « pop » d'appui (rebond `Back`) sur tous les boutons, apparition en cascade des cartes à l'activation d'un onglet, tooltips d'en-tête (verrouiller / fermer).
@@ -340,7 +379,7 @@ The menu is organized into **7 tabs**, each focused on a specific category of fe
 | Feature | Description |
 |:---|:---|
 | **🎨 Animated Themes** | The menu now breathes with your theme — animated color-shifting gradient, pulsing border, header shimmer, and a glowing logo badge, all recoloring live when you switch themes |
-| **⚡ New Loading Screen** | Redesigned with an animated ⚡ logo + pulsing halo, version badge, title shimmer, rotating spinner, and dynamic emoji status messages |
+| **⚡ New Loading Screen** | Redesigned with an animated logo + pulsing halo, version badge, title shimmer, rotating spinner, and dynamic status messages |
 | **🎯 Targeting rework** | Click a selected player again to **deselect**; deselecting stops spectate; when your target leaves you get a notification, auto-deselect, and auto re-spectate/re-select if they rejoin; **auto-spectate switches** to new target |
 | **🧊 Server Freeze Target** | Anchor any player's character (replicated to server) |
 | **👻 Invisible Target** | Make any targeted player invisible (uses `LocalTransparencyModifier`) |
@@ -514,7 +553,7 @@ The menu is organized into **7 tabs**, each focused on a specific category of fe
 |:---|:---|
 | 👑 **Owner** | [BkZ-dev](https://github.com/BkZ-dev) |
 | 🤝 **Contributors** | All people who use this menu ❤️ |
-| 📦 **Version** | **7.2** (Build 2026.11) |
+| 📦 **Version** | **7.3** (Build 2026.11) |
 
 ---
 

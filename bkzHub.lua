@@ -3,7 +3,7 @@
 
 print("")
 print("==================================================")
-print("   bkz HUB  v7.2   |   by bkz")
+print("   bkz HUB  v7.3   |   by bkz")
 print("   Loading ...")
 print("==================================================")
 print("")
@@ -26,6 +26,11 @@ notifyCount = 0      -- compteur de notifications (evite les toasts doublons)
 uiRefs = {}          -- references UI tardives (boutons/dropdowns mis a jour par applyConfig)
 AUTO_CANVAS_OK = pcall(function() local _ = Enum.AutomaticSize.Y end) -- certains executeurs n'exposent pas cet enum
 LOGO_IMAGE_ID = 0     -- ID d'un decal Roblox uploade pour remplacer le monogramme du logo (0 = monogramme vectoriel)
+TRACKED_CONNS = {}    -- connexions globales (services) a liberer quand l'UI est detruite
+function track(conn)
+	if conn then TRACKED_CONNS[#TRACKED_CONNS + 1] = conn end
+	return conn
+end
 
 player = nil
 mouse = nil
@@ -209,10 +214,10 @@ lsLogoGrad.Color = ColorSequence.new(Color3.fromRGB(120, 85, 255), Color3.fromRG
 local lsLogoTxt = Instance.new("TextLabel", lsLogo)
 lsLogoTxt.Size = UDim2.new(1, 0, 1, 0)
 lsLogoTxt.BackgroundTransparency = 1
-lsLogoTxt.Text = "⚡"
+lsLogoTxt.Text = "B"
 lsLogoTxt.TextColor3 = Color3.new(1, 1, 1)
 lsLogoTxt.Font = Enum.Font.GothamBlack
-lsLogoTxt.TextSize = 44
+lsLogoTxt.TextSize = 40
 lsLogoTxt.TextStrokeTransparency = 0.1
 lsLogoTxt.TextStrokeColor3 = Color3.fromRGB(255, 220, 120)
 local lsLogoStroke = Instance.new("UIStroke", lsLogo)
@@ -232,7 +237,7 @@ local lsTitle = Instance.new("TextLabel", lsBg)
 lsTitle.Size = UDim2.new(1, 0, 0, 50)
 lsTitle.Position = UDim2.new(0, 0, 0.5, -92)
 lsTitle.BackgroundTransparency = 1
-lsTitle.Text = "🌐  bkz HUB"
+lsTitle.Text = "bkz HUB"
 lsTitle.TextColor3 = Color3.fromRGB(215, 195, 255)
 lsTitle.TextStrokeTransparency = 0.3
 lsTitle.TextStrokeColor3 = Color3.fromRGB(95, 60, 205)
@@ -277,7 +282,7 @@ Instance.new("UICorner", lsBadge).CornerRadius = UDim.new(1, 0)
 local lsBadgeTxt = Instance.new("TextLabel", lsBadge)
 lsBadgeTxt.Size = UDim2.new(1, 0, 1, 0)
 lsBadgeTxt.BackgroundTransparency = 1
-lsBadgeTxt.Text = "⚡  v7.2  •  ULTIMATE"
+lsBadgeTxt.Text = "v7.3 • ULTIMATE"
 lsBadgeTxt.TextColor3 = Color3.new(1, 1, 1)
 lsBadgeTxt.Font = Enum.Font.GothamBold
 lsBadgeTxt.TextSize = 10
@@ -289,7 +294,7 @@ local lsSub = Instance.new("TextLabel", lsBg)
 lsSub.Size = UDim2.new(1, 0, 0, 18)
 lsSub.Position = UDim2.new(0, 0, 0.5, -40)
 lsSub.BackgroundTransparency = 1
-lsSub.Text = "Loading  •  v7.2"
+lsSub.Text = "Loading  •  v7.3"
 lsSub.TextColor3 = Color3.fromRGB(168, 158, 218)
 lsSub.Font = Enum.Font.Gotham
 lsSub.TextSize = 12
@@ -412,17 +417,17 @@ task.spawn(function()
 		dots = (dots % 3) + 1
 		local dd = string.rep(".", dots)
 		if t < 0.2 then
-			lsStatus.Text = "⚙  Initialisation des modules" .. dd
+			lsStatus.Text = "Initialisation des modules" .. dd
 		elseif t < 0.4 then
-			lsStatus.Text = "🎨 Application des thèmes" .. dd
+			lsStatus.Text = "Application des thèmes" .. dd
 		elseif t < 0.6 then
-			lsStatus.Text = "🧠 Chargement de l'ESP" .. dd
+			lsStatus.Text = "Chargement de l'ESP" .. dd
 		elseif t < 0.8 then
-			lsStatus.Text = "🎯 Configuration de l'aimbot" .. dd
+			lsStatus.Text = "Configuration de l'aimbot" .. dd
 		elseif t < 0.95 then
-			lsStatus.Text = "✨ Finalisation de l'interface" .. dd
+			lsStatus.Text = "Finalisation de l'interface" .. dd
 		else
-			lsStatus.Text = "🚀 Prêt !"
+			lsStatus.Text = "Prêt !"
 		end
 		task.wait(0.05)
 	end
@@ -697,18 +702,183 @@ backdrop.BorderSizePixel = 0
 backdrop.ZIndex = 0
 backdrop.Visible = false
 
-local hoverSound
-function playHover()
+-- ================= SFX MANAGER (SoundService) =================
+-- Sons courts et doux. Remplace les ID par les tiens si tu veux une signature sonore custom.
+SFX_ENABLED = true
+SFX_DEFS = {
+	click  = { id = 6895079853, vol = 0.16, speed = 1.00, minGap = 0.04 },  -- Roblox "UI Click" (audio public)
+	hover  = { id = 6895079853, vol = 0.06, speed = 1.65, minGap = 0.07 },
+	open   = { id = 6895079853, vol = 0.22, speed = 1.15, minGap = 0.10 },
+	close  = { id = 6895079853, vol = 0.18, speed = 0.90, minGap = 0.10 },
+	scroll = { id = 6895079853, vol = 0.035, speed = 2.30, minGap = 0.14 },
+	toggle = { id = 6895079853, vol = 0.14, speed = 1.30, minGap = 0.05 },
+}
+SFX_CACHE = {}
+SFX_LAST = {}
+function playSfx(name)
+	if not SFX_ENABLED then return end
+	local def = SFX_DEFS[name]
+	if not def then return end
 	pcall(function()
-		if not hoverSound then
-			hoverSound = Instance.new("Sound")
-			hoverSound.SoundId = "rbxassetid://9044532086"
-			hoverSound.Volume = 0.15
-			hoverSound.PlaybackSpeed = 1.5
-			hoverSound.Parent = workspace
+		local now = os.clock()
+		if SFX_LAST[name] and (now - SFX_LAST[name]) < (def.minGap or 0.05) then return end
+		SFX_LAST[name] = now
+		local snd = SFX_CACHE[name]
+		if not snd then
+			snd = Instance.new("Sound")
+			local asset = tostring(def.id)
+			if not asset:find("rbxassetid://", 1, true) and not asset:find("rbxasset://", 1, true) then
+				asset = "rbxassetid://" .. asset
+			end
+			snd.SoundId = asset
+			snd.Volume = def.vol
+			snd.PlaybackSpeed = def.speed
+			snd.Parent = game:GetService("SoundService")
+			SFX_CACHE[name] = snd
 		end
-		hoverSound:Play()
+		snd:Play()
 	end)
+end
+function playHover() playSfx("hover") end
+
+-- ================= ICONES VECTORIELLES (line-art, sans asset) =================
+-- Mets tes propres asset IDs ici pour utiliser des ImageLabels (0 = icone vectorielle locale).
+-- Exemple : ICON_ASSETS.player = 123456789
+ICON_ASSETS = {
+	player = 0, personal = 0, aim = 0, esp = 0, world = 0, settings = 0, other = 0,
+	close = 0, lock = 0, unlock = 0, search = 0, refresh = 0,
+}
+
+function iconSetColor(root, color)
+	for _, d in ipairs(root:GetDescendants()) do
+		if d:IsA("Frame") and d.BackgroundTransparency < 1 then
+			d.BackgroundColor3 = color
+		elseif d:IsA("UIStroke") then
+			d.Color = color
+		end
+	end
+end
+
+function iconBar(parent, x, y, w, h, rot)
+	local f = Instance.new("Frame", parent)
+	f.BackgroundColor3 = currentTheme.Text
+	f.BorderSizePixel = 0
+	f.Size = UDim2.new(0, w, 0, h)
+	f.Position = UDim2.new(0, x, 0, y)
+	if rot then f.Rotation = rot end
+	Instance.new("UICorner", f).CornerRadius = UDim.new(1, 0)
+	return f
+end
+
+function iconRing(parent, x, y, d, thick)
+	local f = Instance.new("Frame", parent)
+	f.BackgroundTransparency = 1
+	f.BorderSizePixel = 0
+	f.Size = UDim2.new(0, d, 0, d)
+	f.Position = UDim2.new(0, x, 0, y)
+	Instance.new("UICorner", f).CornerRadius = UDim.new(1, 0)
+	local s = Instance.new("UIStroke", f)
+	s.Color = currentTheme.Text
+	s.Thickness = thick or 1.4
+	return f
+end
+
+-- Dessine une icone 16x16 en primitives ; retourne (root, setColor)
+function makeIcon(parent, key, size, fixedColor)
+	size = size or 16
+	local root = Instance.new("Frame", parent)
+	root.Name = "Icon_" .. tostring(key)
+	root.BackgroundTransparency = 1
+	root.Size = UDim2.new(0, size, 0, size)
+	root.AnchorPoint = Vector2.new(0.5, 0.5)
+	root.Position = UDim2.new(0.5, 0, 0.5, 0)
+	root.BorderSizePixel = 0
+	root.ZIndex = 6
+	local assetId = ICON_ASSETS and ICON_ASSETS[key]
+	if assetId and tonumber(assetId) and tonumber(assetId) > 0 then
+		local img = Instance.new("ImageLabel", root)
+		img.Size = UDim2.new(1, 0, 1, 0)
+		img.BackgroundTransparency = 1
+		img.Image = "rbxassetid://" .. tostring(tonumber(assetId))
+		img.ImageColor3 = fixedColor or currentTheme.Text
+		onThemeChanged(function(t) img.ImageColor3 = fixedColor or t.Text end)
+		return root, function(c) img.ImageColor3 = c end
+	end
+	local s = size / 16
+	local function S(n) return n * s end
+	local box = Instance.new("Frame", root)
+	box.BackgroundTransparency = 1
+	box.BorderSizePixel = 0
+	box.Size = UDim2.new(0, S(16), 0, S(16))
+	box.Position = UDim2.new(0.5, -S(8), 0.5, -S(8))
+
+	if key == "player" then
+		iconRing(box, S(5.5), S(1.5), S(5), S(1.3))
+		local body = iconBar(box, S(2.5), S(9), S(11), S(4.5))
+		body.BackgroundColor3 = currentTheme.Text
+	elseif key == "personal" or key == "lock" or key == "unlock" then
+		local sh = iconRing(box, S(4.5), S(1), S(7), S(1.3))
+		if key == "unlock" then sh.Position = UDim2.new(0, S(8), 0, S(0.5)) end
+		iconBar(box, S(3), S(7), S(10), S(7.5))
+	elseif key == "aim" then
+		iconRing(box, S(3), S(3), S(10), S(1.3))
+		iconBar(box, S(7.4), S(0.5), S(1.2), S(3))
+		iconBar(box, S(7.4), S(12.5), S(1.2), S(3))
+		iconBar(box, S(0.5), S(7.4), S(3), S(1.2))
+		iconBar(box, S(12.5), S(7.4), S(3), S(1.2))
+		iconRing(box, S(6.6), S(6.6), S(2.8), S(1))
+	elseif key == "esp" then
+		iconBar(box, S(3), S(4), S(10), S(1.6))
+		iconBar(box, S(3), S(7.2), S(7), S(1.6))
+		iconBar(box, S(3), S(10.4), S(4), S(1.6))
+		iconRing(box, S(11.6), S(10.2), S(2.6), S(1))
+	elseif key == "world" then
+		iconRing(box, S(2.5), S(2.5), S(11), S(1.3))
+		iconBar(box, S(2.5), S(7.4), S(11), S(1.2))
+		iconBar(box, S(7.4), S(2.5), S(1.2), S(11))
+	elseif key == "settings" then
+		iconBar(box, S(3), S(3.5), S(10), S(1.3))
+		iconRing(box, S(9), S(2.2), S(3.8), S(1.3))
+		iconBar(box, S(3), S(7.5), S(10), S(1.3))
+		iconRing(box, S(3.2), S(6.2), S(3.8), S(1.3))
+		iconBar(box, S(3), S(11.5), S(10), S(1.3))
+		iconRing(box, S(8.2), S(10.2), S(3.8), S(1.3))
+	elseif key == "other" then
+		iconRing(box, S(2.5), S(2.5), S(11), S(1.3))
+		iconBar(box, S(7.4), S(4.6), S(1.4), S(1.8))
+		iconBar(box, S(7.4), S(7.6), S(1.4), S(4.5))
+	elseif key == "close" then
+		iconBar(box, S(2), S(7.2), S(12), S(1.6), 45)
+		iconBar(box, S(2), S(7.2), S(12), S(1.6), -45)
+	elseif key == "search" then
+		iconRing(box, S(2.5), S(2.5), S(9), S(1.4))
+		iconBar(box, S(10.5), S(10.5), S(5), S(1.6), 45)
+	elseif key == "refresh" then
+		iconRing(box, S(2.2), S(2.2), S(11.6), S(1.4))
+		-- Chevron de rotation (haut-droite)
+		iconBar(box, S(10.2), S(1.0), S(3.6), S(1.4), 45)
+		iconBar(box, S(12.8), S(3.6), S(3.6), S(1.4), -45)
+	else
+		iconRing(box, S(5), S(5), S(6), S(1.4))
+	end
+	local function setColor(c) iconSetColor(root, c) end
+	setColor(fixedColor or currentTheme.Text)
+	onThemeChanged(function(t) setColor(fixedColor or t.Text) end)
+	return root, setColor
+end
+
+-- Icone cadenas avec etat ouvert/ferme (pour le bouton de verrouillage)
+function makeLockIcon(parent, size, fixedColor)
+	size = size or 14
+	local root, setColor = makeIcon(parent, "lock", size, fixedColor)
+	local box = root:FindFirstChildOfClass("Frame")
+	local shackle = box and box:FindFirstChildOfClass("Frame")
+	local s = size / 16
+	return root, setColor, function(locked)
+		if shackle then
+			shackle.Position = locked and UDim2.new(0, 4.5 * s, 0, 1 * s) or UDim2.new(0, 8 * s, 0, 0.5 * s)
+		end
+	end
 end
 
 
@@ -728,30 +898,52 @@ mainGradient.Rotation = 90
 mainGradient.Color = ColorSequence.new(currentTheme.BG, currentTheme.Panel)
 mainGradient.Transparency = NumberSequence.new(0, 0.35)
 
--- Animated color-shifting gradient that breathes the theme accent into the menu
-local mainGradAnim = Instance.new("UIGradient", main)
-mainGradAnim.Name = "mainGradAnim"
-mainGradAnim.Rotation = 90
-mainGradAnim.Color = ColorSequence.new(currentTheme.BG, currentTheme.Accent)
-mainGradAnim.Transparency = NumberSequence.new({
-	NumberSequenceKeypoint.new(0, 1),
-	NumberSequenceKeypoint.new(0.5, 0.92),
-	NumberSequenceKeypoint.new(1, 1)
-})
-TweenService:Create(mainGradAnim, TweenInfo.new(4.0, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1), {
-	Rotation = 270
+-- Un seul UIGradient par objet (Roblox n'en applique qu'un) : on anime l'Offset du gradient principal.
+-- L'ancien 2e UIGradient (mainGradAnim) etait inerte et consommait un tween en boucle pour rien.
+TweenService:Create(mainGradient, TweenInfo.new(4.0, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	Offset = Vector2.new(0, 0.35)
 }):Play()
 
 
 stroke = Instance.new("UIStroke", main)
 stroke.Color = currentTheme.Accent
-stroke.Thickness = 2
-stroke.Transparency = 0.25
--- Pulsing border glow
+stroke.Thickness = 1.5
+stroke.Transparency = 0.45
+-- Pulsing border glow (subtil : evite l'effet "neon epais")
 TweenService:Create(stroke, TweenInfo.new(2.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-	Transparency = 0.05,
-	Thickness = 2.5
+	Transparency = 0.15,
+	Thickness = 2
 }):Play()
+
+-- ================= RESPONSIVE (PC / mobile / tablette) =================
+-- UIScale global calcule depuis le viewport : le menu reste lisible et centre sur petits ecrans.
+menuScale = Instance.new("UIScale", main)
+function applyMenuScale()
+	pcall(function()
+		local cam = workspace.CurrentCamera
+		local vp = cam and cam.ViewportSize or Vector2.new(1920, 1080)
+		local s = math.clamp(math.min(vp.X / 460, vp.Y / 560), 0.62, 1.15)
+		menuScale.Scale = s
+		local w = menuW or 380
+		local h = menuH or 500
+		main.Position = UDim2.new(0.5, -w * s / 2, 0.5, -h * s / 2)
+	end)
+end
+applyMenuScale()
+pcall(function()
+	local cam = workspace.CurrentCamera
+	if cam then
+		track(cam:GetPropertyChangedSignal("ViewportSize"):Connect(applyMenuScale))
+	end
+	-- Liberation propre des connexions globales a la destruction de l'UI (anti memory-leak)
+	gui.Destroying:Connect(function()
+		for _, c in ipairs(TRACKED_CONNS) do pcall(function() c:Disconnect() end) end
+		TRACKED_CONNS = {}
+		for _, s in pairs(SFX_CACHE) do pcall(function() s:Destroy() end) end
+		SFX_CACHE = {}
+		pcall(function() RunService:UnbindFromRenderStep("ESP_Update") end)
+	end)
+end)
 
 
 
@@ -765,19 +957,10 @@ Instance.new("UICorner", header).CornerRadius = UDim.new(0, 16)
 headerGradient = Instance.new("UIGradient", header)
 headerGradient.Rotation = 90
 headerGradient.Color = ColorSequence.new(currentTheme.Panel, currentTheme.Button)
-
--- Animated shimmer sweeping across the header
-local headerShimmer = Instance.new("UIGradient", header)
-headerShimmer.Name = "headerShimmer"
-headerShimmer.Rotation = 90
-headerShimmer.Color = ColorSequence.new(currentTheme.Accent, currentTheme.Accent, currentTheme.Accent)
-headerShimmer.Transparency = NumberSequence.new({
-	NumberSequenceKeypoint.new(0, 1),
-	NumberSequenceKeypoint.new(0.5, 0.9),
-	NumberSequenceKeypoint.new(1, 1)
-})
-TweenService:Create(headerShimmer, TweenInfo.new(3.2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {
-	Offset = Vector2.new(1, 0)
+-- Un seul gradient applique par Roblox : on anime l'Offset du gradient principal pour le balayage lumineux.
+-- (l'ancien 2e UIGradient headerShimmer etait inerte -> shimmer invisible)
+TweenService:Create(headerGradient, TweenInfo.new(3.2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true), {
+	Offset = Vector2.new(0, 0.55)
 }):Play()
 
 
@@ -796,16 +979,16 @@ logoBadgeStroke.Transparency = 0.4
 local logoGlow = Instance.new("Frame", header)
 logoGlow.Name = "logoGlow"
 logoGlow.Size = UDim2.new(0, 38, 0, 38)
-logoGlow.Position = UDim2.new(0, 12, 0.5, -19)
-logoGlow.AnchorPoint = Vector2.new(0, 0.5)
+logoGlow.Position = UDim2.new(0, 31, 0.5, 0)
+logoGlow.AnchorPoint = Vector2.new(0.5, 0.5)
 logoGlow.BackgroundColor3 = currentTheme.Accent
-logoGlow.BackgroundTransparency = 0.5
+logoGlow.BackgroundTransparency = 0.78
 logoGlow.BorderSizePixel = 0
-logoGlow.ZIndex = 4
+logoGlow.ZIndex = 2 -- derriere le badge (ZIndex 3), sinon le halo masque le logo
 Instance.new("UICorner", logoGlow).CornerRadius = UDim.new(0, 12)
 TweenService:Create(logoGlow, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-	BackgroundTransparency = 0.1,
-	Size = UDim2.new(0, 46, 0, 46)
+	BackgroundTransparency = 0.55,
+	Size = UDim2.new(0, 44, 0, 44)
 }):Play()
 logoText = Instance.new("TextLabel", logoBadge)
 logoText.Size = UDim2.new(1, 0, 1, 0)
@@ -816,6 +999,17 @@ logoText.Font = Enum.Font.GothamBlack
 logoText.TextSize = 20
 logoText.TextStrokeTransparency = 0.2
 logoText.TextStrokeColor3 = Color3.new(0, 0, 0)
+-- Slot logo image : si LOGO_IMAGE_ID > 0, remplace le monogramme "B" par ton decal uploade.
+if LOGO_IMAGE_ID and tonumber(LOGO_IMAGE_ID) and tonumber(LOGO_IMAGE_ID) > 0 then
+	local logoImg = Instance.new("ImageLabel", logoBadge)
+	logoImg.Name = "LogoImage"
+	logoImg.Size = UDim2.new(1, -4, 1, -4)
+	logoImg.Position = UDim2.new(0, 2, 0, 2)
+	logoImg.BackgroundTransparency = 1
+	logoImg.Image = "rbxassetid://" .. tostring(tonumber(LOGO_IMAGE_ID))
+	logoImg.ZIndex = 5
+	logoText.Visible = false
+end
 
 accentBar = Instance.new("Frame", header)
 accentBar.Size = UDim2.new(1, -40, 0, 2)
@@ -836,50 +1030,8 @@ headerFix.Position = UDim2.new(0, 0, 1, -14)
 headerFix.BackgroundColor3 = currentTheme.Panel
 headerFix.BorderSizePixel = 0
 
--- Logo : monogramme vectoriel degrade (aucune dependance externe, marche sur tous les executeurs).
--- Pour brancher une vraie image : upload le decal sur Roblox puis mets son ID dans LOGO_IMAGE_ID.
-local logoBadge = Instance.new("Frame", header)
-logoBadge.Name = "LogoBadge"
-logoBadge.Size = UDim2.new(0, 34, 0, 34)
-logoBadge.Position = UDim2.new(0, 14, 0.5, -17)
-logoBadge.BackgroundColor3 = currentTheme.Accent
-logoBadge.BorderSizePixel = 0
-Instance.new("UICorner", logoBadge).CornerRadius = UDim.new(0, 10)
-local logoGrad = Instance.new("UIGradient", logoBadge)
-logoGrad.Rotation = 60
-logoGrad.Color = ColorSequence.new(
-	mixColor(currentTheme.Accent, Color3.new(1,1,1), 0.28),
-	mixColor(currentTheme.Accent, currentTheme.BG, 0.25)
-)
-local logoGlyph = Instance.new("TextLabel", logoBadge)
-logoGlyph.Size = UDim2.new(1, 0, 1, 0)
-logoGlyph.BackgroundTransparency = 1
-logoGlyph.Text = "B"
-logoGlyph.Font = Enum.Font.GothamBlack
-logoGlyph.TextSize = 17
-logoGlyph.TextColor3 = Color3.new(1,1,1)
-local logoStroke = Instance.new("UIStroke", logoBadge)
-logoStroke.Color = Color3.new(1,1,1)
-logoStroke.Transparency = 0.78
-logoStroke.Thickness = 1
-if LOGO_IMAGE_ID and tonumber(LOGO_IMAGE_ID) and tonumber(LOGO_IMAGE_ID) > 0 then
-	local img = Instance.new("ImageLabel", logoBadge)
-	img.Size = UDim2.new(1, -6, 1, -6)
-	img.Position = UDim2.new(0, 3, 0, 3)
-	img.BackgroundTransparency = 1
-	img.Image = "rbxassetid://" .. tostring(tonumber(LOGO_IMAGE_ID))
-	logoGlyph.Visible = false
-end
-onThemeChanged(function(t)
-	logoBadge.BackgroundColor3 = t.Accent
-	logoGrad.Color = ColorSequence.new(
-		mixColor(t.Accent, Color3.new(1,1,1), 0.28),
-		mixColor(t.Accent, t.BG, 0.25)
-	)
-end)
-
 title = Instance.new("TextLabel", header)
-title.Text = "🌐 bkz HUB"
+title.Text = "bkz HUB"
 title.Size = UDim2.new(1, -100, 1, 0)
 title.Position = UDim2.new(0, 58, 0, 0)
 title.BackgroundTransparency = 1
@@ -889,7 +1041,7 @@ title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 subtitle = Instance.new("TextLabel", header)
-subtitle.Text = "v7.2  •  " .. player.Name
+subtitle.Text = "v7.3  •  " .. player.Name
 subtitle.Size = UDim2.new(1, -100, 0, 14)
 subtitle.Position = UDim2.new(0, 58, 0, 33)
 subtitle.BackgroundTransparency = 1
@@ -938,41 +1090,43 @@ function attachTip(btn, txt)
 end
 
 lockBtn = Instance.new("TextButton", header)
-lockBtn.Text = "🔓"
+lockBtn.Text = ""
 lockBtn.Size = UDim2.new(0, 30, 0, 30)
 lockBtn.Position = UDim2.new(1, -74, 0.5, -15)
 lockBtn.BackgroundColor3 = currentTheme.Button
 lockBtn.TextColor3 = Color3.new(1,1,1)
-lockBtn.Font = Enum.Font.GothamBlack
-lockBtn.TextSize = 14
 lockBtn.BorderSizePixel = 0
+lockBtn.AutoButtonColor = false
 Instance.new("UICorner", lockBtn).CornerRadius = UDim.new(0, 8)
 lockBtn.MouseEnter:Connect(playHover)
 lockBtn.Name = "lockBtn"
 attachTip(lockBtn, "Verrouiller / deverrouiller l'interface")
+local lockIcon, _, setLockState = makeLockIcon(lockBtn, 14, Color3.new(1,1,1))
+if setLockState then setLockState(false) end -- l'interface demarre deverrouillee
 lockBtn.MouseButton1Click:Connect(function()
 	interfaceLocked = not interfaceLocked
-	lockBtn.Text = interfaceLocked and "🔒" or "🔓"
+	playSfx("toggle")
+	if setLockState then setLockState(interfaceLocked) end
 	lockBtn.BackgroundColor3 = interfaceLocked and currentTheme.Success or currentTheme.Button
 	-- Glisser/resize deja blockes via interfaceLocked dans startDrag/bouton de redimensionnement.
 	-- (ancien code : main.Draggable = ... propriete Roblox retiree -> erreur a chaque clic)
-	showNotification(interfaceLocked and "🔒 Interface locked" or "🔓 Interface unlocked", 1.5)
+	showNotification(interfaceLocked and "Interface locked" or "Interface unlocked", 1.5)
 end)
 
 
 closeBtn = Instance.new("TextButton", header)
-closeBtn.Text = "X"
+closeBtn.Text = ""
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -38, 0.5, -15)
 closeBtn.BackgroundColor3 = currentTheme.Danger
 closeBtn.TextColor3 = Color3.new(1,1,1)
-closeBtn.Font = Enum.Font.GothamBlack
-closeBtn.TextSize = 14
 closeBtn.BorderSizePixel = 0
+closeBtn.AutoButtonColor = false
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
 closeBtn.MouseEnter:Connect(playHover)
 closeBtn.Name = "closeBtn"
 attachTip(closeBtn, "Fermer le menu")
+makeIcon(closeBtn, "close", 11, Color3.new(1,1,1))
 
 glassOverlay = Instance.new("Frame", main)
 glassOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -1013,13 +1167,13 @@ Instance.new("UICorner", tabIndicator).CornerRadius = UDim.new(1, 0)
 
 
 tabDefs = {
-	{ name = "Player",   icon = "👤" },
-	{ name = "Personal", icon = "🔒" },
-	{ name = "Aim",      icon = "🎯" },
-	{ name = "ESP",      icon = "👁" },
-	{ name = "World",    icon = "🌍" },
-	{ name = "Settings", icon = "⚙" },
-	{ name = "Other",    icon = "ℹ" },
+	{ name = "Player" },
+	{ name = "Personal" },
+	{ name = "Aim" },
+	{ name = "ESP" },
+	{ name = "World" },
+	{ name = "Settings" },
+	{ name = "Other" },
 }
 
 pages = {}
@@ -1072,14 +1226,15 @@ for _, def in ipairs(tabDefs) do
 	pages[def.name] = page
 
 	local tb = Instance.new("TextButton", tabBar)
-	tb.Text = def.icon
+	tb.Text = ""
 	tb.Size = UDim2.new(1 / #tabDefs, -3, 1, 0)
 	tb.BackgroundColor3 = (def.name == "Player") and currentTheme.TabActive or currentTheme.Tab
-	tb.TextColor3 = (def.name == "Player") and Color3.new(1,1,1) or currentTheme.SubText
-	tb.Font = Enum.Font.GothamBold
-	tb.TextSize = 16
 	tb.BorderSizePixel = 0
-	Instance.new("UICorner", tb).CornerRadius = UDim.new(0, 6)
+	tb.AutoButtonColor = false
+	Instance.new("UICorner", tb).CornerRadius = UDim.new(0, 8)
+	local tabIcon, tabIconSet = makeIcon(tb, string.lower(def.name), 15)
+	tabIcon.Position = UDim2.new(0.5, 0, 0.5, -7)
+	if tabIconSet then tabIconSet((def.name == "Player") and Color3.new(1,1,1) or currentTheme.SubText) end
 
 	local nameLbl = Instance.new("TextLabel", tb)
 	nameLbl.Size = UDim2.new(1, 0, 0, 10)
@@ -1087,9 +1242,10 @@ for _, def in ipairs(tabDefs) do
 	nameLbl.BackgroundTransparency = 1
 	nameLbl.Text = def.name
 	nameLbl.Font = Enum.Font.Gotham
-	nameLbl.TextSize = 8
+	nameLbl.TextSize = 9
 	nameLbl.TextColor3 = currentTheme.SubText
 	tb.MouseEnter:Connect(function()
+		playSfx("hover")
 		if def.name ~= activeTab then
 			TweenService:Create(tb, TweenInfo.new(0.15), {BackgroundColor3 = currentTheme.Button}):Play()
 		end
@@ -1100,6 +1256,7 @@ for _, def in ipairs(tabDefs) do
 		end
 	end)
 	tb.MouseButton1Click:Connect(function()
+		playSfx("click")
 		activeTab = def.name
 		for n, p in pairs(pages) do
 			if n == def.name then
@@ -1117,6 +1274,10 @@ for _, def in ipairs(tabDefs) do
 		for n, b in pairs(tabBtns) do
 			b.BackgroundColor3 = (n == def.name) and currentTheme.TabActive or currentTheme.Tab
 			b.TextColor3 = (n == def.name) and Color3.new(1,1,1) or currentTheme.SubText
+			local ic = b:FindFirstChild("Icon_" .. string.lower(n))
+			if ic then iconSetColor(ic, (n == def.name) and Color3.new(1,1,1) or currentTheme.SubText) end
+			local nm = b:FindFirstChildOfClass("TextLabel")
+			if nm then nm.TextColor3 = (n == def.name) and Color3.new(1,1,1) or currentTheme.SubText end
 		end
 		if moveTabIndicator then moveTabIndicator(def.name) end
 	end)
@@ -1254,6 +1415,8 @@ function createBtn(parent, text, color, order, func)
 	btn.ZIndex = 2
 
 	btn.MouseEnter:Connect(function()
+		if btn:GetAttribute("Disabled") then return end
+		playSfx("hover")
 		TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundColor3 = currentTheme.ButtonHov}):Play()
 		TweenService:Create(stroke2, TweenInfo.new(0.2), {Transparency = 0.6, Color = currentTheme.Accent}):Play()
 		TweenService:Create(hoverGlow, TweenInfo.new(0.2), {BackgroundTransparency = 0.93}):Play()
@@ -1264,6 +1427,8 @@ function createBtn(parent, text, color, order, func)
 		TweenService:Create(hoverGlow, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
 	end)
 	btn.MouseButton1Click:Connect(function()
+		if btn:GetAttribute("Disabled") then return end
+		playSfx("click")
 		-- Pop d'appui : le cadre se compresse legerement puis rebondit (easing Back)
 		pressScale.Scale = 0.97
 		TweenService:Create(pressScale, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
@@ -1279,7 +1444,7 @@ function createBtn(parent, text, color, order, func)
 		func(btn)
 		if (notifyCount or 0) == before then
 			local label = text:gsub("[^%w%s]","")
-			showNotification("👉 " .. label, 1.5)
+			showNotification("› " .. label, 1.5)
 		end
 	end)
 
@@ -1295,6 +1460,20 @@ end
 
 toggleStates = {}
 toggleApply = {}
+
+function setBtnDisabled(targetBtn, disabled)
+	if not targetBtn then return end
+	targetBtn:SetAttribute("Disabled", disabled and true or nil)
+	targetBtn.Active = not disabled
+	local frame = targetBtn.Parent
+	if frame and frame:IsA("GuiObject") then
+		TweenService:Create(frame, TweenInfo.new(0.15), {BackgroundTransparency = disabled and 0.5 or 0}):Play()
+	end
+	TweenService:Create(targetBtn, TweenInfo.new(0.15), {TextTransparency = disabled and 0.6 or 0}):Play()
+end
+
+-- Etat Desactive : le bouton ne reagit plus au survol ni au clic.
+-- Utilisation : setBtnDisabled(unBouton, true) / setBtnDisabled(unBouton, false)
 
 function createToggle(parent, text, order, func, configKey)
 	local frame = Instance.new("Frame", parent)
@@ -1395,6 +1574,7 @@ function createToggle(parent, text, order, func, configKey)
 		TweenService:Create(strokeT, TweenInfo.new(0.18), {Transparency = 0.93, Color = Color3.new(1,1,1)}):Play()
 	end)
 	hitbox.MouseButton1Click:Connect(function()
+		playSfx("toggle")
 		state = not state
 		if configKey then toggleStates[configKey] = state end
 		applySwitch(state, true)
@@ -1702,6 +1882,8 @@ function createSlider(parent, text, min, max, default, order, func, configKey)
 
 	hitbox.MouseEnter:Connect(function()
 
+		playHover()
+
 		TweenService:Create(knob, TweenInfo.new(0.15), {Size = UDim2.new(0, 17, 0, 17)}):Play()
 
 		TweenService:Create(inputStroke, TweenInfo.new(0.15), {Transparency = 0.6, Color = currentTheme.Accent}):Play()
@@ -1727,6 +1909,8 @@ function createSlider(parent, text, min, max, default, order, func, configKey)
 	hitbox.MouseButton1Down:Connect(function(x, y)
 
 		if draggingSlider then return end
+
+		playSfx("click")
 
 		draggingSlider = true
 
@@ -1933,7 +2117,7 @@ onThemeChanged(function(t)
 	for _, v in pairs(edgeBars) do v.bar.BackgroundColor3 = t.Accent end
 end)
 
-UIS.InputChanged:Connect(function(input)
+track(UIS.InputChanged:Connect(function(input)
 	if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
 	if dragging and not resizing then
 		local delta = input.Position - dragStart
@@ -1946,13 +2130,13 @@ UIS.InputChanged:Connect(function(input)
 		if resizing == "y" or resizing == "xy" then newH = math.max(380, resizeStartSize.Y + delta.Y) end
 		applyMenuSize(newW, newH)
 	end
-end)
+end))
 
-UIS.InputEnded:Connect(function(input)
+track(UIS.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		dragging = false; resizing = nil
 	end
-end)
+end))
 
 
 
@@ -2051,16 +2235,16 @@ function playInstantTransmissionFX(position)
 	Debris:AddItem(burst, 0.45)
 end
 
-UIS.InputBegan:Connect(function(input, gpe)
+track(UIS.InputBegan:Connect(function(input, gpe)
 	if not gpe and gokuMode and input.KeyCode == Enum.KeyCode.F then
 		playInstantTransmissionFX(mouse.Hit.p)
 	end
-end)
+end))
 
 
 
 
-createSection(pages.Player, "🎯  Targeting", 0)
+createSection(pages.Player, "Targeting", 0)
 
 
 searchRow = Instance.new("Frame", pages.Player)
@@ -2077,11 +2261,14 @@ ddFrame.BackgroundColor3 = currentTheme.Button
 ddFrame.BorderSizePixel = 0
 Instance.new("UICorner", ddFrame).CornerRadius = UDim.new(0, 8)
 
+searchIcon = makeIcon(ddFrame, "search", 13)
+searchIcon.Position = UDim2.new(0, 16, 0.5, 0)
+
 searchBox = Instance.new("TextBox", ddFrame)
-searchBox.PlaceholderText = "  👤  Search for a player..."
+searchBox.PlaceholderText = "Search for a player..."
 searchBox.Text = ""
-searchBox.Size = UDim2.new(1, -10, 1, 0)
-searchBox.Position = UDim2.new(0, 10, 0, 0)
+searchBox.Size = UDim2.new(1, -34, 1, 0)
+searchBox.Position = UDim2.new(0, 28, 0, 0)
 searchBox.BackgroundTransparency = 1
 searchBox.TextColor3 = currentTheme.Text
 searchBox.PlaceholderColor3 = currentTheme.SubText
@@ -2099,14 +2286,15 @@ refreshFrame.BorderSizePixel = 0
 Instance.new("UICorner", refreshFrame).CornerRadius = UDim.new(0, 8)
 
 refreshBtn = Instance.new("TextButton", refreshFrame)
-refreshBtn.Text = "🔄"
+refreshBtn.Text = ""
 refreshBtn.Size = UDim2.new(1, 0, 1, 0)
 refreshBtn.BackgroundTransparency = 1
 refreshBtn.TextColor3 = Color3.new(1,1,1)
 refreshBtn.Font = Enum.Font.GothamBold
 refreshBtn.TextSize = 16
-
+makeIcon(refreshBtn, "refresh", 15, Color3.new(1,1,1))
 	refreshBtn.MouseEnter:Connect(function()
+		if refreshBtn:GetAttribute("Disabled") then return end
 		playHover()
 		TweenService:Create(refreshFrame, TweenInfo.new(0.12), {BackgroundColor3 = currentTheme.AccentHov}):Play()
 	end)
@@ -2169,14 +2357,14 @@ function selectPlayer(p)
 	TweenService:Create(ddList, TweenInfo.new(0.15), {Size = UDim2.new(1,0,0,0)}):Play()
 	task.wait(0.15); ddList.Visible = false
 
-	infoName.Text = "👤  " .. p.Name .. "  (ID: " .. p.UserId .. ")"
+	infoName.Text = "› " .. p.Name .. "  (ID: " .. p.UserId .. ")"
 	local teamName = p.Team and p.Team.Name or "None"
-	infoStats.Text = "🏷  " .. p.Name .. (p.DisplayName ~= p.Name and " (" .. p.DisplayName .. ")" or "") .. "   🚩 Team: " .. teamName
+	infoStats.Text = "Team: " .. teamName .. (p.DisplayName ~= p.Name and "  •  " .. p.DisplayName or "")
 	local hum = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
 	if hum then
-		infoHP.Text = "❤  HP: " .. math.floor(hum.Health) .. " / " .. math.max(hum.MaxHealth,1)
+		infoHP.Text = "HP: " .. math.floor(hum.Health) .. " / " .. math.max(hum.MaxHealth,1)
 	else
-		infoHP.Text = "❤  HP: N/A"
+		infoHP.Text = "HP: N/A"
 	end
 end
 
@@ -2184,7 +2372,7 @@ end
 local lostTargetUserId = nil
 local lostTargetName = nil
 
-Players.PlayerRemoving:Connect(function(p)
+track(Players.PlayerRemoving:Connect(function(p)
 	if p == targetPlayer or p == spectatingPlayer then
 		local wasSpectating = (p == spectatingPlayer)
 		-- remember who left so we can re-find them
@@ -2197,11 +2385,12 @@ Players.PlayerRemoving:Connect(function(p)
 		infoName.Text = "No player selected"
 		infoStats.Text = ""
 		infoHP.Text = ""
-		showNotification("👋  " .. p.Name .. " a quitté la partie", 3)
+		showNotification("› " .. p.Name .. " a quitté la partie", 3)
 		-- if we were spectating, keep trying to re-spectate them when they rejoin
 		if wasSpectating then
 			task.spawn(function()
 				while lostTargetUserId and not targetPlayer do
+					if not gui or not gui.Parent then break end
 					task.wait(1)
 					local rejoined = Players:FindFirstChild(lostTargetName)
 					if rejoined and rejoined.UserId == lostTargetUserId then
@@ -2213,7 +2402,7 @@ Players.PlayerRemoving:Connect(function(p)
 							if hum then
 								spectatingPlayer = rejoined
 								workspace.CurrentCamera.CameraSubject = hum
-								showNotification("🎥  Re-spectate: " .. rejoined.Name, 3)
+								showNotification("Re-spectate: " .. rejoined.Name, 3)
 							end
 						end
 						lostTargetUserId = nil
@@ -2224,7 +2413,7 @@ Players.PlayerRemoving:Connect(function(p)
 			end)
 		end
 	end
-end)
+end))
 
 
 function updateDD(filter)
@@ -2306,15 +2495,20 @@ searchBox.FocusLost:Connect(function(enterPressed)
 	end
 end)
 
-UIS.InputBegan:Connect(function(input, gpe)
+track(UIS.InputBegan:Connect(function(input, gpe)
 	if gpe then return end
 	if input.KeyCode == Enum.KeyCode.Tab and searchBox:IsFocused() then
 		selectFirstResult()
 	end
-end)
+end))
 
 
 refreshBtn.MouseButton1Click:Connect(function()
+	if refreshBtn:GetAttribute("Disabled") then return end
+	setBtnDisabled(refreshBtn, true)
+	task.delay(0.4, function()
+		if refreshBtn.Parent then setBtnDisabled(refreshBtn, false) end
+	end)
 	refreshDD()
 end)
 
@@ -2323,7 +2517,7 @@ searchBox.Focused:Connect(function()
 	updateDD(searchBox.Text)
 end)
 
-createSection(pages.Player, "⚡  Actions", 10)
+createSection(pages.Player, "Actions", 10)
 
 
 infoPanel = Instance.new("Frame", pages.Player)
@@ -2373,12 +2567,12 @@ RunService.Heartbeat:Connect(function()
 	if targetPlayer and targetPlayer.Character then
 		local hum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
 		if hum then
-			infoHP.Text = "❤  HP: " .. math.floor(hum.Health) .. " / " .. math.max(hum.MaxHealth,1)
+			infoHP.Text = "HP:" .. math.floor(hum.Health) .. " / " .. math.max(hum.MaxHealth,1)
 		end
 	end
 end)
 
-createBtn(pages.Player, "🎥  Spectate", currentTheme.Button, 11, function()
+createBtn(pages.Player, "Spectate", currentTheme.Button, 11, function()
 	if targetPlayer and targetPlayer.Character then
 		local hum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
 		if hum then
@@ -2387,10 +2581,10 @@ createBtn(pages.Player, "🎥  Spectate", currentTheme.Button, 11, function()
 		end
 	end
 end)
-createBtn(pages.Player, "⏹  Stop Spectate", currentTheme.Button, 12, function()
+createBtn(pages.Player, "Stop Spectate", currentTheme.Button, 12, function()
 	stopSpectate()
 end)
-createBtn(pages.Player, "📍  TP Player to Me", currentTheme.Button, 13, function()
+createBtn(pages.Player, "TP Player to Me", currentTheme.Button, 13, function()
 	if not (targetPlayer and targetPlayer.Character and player.Character) then return end
 	local myHRP = player.Character:FindFirstChild("HumanoidRootPart")
 	local theirHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -2402,7 +2596,7 @@ createBtn(pages.Player, "📍  TP Player to Me", currentTheme.Button, 13, functi
 		theirHRP.Anchored = wasAnchored
 	end
 end)
-createBtn(pages.Player, "🚀  TP Me to Player", currentTheme.Button, 14, function()
+createBtn(pages.Player, "TP Me to Player", currentTheme.Button, 14, function()
 	if not (targetPlayer and targetPlayer.Character and player.Character) then return end
 	local myHRP = player.Character:FindFirstChild("HumanoidRootPart")
 	local theirHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -2422,9 +2616,9 @@ local function hasPlayerCollisions()
 	return true
 end
 
-createBtn(pages.Player, "🧊  Freeze Target", currentTheme.Button, 15, function()
+createBtn(pages.Player, "Freeze Target", currentTheme.Button, 15, function()
 	if not hasPlayerCollisions() then
-		showNotification("⚠  Collisions désactivées dans ce jeu — Freeze impossible", 3)
+		showNotification("Collisions désactivées dans ce jeu — Freeze impossible", 3)
 		return
 	end
 	if not targetPlayer or not targetPlayer.Character then return end
@@ -2435,18 +2629,18 @@ createBtn(pages.Player, "🧊  Freeze Target", currentTheme.Button, 15, function
 			hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
 			hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 		end)
-		showNotification("🧊  " .. targetPlayer.Name .. " gelé", 3)
+		showNotification("› " .. targetPlayer.Name .. " gelé", 3)
 	end
 end)
-createBtn(pages.Player, "♻  Unfreeze Target", currentTheme.Button, 16, function()
+createBtn(pages.Player, "Unfreeze Target", currentTheme.Button, 16, function()
 	if not targetPlayer or not targetPlayer.Character then return end
 	local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 	if hrp then
 		pcall(function() hrp.Anchored = false end)
-		showNotification("♻  " .. targetPlayer.Name .. " dégelé", 3)
+		showNotification("› " .. targetPlayer.Name .. " dégelé", 3)
 	end
 end)
-createBtn(pages.Player, "👻  Invisible Target", currentTheme.Button, 17, function()
+createBtn(pages.Player, "Invisible Target", currentTheme.Button, 17, function()
 	if not targetPlayer or not targetPlayer.Character then return end
 	local char = targetPlayer.Character
 	-- Save originals before making invisible
@@ -2464,9 +2658,9 @@ createBtn(pages.Player, "👻  Invisible Target", currentTheme.Button, 17, funct
 			pcall(function() part.Transparency = 1 end)
 		end
 	end
-	showNotification("👻  " .. targetPlayer.Name .. " rendu invisible", 3)
+	showNotification("› " .. targetPlayer.Name .. " rendu invisible", 3)
 end)
-createBtn(pages.Player, "👁  Uninvisible Target", currentTheme.Button, 18, function()
+createBtn(pages.Player, "Uninvisible Target", currentTheme.Button, 18, function()
 	if not targetPlayer or not targetPlayer.Character then return end
 	local saved = targetInvisStorage[targetPlayer.UserId]
 	if saved then
@@ -2481,11 +2675,11 @@ createBtn(pages.Player, "👁  Uninvisible Target", currentTheme.Button, 18, fun
 		end
 		targetInvisStorage[targetPlayer.UserId] = nil
 	end
-	showNotification("👁  " .. targetPlayer.Name .. " rendu visible", 3)
+	showNotification("› " .. targetPlayer.Name .. " rendu visible", 3)
 end)
-createBtn(pages.Player, "🚀  Fling Target", currentTheme.Danger, 19, function()
+createBtn(pages.Player, "Fling Target", currentTheme.Danger, 19, function()
 	if not hasPlayerCollisions() then
-		showNotification("⚠  Collisions désactivées dans ce jeu — Fling impossible", 3)
+		showNotification("Collisions désactivées dans ce jeu — Fling impossible", 3)
 		return
 	end
 	if not targetPlayer or not targetPlayer.Character then return end
@@ -2497,10 +2691,10 @@ createBtn(pages.Player, "🚀  Fling Target", currentTheme.Danger, 19, function(
 			hrp.AssemblyLinearVelocity = Vector3.new(0, 250, 0)
 			hrp.AssemblyAngularVelocity = Vector3.new(9999, 9999, 9999)
 		end)
-		showNotification("🚀  " .. targetPlayer.Name .. " flingué", 3)
+		showNotification("› " .. targetPlayer.Name .. " flingué", 3)
 	end
 end)
-createBtn(pages.Player, "🛑  Stop Fling", currentTheme.Button, 20, function()
+createBtn(pages.Player, "Stop Fling", currentTheme.Button, 20, function()
 	if not targetPlayer or not targetPlayer.Character then return end
 	local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 	if hrp then
@@ -2509,7 +2703,7 @@ createBtn(pages.Player, "🛑  Stop Fling", currentTheme.Button, 20, function()
 			hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
 			hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 		end)
-		showNotification("🛑  Fling arrêté sur " .. targetPlayer.Name, 3)
+		showNotification("Fling arrêté sur " .. targetPlayer.Name, 3)
 	end
 end)
 
@@ -2540,7 +2734,7 @@ function startChatSpy(filterPlayer)
 				for _, pl in ipairs(Players:GetPlayers()) do
 					if pl.UserId == src.UserId then pName = pl.Name; break end
 				end
-				showNotification("💬  " .. pName .. ": " .. (msg.Text or ""), 5)
+				showNotification("› " .. pName .. ": " .. (msg.Text or ""), 5)
 			end)
 			table.insert(chatSpyConns, c)
 			connected = true
@@ -2552,7 +2746,7 @@ function startChatSpy(filterPlayer)
 		if filterPlayer and pl ~= filterPlayer then return end
 		local c = pl.Chatted:Connect(function(msg)
 			if not chatSpyActive then return end
-			showNotification("💬  " .. pl.Name .. ": " .. msg, 5)
+			showNotification("› " .. pl.Name .. ": " .. msg, 5)
 		end)
 		table.insert(chatSpyConns, c)
 	end
@@ -2565,26 +2759,26 @@ function startChatSpy(filterPlayer)
 	table.insert(chatSpyConns, cAdd)
 end
 
-createBtn(pages.Player, "💬  Chat Spy (joueur ciblé)", currentTheme.Button, 21, function()
+createBtn(pages.Player, "Chat Spy (joueur ciblé)", currentTheme.Button, 21, function()
 	if chatSpyActive then
 		stopChatSpy()
-		showNotification("👁  Chat Spy OFF", 2)
+		showNotification("Chat Spy OFF", 2)
 	else
 		if targetPlayer then
 			startChatSpy(targetPlayer)
-			showNotification("👁  Chat Spy ON → " .. targetPlayer.Name, 3)
+			showNotification("Chat Spy ON → " .. targetPlayer.Name, 3)
 		else
-			showNotification("❌  Sélectionne un joueur d'abord", 2)
+			showNotification("Sélectionne un joueur d'abord", 2)
 		end
 	end
 end)
-createBtn(pages.Player, "💬  Chat Spy (tous les joueurs)", currentTheme.Button, 22, function()
+createBtn(pages.Player, "Chat Spy (tous les joueurs)", currentTheme.Button, 22, function()
 	if chatSpyActive then
 		stopChatSpy()
-		showNotification("👁  Chat Spy OFF", 2)
+		showNotification("Chat Spy OFF", 2)
 	else
 		startChatSpy(nil)
-		showNotification("👁  Chat Spy ON → tous les joueurs", 3)
+		showNotification("Chat Spy ON → tous les joueurs", 3)
 	end
 end)
 
@@ -2611,7 +2805,7 @@ do
 	local toolBtn = Instance.new("TextButton", toolsFrame)
 	toolBtn.Size = UDim2.new(1, 0, 1, 0)
 	toolBtn.BackgroundTransparency = 1
-	toolBtn.Text = "🧰  Give Tools du jeu (Liste)"
+	toolBtn.Text = "Give Tools du jeu (Liste)"
 	toolBtn.TextColor3 = currentTheme.Text
 	toolBtn.Font = Enum.Font.GothamSemibold
 	toolBtn.TextSize = 13
@@ -2657,7 +2851,7 @@ do
 		end
 		table.sort(found, function(a,b) return a.Name < b.Name end)
 		if #found == 0 then
-			showNotification("⚠  Aucun tool trouvé dans le jeu", 3)
+			showNotification("Aucun tool trouvé dans le jeu", 3)
 			open = false
 			list.Visible = false
 			return
@@ -2666,7 +2860,7 @@ do
 		list.Visible = true
 		local header = Instance.new("TextButton", list)
 		header.Size = UDim2.new(1, 0, 0, 28)
-		header.Text = "➕  GIVE ALL  (" .. #found .. " tools)"
+		header.Text = "GIVE ALL (" .. #found .. " tools)"
 		header.TextColor3 = Color3.new(1,1,1)
 		header.Font = Enum.Font.GothamBold
 		header.TextSize = 12
@@ -2674,14 +2868,14 @@ do
 		header.LayoutOrder = 0
 		header.MouseButton1Click:Connect(function()
 			for _, t in ipairs(found) do giveTool(t) end
-			showNotification("🧰  Tools donnés !", 3)
+			showNotification("Tools donnés !", 3)
 			list.Visible = false
 			open = false
 		end)
 		for i, t in ipairs(found) do
 			local row = Instance.new("TextButton", list)
 			row.Size = UDim2.new(1, 0, 0, 28)
-			row.Text = "    ⚔  " .. t.Name
+			row.Text = "      " .. t.Name
 			row.TextColor3 = currentTheme.Text
 			row.Font = Enum.Font.Gotham
 			row.TextSize = 12
@@ -2690,13 +2884,13 @@ do
 			row.LayoutOrder = i
 			row.MouseButton1Click:Connect(function()
 				giveTool(t)
-				showNotification("🧰  Tool donné : " .. t.Name, 3)
+				showNotification("Tool donné : " .. t.Name, 3)
 			end)
 		end
 	end)
 end
 
-createSection(pages.Personal, "🏃  Movement", 0)
+createSection(pages.Personal, "Movement", 0)
 
 savedWalkSpeed = 16
 savedJumpPower = 50
@@ -2714,17 +2908,17 @@ player.CharacterAdded:Connect(function(char)
 	applyMovement(char)
 end)
 
-createToggle(pages.Personal, "⚡  Goku TP (F + Mouse)", 1, function(state)
+createToggle(pages.Personal, "Goku TP (F + Mouse)", 1, function(state)
 	gokuMode = state
 end, "gokuTP")
 
-createNumberInput(pages.Personal, "🏃  Walk Speed", 16, 2, function(val)
+createNumberInput(pages.Personal, "Walk Speed", 16, 2, function(val)
 	savedWalkSpeed = val
 	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if hum then hum.WalkSpeed = val end
 end, "walkSpeed")
 
-createNumberInput(pages.Personal, "🦘  Jump Height", 50, 3, function(val)
+createNumberInput(pages.Personal, "Jump Height", 50, 3, function(val)
 	savedJumpPower = val
 	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if hum then
@@ -2733,11 +2927,11 @@ createNumberInput(pages.Personal, "🦘  Jump Height", 50, 3, function(val)
 	end
 end, "jumpPower")
 
-createToggle(pages.Personal, "🧊  Freeze (no move)", 4, function(state)
+createToggle(pages.Personal, "Freeze (no move)", 4, function(state)
 	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if hrp then hrp.Anchored = state end
 end, "freeze")
-createSection(pages.Personal, "🦅  Fly", 5)
+createSection(pages.Personal, "Fly", 5)
 
 flyEnabled = false
 flySpeed = 40
@@ -2788,16 +2982,16 @@ function disableFly()
 	end
 end
 
-createToggle(pages.Personal, "🦅  Fly  (WASD + Space/Ctrl)", 6, function(state)
+createToggle(pages.Personal, "Fly (WASD + Space/Ctrl)", 6, function(state)
 	flyEnabled = state
 	if state then enableFly() else disableFly() end
 end, "fly")
 
-createNumberInput(pages.Personal, "🦅  Fly Speed", 40, 7, function(val)
+createNumberInput(pages.Personal, "Fly Speed", 40, 7, function(val)
 	flySpeed = val
 end, "flySpeed")
 
-createSection(pages.Personal, "👁  Collision & Visual", 8)
+createSection(pages.Personal, "Collision & Visual", 8)
 
 local noclipEnabled = false
 local noclipConn = nil
@@ -2816,7 +3010,7 @@ local function restoreNoClipCollide()
 	noclipOriginalCollide = nil
 end
 
-createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(state)
+createToggle(pages.Personal, "Noclip (walk through walls)", 9, function(state)
 	noclipEnabled = state
 	if state then
 		if noclipConn then noclipConn:Disconnect() end
@@ -2841,7 +3035,7 @@ createToggle(pages.Personal, "🕶  Noclip (walk through walls)", 9, function(st
 	end
 end, "noclip")
 
-createSection(pages.Personal, "🛡  Survival", 10)
+createSection(pages.Personal, "Survival", 10)
 
 
 godConn        = nil
@@ -2915,7 +3109,7 @@ function disableGod()
 	if godRespawnConn then godRespawnConn:Disconnect(); godRespawnConn = nil end
 end
 
-createToggle(pages.Personal, "🛡  God Mode (invincible)", 11, function(state)
+createToggle(pages.Personal, "God Mode (invincible)", 11, function(state)
 	if state then enableGod() else disableGod() end
 end, "godMode")
 
@@ -2949,7 +3143,7 @@ function startAntiKick()
 	table.insert(antiKickConns, c2)
 end
 
-createToggle(pages.Personal, "🚫  Anti-Kick Bypass", 12, function(state)
+createToggle(pages.Personal, "Anti-Kick Bypass", 12, function(state)
 	if state then startAntiKick() else stopAntiKick() end
 end, "antiKick")
 
@@ -2979,7 +3173,7 @@ function disableNoFall()
 	if noFallConn then noFallConn:Disconnect(); noFallConn = nil end
 end
 
-createToggle(pages.Personal, "🦶  No Fall Damage", 13, function(state)
+createToggle(pages.Personal, "No Fall Damage", 13, function(state)
 	if state then enableNoFall() else disableNoFall() end
 end, "noFall")
 
@@ -3016,7 +3210,7 @@ function disableAntiGrab()
 	end)
 end
 
-createToggle(pages.Personal, "🔒  Anti-Tool Grab", 14, function(state)
+createToggle(pages.Personal, "Anti-Tool Grab", 14, function(state)
 	if state then enableAntiGrab() else disableAntiGrab() end
 end, "antiGrab")
 
@@ -3049,13 +3243,13 @@ function startAntiCheat()
 	table.insert(antiCheatConns, c1)
 end
 
-createToggle(pages.Personal, "🛡  Anti-Cheat Bypass", 15, function(state)
+createToggle(pages.Personal, "Anti-Cheat Bypass", 15, function(state)
 	if state then startAntiCheat() else stopAntiCheat() end
 end, "antiCheat")
 
 
 jumpConn = nil
-createToggle(pages.Personal, "🦘  Infinite Jump", 16, function(state)
+createToggle(pages.Personal, "Infinite Jump", 16, function(state)
 	if state then
 		jumpConn = UIS.JumpRequest:Connect(function()
 			local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
@@ -3066,7 +3260,7 @@ createToggle(pages.Personal, "🦘  Infinite Jump", 16, function(state)
 	end
 end, "infJump")
 
-createSection(pages.Personal, "🎯  Combat", 20)
+createSection(pages.Personal, "Combat", 20)
 
 
 ammoEnabled   = false
@@ -3123,7 +3317,7 @@ function watchAmmoChar(char)
 	table.insert(ammoConns, c)
 end
 
-createToggle(pages.Personal, "🔫  Unlimited Ammo", 21, function(state)
+createToggle(pages.Personal, "Unlimited Ammo", 21, function(state)
 	ammoEnabled = state
 	ammoCleanup()
 	if not state then return end
@@ -3169,7 +3363,7 @@ function watchReloadChar(char)
 	table.insert(reloadConns, c)
 end
 
-createToggle(pages.Personal, "⚡  Instant Reload", 22, function(state)
+createToggle(pages.Personal, "Instant Reload", 22, function(state)
 	reloadEnabled = state
 	reloadCleanup()
 	if reloadLoopConn then reloadLoopConn:Disconnect(); reloadLoopConn = nil end
@@ -3231,7 +3425,7 @@ function recoilPatchTool(tool)
 	end
 end
 
-createToggle(pages.Personal, "🎯  No Recoil", 23, function(state)
+createToggle(pages.Personal, "No Recoil", 23, function(state)
 	recoilEnabled = state
 	
 	if recoilConn then recoilConn:Disconnect(); recoilConn = nil end
@@ -3300,7 +3494,7 @@ createToggle(pages.Personal, "🎯  No Recoil", 23, function(state)
 	table.insert(recoilConns, c2)
 end, "noRecoil")
 
-createSection(pages.Personal, "🧪  Extra", 30)
+createSection(pages.Personal, "Extra", 30)
 
 invisibleEnabled = false
 invisibleConns = {}
@@ -3349,7 +3543,7 @@ function stopInvisible()
 	setInvisible(player.Character, false)
 end
 
-createToggle(pages.Personal, "👻  Invisible", 31, function(state)
+createToggle(pages.Personal, "Invisible", 31, function(state)
 	if state then
 		invisibleEnabled = true
 		setInvisible(player.Character, true)
@@ -3381,7 +3575,7 @@ local function getFireRemotes(tool)
 	return list
 end
 
-createToggle(pages.Personal, "🔥  Rapid Fire (hold click)", 25, function(state)
+createToggle(pages.Personal, "Rapid Fire (hold click)", 25, function(state)
 	rapidFireEnabled = state
 	rapidFireTimer = 0
 	if state then
@@ -3407,7 +3601,7 @@ createToggle(pages.Personal, "🔥  Rapid Fire (hold click)", 25, function(state
 	end
 end, "rapidFire")
 
-createSlider(pages.Personal, "⏱  Fire Interval (ms)", 50, 500, 100, 26, function(val)
+createSlider(pages.Personal, "Fire Interval (ms)", 50, 500, 100, 26, function(val)
 	rapidFireInterval = val / 1000
 end, "fireInterval")
 
@@ -3437,7 +3631,7 @@ function disableAutoParry()
 	if autoParryConn then autoParryConn:Disconnect(); autoParryConn = nil end
 end
 
-createToggle(pages.Personal, "⚔  Auto Parry (block)", 24, function(state)
+createToggle(pages.Personal, "Auto Parry (block)", 24, function(state)
 	if state then enableAutoParry() else disableAutoParry() end
 end, "autoParry")
 
@@ -3835,7 +4029,7 @@ function stopAim()
 end
 
 
-UIS.InputBegan:Connect(function(input, gpe)
+track(UIS.InputBegan:Connect(function(input, gpe)
 	if gpe or not aimEnabled then return end
 	if isAimInput(input) then
 		if aimMode == "toggle" then
@@ -3844,17 +4038,17 @@ UIS.InputBegan:Connect(function(input, gpe)
 			aimActive = true
 		end
 	end
-end)
-UIS.InputEnded:Connect(function(input)
+end))
+track(UIS.InputEnded:Connect(function(input)
 	if aimMode == "hold" and isAimInput(input) then
 		aimActive = false
 	end
-end)
+end))
 
 
 
 
-createSection(pages.Personal, "📐  Appearance", 40)
+createSection(pages.Personal, "Appearance", 40)
 
 currentScale = 1.0
 
@@ -3919,13 +4113,13 @@ player.CharacterAdded:Connect(function(char)
 	applyScale(currentScale * 100)
 end)
 
-createNumberInput(pages.Personal, "📐  Character Size", 100, 41, function(val)
+createNumberInput(pages.Personal, "Character Size", 100, 41, function(val)
 	applyScale(val)
 end, "characterSize")
 
 
 
-createSection(pages.Aim, "🎯  Aim Lock", 0)
+createSection(pages.Aim, "Aim Lock", 0)
 
 
 aimStatusLabel = Instance.new("TextLabel", pages.Aim)
@@ -3945,34 +4139,34 @@ end
 updateAimStatus()
 
 
-createToggle(pages.Aim, "🎯  Aim Lock ON / OFF", 2, function(state)
+createToggle(pages.Aim, "Aim Lock ON / OFF", 2, function(state)
 	aimEnabled = state
 	if state then startAim() else stopAim() end
 end, "aimLock")
 
 
-createSection(pages.Aim, "⚙️  Settings", 10)
+createSection(pages.Aim, "Settings", 10)
 
 
-createSlider(pages.Aim, "🎚  Smooth (aim speed)", 1, 30, 8, 11, function(val)
+createSlider(pages.Aim, "Smooth (aim speed)", 1, 30, 8, 11, function(val)
 	aimSmooth = val / 100
 	updateAimStatus()
 end, "aimSmooth")
 
 
-createNumberInput(pages.Aim, "🔵  FOV (radius pixels)", 250, 12, function(val)
+createNumberInput(pages.Aim, "FOV (radius pixels)", 250, 12, function(val)
 	aimFOV = val
 	if aimShowCircle then pcall(updateFOVCircle) end
 end, "aimFOV")
 
-createSlider(pages.Aim, "🎯  Prediction (lead)", 0, 50, 15, 13, function(val)
+createSlider(pages.Aim, "Prediction (lead)", 0, 50, 15, 13, function(val)
 	aimPrediction = val / 100
 end, "aimPrediction")
 
-createToggle(pages.Aim, "👥  Team Check", 14, function(state)
+createToggle(pages.Aim, "Team Check", 14, function(state)
 	aimTeamCheck = state
 end, "aimTeamCheck")
-createToggle(pages.Aim, "🧱  Wall Check", 15, function(state)
+createToggle(pages.Aim, "Wall Check", 15, function(state)
 	aimWallCheck = state
 end, "aimWallCheck")
 
@@ -4055,7 +4249,7 @@ function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 		row.MouseEnter:Connect(function() playHover(); row.BackgroundTransparency = 0.8 end)
 		row.MouseLeave:Connect(function() row.BackgroundTransparency = 1 end)
 		row.MouseButton1Click:Connect(function()
-			playHover()
+			playSfx("click")
 			selIdx = i
 			htxt.Text = label .. " : " .. items[selIdx]
 			onPick(items[selIdx])
@@ -4084,7 +4278,7 @@ function mkDropdown(parent, label, items, defaultIdx, order, onPick)
 		TweenService:Create(strokeD, TweenInfo.new(0.18), {Transparency = 0.93, Color = Color3.new(1,1,1)}):Play()
 	end)
 	hdr.MouseButton1Click:Connect(function()
-		playHover()
+		playSfx("toggle")
 		setOpen(not open)
 	end)
 
@@ -4116,72 +4310,72 @@ MOUSE_LABELS = {}
 for _, m in ipairs(MOUSE_KEYS) do table.insert(MOUSE_LABELS, m.label) end
 
 methodNames = {"1 - Direct Cam", "2 - Scriptable Cam", "3 - HRP Orient"}
-aimMethodDropdown = mkDropdown(pages.Aim, "🔧  Method", methodNames, math.clamp(aimMethod, 1, 3), 16, function(selected)
+aimMethodDropdown = mkDropdown(pages.Aim, "Method", methodNames, math.clamp(aimMethod, 1, 3), 16, function(selected)
 	for i, m in ipairs(methodNames) do
 		if m == selected then aimMethod = i; break end
 	end
-	showNotification("🎯  Method: " .. selected, 2)
+	showNotification("Method: " .. selected, 2)
 end)
 
 aimTargetPart = aimTargetPart or "Head"
 local aimPartItems = {"Head", "UpperTorso", "Torso", "HumanoidRootPart"}
-aimPartDropdown = mkDropdown(pages.Aim, "🎯  Target Part", aimPartItems, 1, 17, function(selected)
+aimPartDropdown = mkDropdown(pages.Aim, "Target Part", aimPartItems, 1, 17, function(selected)
 	aimTargetPart = selected
-	showNotification("🎯  Target: " .. selected, 2)
+	showNotification("Target: " .. selected, 2)
 end)
 
 
-createSection(pages.Aim, "⌨  Binding", 20)
-aimModeDropdown = mkDropdown(pages.Aim, "🔄  Mode", {"Hold", "Toggle"}, (aimMode == "toggle") and 2 or 1, 21, function(selected)
+createSection(pages.Aim, "Binding", 20)
+aimModeDropdown = mkDropdown(pages.Aim, "Mode", {"Hold", "Toggle"}, (aimMode == "toggle") and 2 or 1, 21, function(selected)
 	aimMode = (selected == "Toggle") and "toggle" or "hold"
 	updateAimStatus()
 end)
-aimMouseDropdown = mkDropdown(pages.Aim, "🖱  Mouse", MOUSE_LABELS, 1, 22, function(lbl)
+aimMouseDropdown = mkDropdown(pages.Aim, "Mouse", MOUSE_LABELS, 1, 22, function(lbl)
 	for _, m in ipairs(MOUSE_KEYS) do
 		if m.label == lbl then aimKey = m.id; break end
 	end
 	updateAimStatus()
 end)
-aimKeyDropdown = mkDropdown(pages.Aim, "⌨  Keyboard", KEYBOARD_KEYS, 1, 23, function(key)
+aimKeyDropdown = mkDropdown(pages.Aim, "Keyboard", KEYBOARD_KEYS, 1, 23, function(key)
 	aimKey = key
 	updateAimStatus()
 end)
 
 
-createSection(pages.Aim, "🎯  Target Types", 30)
-createToggle(pages.Aim, "👤  Players", 31, function(state)
+createSection(pages.Aim, "Target Types", 30)
+createToggle(pages.Aim, "Players", 31, function(state)
 	aimTargetPlayers = state
 end, "aimTargetPlayers")
-createToggle(pages.Aim, "🤖  Bots / AI", 32, function(state)
+createToggle(pages.Aim, "Bots / AI", 32, function(state)
 	aimTargetBots = state
 end, "aimTargetBots")
-createToggle(pages.Aim, "🚗  Vehicles", 33, function(state)
+createToggle(pages.Aim, "Vehicles", 33, function(state)
 	aimTargetVehicles = state
 end, "aimTargetVehicles")
-createToggle(pages.Aim, "📦  Objects", 34, function(state)
+createToggle(pages.Aim, "Objects", 34, function(state)
 	aimTargetObjects = state
 end, "aimTargetObjects")
 
 
-createSection(pages.Aim, "🔭  Visuals & Distance", 40)
-createToggle(pages.Aim, "🔵  Show FOV Circle", 41, function(state)
+createSection(pages.Aim, "Visuals & Distance", 40)
+createToggle(pages.Aim, "Show FOV Circle", 41, function(state)
 	aimShowCircle = state
 	if state then updateFOVCircle() else destroyFOVCircle() end
 end, "aimShowCircle")
 
 
-createSlider(pages.Aim, "📏  Max Distance (0 = infinite)", 0, 500, 0, 42, function(val)
+createSlider(pages.Aim, "Max Distance (0 = infinite)", 0, 500, 0, 42, function(val)
 	aimDistance = val
 end, "aimDistance")
 
 
-createSection(pages.World, "☀  Environment", 0)
+createSection(pages.World, "Environment", 0)
 
 shader = nil
 for _, v in pairs(Lighting:GetChildren()) do if v.Name == "AdminShader" then shader = v; break end end
 if not shader then shader = Instance.new("ColorCorrectionEffect", Lighting); shader.Name = "AdminShader"; shader.Enabled = false end
 
-createToggle(pages.World, "🎨  Cinematic Shaders", 1, function(state)
+createToggle(pages.World, "Cinematic Shaders", 1, function(state)
 	shader.Enabled = state
 	if state then
 		shader.Brightness = -0.05; shader.Contrast = 0.08
@@ -4189,7 +4383,7 @@ createToggle(pages.World, "🎨  Cinematic Shaders", 1, function(state)
 	end
 end, "cinematic")
 
-createToggle(pages.World, "🌙  Night Mode", 2, function(state)
+createToggle(pages.World, "Night Mode", 2, function(state)
 	if state then
 		TweenService:Create(Lighting, TweenInfo.new(1.5), {ClockTime=0, Brightness=0.5, Ambient=Color3.fromRGB(20,20,50)}):Play()
 	else
@@ -4236,11 +4430,11 @@ local function applyAdvancedShader(on)
 	end
 end
 
-createToggle(pages.World, "💠  Advanced Shader (HD)", 3, function(state)
+createToggle(pages.World, "Advanced Shader (HD)", 3, function(state)
 	applyAdvancedShader(state)
 end, "advancedShader")
 
-createToggle(pages.World, "🌈  Rainbow Sky", 4, function(state)
+createToggle(pages.World, "Rainbow Sky", 4, function(state)
 	if state then
 		local hue = 0
 		RunService:BindToRenderStep("RainbowSky", 1, function()
@@ -4256,7 +4450,7 @@ createToggle(pages.World, "🌈  Rainbow Sky", 4, function(state)
 end, "rainbowSky")
 
 
-createSection(pages.World, "🌫  Fog & Effects", 20)
+createSection(pages.World, "Fog & Effects", 20)
 
 function getAtmo()
 	local a = Lighting:FindFirstChildOfClass("Atmosphere")
@@ -4264,7 +4458,7 @@ function getAtmo()
 	return a
 end
 
-createToggle(pages.World, "🌫  Dense Fog", 21, function(state)
+createToggle(pages.World, "Dense Fog", 21, function(state)
 	local atmo = getAtmo()
 	TweenService:Create(atmo, TweenInfo.new(1.5), {
 		Density = state and 0.85 or 0.3,
@@ -4272,7 +4466,7 @@ createToggle(pages.World, "🌫  Dense Fog", 21, function(state)
 	}):Play()
 end, "denseFog")
 
-createToggle(pages.World, "☁  Light Fog", 22, function(state)
+createToggle(pages.World, "Light Fog", 22, function(state)
 	local atmo = getAtmo()
 	TweenService:Create(atmo, TweenInfo.new(1.5), {
 		Density = state and 0.5 or 0.3,
@@ -4280,7 +4474,7 @@ createToggle(pages.World, "☁  Light Fog", 22, function(state)
 end, "lightFog")
 
 
-createToggle(pages.World, "🌧  Rain", 23, function(state)
+createToggle(pages.World, "Rain", 23, function(state)
 	RunService:UnbindFromRenderStep("AdminRain")
 	for _, v in ipairs(workspace:GetChildren()) do
 		if v.Name == "AdminRain" or v.Name == "AdminRainFar" or v.Name == "AdminRainSplash" then v:Destroy() end
@@ -4372,7 +4566,7 @@ createToggle(pages.World, "🌧  Rain", 23, function(state)
 end, "rain")
 
 
-createToggle(pages.World, "❄  Snow", 24, function(state)
+createToggle(pages.World, "Snow", 24, function(state)
 	RunService:UnbindFromRenderStep("AdminSnow")
 	for _, v in ipairs(workspace:GetChildren()) do
 		if v.Name == "AdminSnow" or v.Name == "AdminSnowFar" or v.Name == "AdminSnowGround" then v:Destroy() end
@@ -4485,7 +4679,7 @@ createToggle(pages.World, "❄  Snow", 24, function(state)
 	end
 end, "snow")
 
-createToggle(pages.World, "🌅  Sunset", 25, function(state)
+createToggle(pages.World, "Sunset", 25, function(state)
 	if state then
 		TweenService:Create(Lighting, TweenInfo.new(2), {
 			ClockTime = 18, Brightness = 1.2,
@@ -4505,13 +4699,13 @@ createToggle(pages.World, "🌅  Sunset", 25, function(state)
 	end
 end, "sunset")
 
-createSection(pages.World, "⏩  Time", 40)
+createSection(pages.World, "Time", 40)
 
-createNumberInput(pages.World, "☀  Time of Day", 14, 41, function(val)
+createNumberInput(pages.World, "Time of Day", 14, 41, function(val)
 	Lighting.ClockTime = val
 end, "timeOfDay")
 
-createSlider(pages.World, "⏩  Time Speed (x)", 0, 5, 0, 42, function(val)
+createSlider(pages.World, "Time Speed (x)", 0, 5, 0, 42, function(val)
 	RunService:UnbindFromRenderStep("AdminTimeSpeed")
 	if val > 0 then
 		RunService:BindToRenderStep("AdminTimeSpeed", 1, function(dt)
@@ -4520,21 +4714,21 @@ createSlider(pages.World, "⏩  Time Speed (x)", 0, 5, 0, 42, function(val)
 	end
 end, "timeSpeed")
 
-createSection(pages.World, "⚙  Physics", 50)
+createSection(pages.World, "Physics", 50)
 
-createNumberInput(pages.World, "🌍  Gravity", 196, 51, function(val)
+createNumberInput(pages.World, "Gravity", 196, 51, function(val)
 	workspace.Gravity = val
 end, "gravity")
 createBtn(pages.World, "↩  Reset Gravity", currentTheme.Button, 52, function()
 	workspace.Gravity = 196
 end)
 
-createSection(pages.World, "🖥  Performance", 60)
+createSection(pages.World, "Performance", 60)
 
-createBtn(pages.World, "🔓  Unlock FPS", currentTheme.Button, 61, function()
+createBtn(pages.World, "Unlock FPS", currentTheme.Button, 61, function()
 	if setfpscap then setfpscap(0) end
 end)
-createBtn(pages.World, "🔒  Reset FPS (60)", currentTheme.Button, 62, function()
+createBtn(pages.World, "Reset FPS (60)", currentTheme.Button, 62, function()
 	RunService:UnbindFromRenderStep("FPSUnlock")
 	if setfpscap then setfpscap(60) end
 end)
@@ -4547,6 +4741,12 @@ end)
 menuW, menuH = 380, 500
 
 function applyMenuSize(w, h)
+	-- Garde le menu dans le viewport quel que soit l'ecran (PC / mobile / console)
+	local s = (menuScale and menuScale.Scale) or 1
+	local cam = workspace.CurrentCamera
+	local vp = cam and cam.ViewportSize or Vector2.new(1920, 1080)
+	w = math.clamp(w, 280, math.max(280, vp.X / s - 16))
+	h = math.clamp(h, 380, math.max(380, vp.Y / s - 16))
 	menuW, menuH = w, h
 	main.Size = UDim2.new(0, menuW, 0, menuH)
 end
@@ -4562,14 +4762,6 @@ function applyTheme(t)
 	logoBadge.BackgroundColor3 = t.Accent
 	accentBar.BackgroundColor3 = t.Accent
 	-- update animated theme elements
-	pcall(function()
-		local ga = main:FindFirstChild("mainGradAnim")
-		if ga then ga.Color = ColorSequence.new(t.BG, t.Accent) end
-	end)
-	pcall(function()
-		local hs = header:FindFirstChild("headerShimmer")
-		if hs then hs.Color = ColorSequence.new(t.Accent, t.Accent, t.Accent) end
-	end)
 	pcall(function()
 		local lg = header:FindFirstChild("logoGlow")
 		if lg then lg.BackgroundColor3 = t.Accent end
@@ -4608,28 +4800,33 @@ function applyTheme(t)
 	for _, cb in pairs(themeListeners) do
 		pcall(cb, t)
 	end
+	-- Apres les listeners d'icones : l'onglet actif garde une icone blanche lisible
+	for name, btn in pairs(tabBtns) do
+		local ic = btn:FindFirstChild("Icon_" .. string.lower(name))
+		if ic then iconSetColor(ic, (name == activeTab) and Color3.new(1,1,1) or t.SubText) end
+	end
 end
 
-createSection(pages.Settings, "🎨  Theme", 0)
-local themeItems = {"🟣  Purple", "⭐  Gold", "🌊  Ocean", "💎  Neon", "🟠  Orange", "💗  Pink", "🌑  Dark", "🌕  Light", "💠  Cyber", "🔴  Red", "🟢  Green", "🔵  Blue", "🌐  Matrix"}
+createSection(pages.Settings, "Theme", 0)
+local themeItems = {"Purple", "Gold", "Ocean", "Neon", "Orange", "Pink", "Dark", "Light", "Cyber", "Red", "Green", "Blue", "Matrix"}
 themeKeyToLabel = {
-    ["Purple"]="🟣  Purple", ["Gold"]="⭐  Gold", ["Ocean"]="🌊  Ocean", ["Neon"]="💎  Neon",
-    ["Orange"]="🟠  Orange", ["Pink"]="💗  Pink", ["Dark"]="🌑  Dark", ["Light"]="🌕  Light",
-    ["Cyber"]="💠  Cyber", ["Rouge"]="🔴  Red", ["Vert"]="🟢  Green", ["Blue"]="🔵  Blue",
-    ["Matrix"]="🌐  Matrix",
+    ["Purple"]="Purple", ["Gold"]="Gold", ["Ocean"]="Ocean", ["Neon"]="Neon",
+    ["Orange"]="Orange", ["Pink"]="Pink", ["Dark"]="Dark", ["Light"]="Light",
+    ["Cyber"]="Cyber", ["Rouge"]="Red", ["Vert"]="Green", ["Blue"]="Blue",
+    ["Matrix"]="Matrix",
 }
 themeLabelToKey = {}
 for tk, tl in pairs(themeKeyToLabel) do themeLabelToKey[tl] = tk end
-themeDropdown = mkDropdown(pages.Settings, "🎨  Theme", themeItems, 7, 1, function(selected)
+themeDropdown = mkDropdown(pages.Settings, "Theme", themeItems, 7, 1, function(selected)
     local key = themeLabelToKey[selected]
     if key and Themes[key] then
         applyTheme(Themes[key])
         autoSave()
-        showNotification("🎨  Theme: " .. selected, 2)
+        showNotification("Theme: " .. selected, 2)
     end
 end)
 
-createSection(pages.Settings, "🎆  Menu Effects", 50)
+createSection(pages.Settings, "Menu Effects", 50)
 
 local fxContainer = Instance.new("Frame", pages.Settings)
 fxContainer.Name = "FxContainer"
@@ -4968,7 +5165,7 @@ local function disableMenuBorderGlow()
 	end
 end
 
-createToggle(fxContainer, "❄  Menu Snow", 1, function(state)
+createToggle(fxContainer, "Menu Snow", 1, function(state)
 	if state then
 		clearFx("snow")
 		startFxLoop("snow", spawnSnowFlake, 0.3)
@@ -4978,7 +5175,7 @@ createToggle(fxContainer, "❄  Menu Snow", 1, function(state)
 	end
 end, "menuSnow")
 
-createToggle(fxContainer, "🌧  Menu Rain", 2, function(state)
+createToggle(fxContainer, "Menu Rain", 2, function(state)
 	if state then
 		clearFx("rain")
 		startFxLoop("rain", spawnRainDrop, 0.06)
@@ -4988,7 +5185,7 @@ createToggle(fxContainer, "🌧  Menu Rain", 2, function(state)
 	end
 end, "menuRain")
 
-createToggle(fxContainer, "🔥  Menu Fire", 3, function(state)
+createToggle(fxContainer, "Menu Fire", 3, function(state)
 	if state then
 		clearFx("fire")
 		startFxLoop("fire", spawnFire, 0.12)
@@ -4998,7 +5195,7 @@ createToggle(fxContainer, "🔥  Menu Fire", 3, function(state)
 	end
 end, "menuFire")
 
-createToggle(fxContainer, "🚀  Menu Rocket", 4, function(state)
+createToggle(fxContainer, "Menu Rocket", 4, function(state)
 	if state then
 		clearFx("rocket")
 		startFxLoop("rocket", spawnRocket, 0.8)
@@ -5008,7 +5205,7 @@ createToggle(fxContainer, "🚀  Menu Rocket", 4, function(state)
 	end
 end, "menuRocket")
 
-createToggle(fxContainer, "🧑  Steve Head", 5, function(state)
+createToggle(fxContainer, "Steve Head", 5, function(state)
 	if state then
 		clearFx("steve")
 		startFxLoop("steve", spawnSteveHead, 0.4)
@@ -5018,11 +5215,11 @@ createToggle(fxContainer, "🧑  Steve Head", 5, function(state)
 	end
 end, "menuSteve")
 
-createToggle(fxContainer, "⬛  Black Background", 6, function(state)
+createToggle(fxContainer, "Black Background", 6, function(state)
 	if state then enableBlackBg() else disableBlackBg() end
 end, "menuBlackBg")
 
-createToggle(fxContainer, "🌐  Matrix Rain", 7, function(state)
+createToggle(fxContainer, "Matrix Rain", 7, function(state)
 	if state then
 		clearFx("matrixRain")
 		startFxLoop("matrixRain", spawnMatrixRain, 0.08)
@@ -5032,39 +5229,39 @@ createToggle(fxContainer, "🌐  Matrix Rain", 7, function(state)
 	end
 end, "menuMatrixRain")
 
-createToggle(fxContainer, "✨  Background Animation", 8, function(state)
+createToggle(fxContainer, "Background Animation", 8, function(state)
 	bgAnimEnabled = state
 	if state then enableBgAnim() else disableBgAnim() end
 end, "bgAnim")
 
-createToggle(fxContainer, "🖼  Menu Border Glow", 9, function(state)
+createToggle(fxContainer, "Menu Border Glow", 9, function(state)
 	if state then enableMenuBorderGlow() else disableMenuBorderGlow() end
 end, "menuBorderGlow")
 
-createSection(pages.Settings, "📐  Menu & Lock", 80)
-createToggle(pages.Settings, "🔒  Lock Interface", 81, function(state)
+createSection(pages.Settings, "Menu & Lock", 80)
+createToggle(pages.Settings, "Lock Interface", 81, function(state)
 	interfaceLocked = state
-	lockBtn.Text = state and "🔒" or "🔓"
+	if setLockState then setLockState(state) end
 	lockBtn.BackgroundColor3 = state and currentTheme.Success or currentTheme.Button
-	showNotification(state and "🔒 Interface locked" or "🔓 Interface unlocked", 1.5)
+	showNotification(state and "Interface locked" or "Interface unlocked", 1.5)
 	autoSave()
 end, "lockInterface")
-createSlider(pages.Settings, "🔲  Menu Opacity", 20, 100, 100, 82, function(val)
+createSlider(pages.Settings, "Menu Opacity", 20, 100, 100, 82, function(val)
 	savedOpacity = val
 	main.BackgroundTransparency = 1 - (val / 100)
 end, "menuOpacity")
 createBtn(pages.Settings, "↩  Reset Size",  currentTheme.Button, 83, function() applyMenuSize(380, 500) autoSave() end)
-createBtn(pages.Settings, "🏠  Recenter Menu", currentTheme.Button, 84, function()
+createBtn(pages.Settings, "Recenter Menu", currentTheme.Button, 84, function()
 	main.Position = UDim2.new(0.5, -menuW/2, 0.5, -menuH/2)
 end)
 
-createSection(pages.Settings, "👁  Camera", 90)
-createSlider(pages.Settings, "👁  FOV", 30, 120, 70, 91, function(val)
+createSection(pages.Settings, "Camera", 90)
+createSlider(pages.Settings, "FOV", 30, 120, 70, 91, function(val)
 	local cam = workspace.CurrentCamera
 	if cam then cam.FieldOfView = val end
 end, "camFov")
 
-createSection(pages.Settings, "💾  Configuration", 100)
+createSection(pages.Settings, "Configuration", 100)
 
 local CONFIG_FILE = "PlayerInfo.json"
 
@@ -5244,7 +5441,7 @@ function applyConfig(cfg)
 	if cfg.keyLayout then
 		keyLayout = cfg.keyLayout
 		if uiRefs.keysLabel then
-			pcall(function() uiRefs.keysLabel.Text = "⌨  Keys: " .. keyLayout end)
+			pcall(function() uiRefs.keysLabel.Text = "Keys:" .. keyLayout end)
 		end
 	end
 	if cfg.aimKey   then aimKey   = cfg.aimKey   end
@@ -5311,7 +5508,7 @@ function applyConfig(cfg)
 		if cfg.espStyle.boxStyle then ESP_BOX_STYLE = cfg.espStyle.boxStyle end
 		if cfg.espStyle.skeletonWidth then ESP_SKELETON_WIDTH = cfg.espStyle.skeletonWidth end
 		if uiRefs.boxStyleLabel then
-			pcall(function() uiRefs.boxStyleLabel.Text = "📦  Box Style: " .. ESP_BOX_STYLE end)
+			pcall(function() uiRefs.boxStyleLabel.Text = "Box Style:" .. ESP_BOX_STYLE end)
 		end
 	end
 	if cfg.rapidFireInterval then rapidFireInterval = cfg.rapidFireInterval end
@@ -5344,15 +5541,15 @@ function saveConfig()
 	local ok, err = writeConfigData()
 	autoSavePending = false
 	if ok then
-		showNotification("✅  Config saved!", 3)
+		showNotification("Config saved!", 3)
 	else
-		showNotification("❌  Save error: " .. tostring(err), 4)
+		showNotification("Save error: " .. tostring(err), 4)
 	end
 end
 
 function loadConfig()
 	if not readfile then
-		showNotification("❌  readfile not available", 3); return
+		showNotification("readfile not available", 3); return
 	end
 	local ok, result = pcall(function()
 		local raw = readfile(CONFIG_FILE)
@@ -5360,16 +5557,16 @@ function loadConfig()
 	end)
 	if ok and result then
 		applyConfig(result)
-		showNotification("✅  Config loaded!", 3)
+		showNotification("Config loaded!", 3)
 	else
-		showNotification("❌  No config found", 3)
+		showNotification("No config found", 3)
 	end
 end
 
 autoSaveAllEnabled = false
 autoSaveAllLoop = nil
 
-createToggle(pages.Settings, "💾  Auto Save All (every 5s)", 101, function(state)
+createToggle(pages.Settings, "Auto Save All (every 5s)", 101, function(state)
 	autoSaveAllEnabled = state
 	if autoSaveAllLoop then pcall(function() task.cancel(autoSaveAllLoop) end); autoSaveAllLoop = nil end
 	if state then
@@ -5382,14 +5579,14 @@ createToggle(pages.Settings, "💾  Auto Save All (every 5s)", 101, function(sta
 	end
 end, "autoSaveAll")
 
-createBtn(pages.Settings, "💾  Save Config",  currentTheme.Success, 102, saveConfig)
-createBtn(pages.Settings, "📂  Load Config",  currentTheme.Button,  103, loadConfig)
-createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  104, function()
+createBtn(pages.Settings, "Save Config",  currentTheme.Success, 102, saveConfig)
+createBtn(pages.Settings, "Load Config",  currentTheme.Button,  103, loadConfig)
+createBtn(pages.Settings, "Reset Config", currentTheme.Danger,  104, function()
 	applyTheme(Themes.Dark)
 	if themeDropdown then themeDropdown.set(themeKeyToLabel["Dark"]) end
 	applyMenuSize(380, 500)
 	keyLayout = "QWERTY"
-	if uiRefs.keysLabel then pcall(function() uiRefs.keysLabel.Text = "⌨  Keys: " .. keyLayout end) end
+	if uiRefs.keysLabel then pcall(function() uiRefs.keysLabel.Text = "Keys:" .. keyLayout end) end
 	local cam = workspace.CurrentCamera
 	if cam then cam.FieldOfView = 70 end
 	aimKey = "Mouse2"; aimMode = "hold"; flySpeed = 40
@@ -5422,7 +5619,7 @@ createBtn(pages.Settings, "🗑  Reset Config", currentTheme.Danger,  104, funct
 	ESP_MAX_DIST_PLAYER = 0; ESP_MAX_DIST_BOT = 0
 	ESP_FILL_TRANSPARENCY = 0.85; ESP_BOX_STYLE = "corners"
 	ESP_SKELETON_WIDTH = 0.15; ESP_HEAD_DOT = false
-	if uiRefs.boxStyleLabel then pcall(function() uiRefs.boxStyleLabel.Text = "📦  Box Style: " .. ESP_BOX_STYLE end) end
+	if uiRefs.boxStyleLabel then pcall(function() uiRefs.boxStyleLabel.Text = "Box Style:" .. ESP_BOX_STYLE end) end
 	rapidFireInterval = 0.1
 	-- Remet chaque slider a sa valeur par defaut (et donc la variable cible)
 	for k, v in pairs(sliderDefaults) do
@@ -5573,12 +5770,14 @@ showNotification = function(message, duration)
 end
 
 
-showNotification("👉𝐁 Press <b>[B]</b> to open the menu", 5)
+showNotification("Press <b>[B]</b> to open the menu", 5)
 
 
 
 function openMenu()
+	menuAnimToken = (menuAnimToken or 0) + 1
 	gui.Enabled = true
+	playSfx("open")
 	local targetOpacity = 1 - math.clamp(savedOpacity or 100, 0, 100) / 100
 	main.Size = UDim2.new(0, menuW, 0, 0)
 	main.BackgroundTransparency = 0.4
@@ -5589,12 +5788,16 @@ function openMenu()
 end
 
 function closeMenu()
+	menuAnimToken = (menuAnimToken or 0) + 1
+	local token = menuAnimToken
+	playSfx("close")
 	local targetOpacity = 1 - math.clamp(savedOpacity or 100, 0, 100) / 100
 	TweenService:Create(main, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		Size = UDim2.new(0, menuW, 0, 0),
 		BackgroundTransparency = 0.35
 	}):Play()
 	task.wait(0.15)
+	if token ~= menuAnimToken then return end -- une reouverture a eu lieu pendant l'animation
 	gui.Enabled = false
 	main.Size = UDim2.new(0, menuW, 0, menuH)
 	main.BackgroundTransparency = targetOpacity
@@ -5605,11 +5808,30 @@ closeBtn.MouseButton1Click:Connect(function()
 	closeMenu()
 end)
 
-UIS.InputBegan:Connect(function(input, gpe)
+track(UIS.InputBegan:Connect(function(input, gpe)
 	if not gpe and input.KeyCode == Enum.KeyCode.B then
 		if gui.Enabled then closeMenu() else openMenu() end
 	end
-end)
+end))
+
+-- Console : le bouton Select/View ouvre aussi le menu (navigation ensuite au stick/croix)
+if UIS.GamepadEnabled then
+	track(UIS.InputBegan:Connect(function(input, gpe)
+		if not gpe and input.KeyCode == Enum.KeyCode.ButtonSelect then
+			if gui.Enabled then closeMenu() else openMenu() end
+		end
+	end))
+end
+
+-- Son de defilement : molette pendant que le curseur survole le menu
+menuHovered = false
+main.MouseEnter:Connect(function() menuHovered = true end)
+main.MouseLeave:Connect(function() menuHovered = false end)
+track(UIS.InputChanged:Connect(function(input)
+	if menuHovered and input.UserInputType == Enum.UserInputType.MouseWheel then
+		playSfx("scroll")
+	end
+end))
 
 
 
@@ -5731,12 +5953,12 @@ function stopNuke()
 end
 
 
-createSection(pages.Personal, "💥  Chaos & Fun", 50)
-createToggle(pages.Personal, "🚀  NUKE MODE  (propulsion + explosion)", 51, function(state)
+createSection(pages.Personal, "Chaos & Fun", 50)
+createToggle(pages.Personal, "NUKE MODE (propulsion + explosion)", 51, function(state)
 	nukeEnabled = state
 	if state then startNuke() else stopNuke() end
 end, "nukeMode")
-createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 52, function()
+createBtn(pages.Personal, "Explode in Place", currentTheme.Danger, 52, function()
 	local char = player.Character
 	local hrp  = char and char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
@@ -5751,7 +5973,7 @@ createBtn(pages.Personal, "💣  Explode in Place", currentTheme.Danger, 52, fun
 		end)
 	end
 end)
-createBtn(pages.Personal, "🔄  Reset Character", currentTheme.Button, 53, function()
+createBtn(pages.Personal, "Reset Character", currentTheme.Button, 53, function()
 	if player.Character then
 		local hum = player.Character:FindFirstChildOfClass("Humanoid")
 		if hum then hum.Health = 0 end
@@ -6595,7 +6817,7 @@ function createColorDropdown(parent, label, order, defaultColor, onChange, confi
 
 		row.MouseButton1Click:Connect(function()
 
-			playHover()
+			playSfx("click")
 
 			selected = cval
 
@@ -6643,7 +6865,7 @@ function createColorDropdown(parent, label, order, defaultColor, onChange, confi
 
 	headerF.MouseButton1Click:Connect(function()
 
-		playHover()
+		playSfx("toggle")
 
 		setOpen(not open)
 
@@ -6682,104 +6904,104 @@ end
 
 
 
-createSection(pages.ESP, "👤  Players", 0)
-createToggle(pages.ESP, "✅  TOUT Joueurs", 1, function(s)
+createSection(pages.ESP, "Players", 0)
+createToggle(pages.ESP, "TOUT Joueurs", 1, function(s)
 	toggleESP("playerBoxes", s); toggleESP("playerNames", s)
 	toggleESP("playerHealth", s); toggleESP("playerHealthBar", s)
 	toggleESP("playerDistance", s); toggleESP("playerSkeletons", s)
 	toggleESP("playerChams", s); toggleESP("playerSnaplines", s)
 	toggleESP("playerHeadDot", s)
 end, nil)
-createToggle(pages.ESP, "📦  Boxes", 10, function(s) toggleESP("playerBoxes", s) end, "espPlayerBoxes")
-createToggle(pages.ESP, "🏷  Names + Team", 11, function(s) toggleESP("playerNames", s) end, "espPlayerNames")
-createToggle(pages.ESP, "❤  Health (text)", 12, function(s) toggleESP("playerHealth", s) end, "espPlayerHealth")
-createToggle(pages.ESP, "📊  Health Bar", 13, function(s) toggleESP("playerHealthBar", s) end, "espPlayerHealthBar")
-createToggle(pages.ESP, "📏  Distance", 14, function(s) toggleESP("playerDistance", s) end, "espPlayerDistance")
-createToggle(pages.ESP, "⚫  Head Dot", 15, function(s) toggleESP("playerHeadDot", s) end, "espPlayerHeadDot")
-createToggle(pages.ESP, "💀  Skeleton", 16, function(s) toggleESP("playerSkeletons", s) end, "espPlayerSkeletons")
-createToggle(pages.ESP, "🔆  Chams", 17, function(s) toggleESP("playerChams", s) end, "espPlayerChams")
-createToggle(pages.ESP, "📐  Snaplines", 18, function(s) toggleESP("playerSnaplines", s) end, "espPlayerSnaplines")
+createToggle(pages.ESP, "Boxes", 10, function(s) toggleESP("playerBoxes", s) end, "espPlayerBoxes")
+createToggle(pages.ESP, "Names + Team", 11, function(s) toggleESP("playerNames", s) end, "espPlayerNames")
+createToggle(pages.ESP, "Health (text)", 12, function(s) toggleESP("playerHealth", s) end, "espPlayerHealth")
+createToggle(pages.ESP, "Health Bar", 13, function(s) toggleESP("playerHealthBar", s) end, "espPlayerHealthBar")
+createToggle(pages.ESP, "Distance", 14, function(s) toggleESP("playerDistance", s) end, "espPlayerDistance")
+createToggle(pages.ESP, "Head Dot", 15, function(s) toggleESP("playerHeadDot", s) end, "espPlayerHeadDot")
+createToggle(pages.ESP, "Skeleton", 16, function(s) toggleESP("playerSkeletons", s) end, "espPlayerSkeletons")
+createToggle(pages.ESP, "Chams", 17, function(s) toggleESP("playerChams", s) end, "espPlayerChams")
+createToggle(pages.ESP, "Snaplines", 18, function(s) toggleESP("playerSnaplines", s) end, "espPlayerSnaplines")
 
-createSection(pages.ESP, "🤖  Bots / NPC", 20)
-createToggle(pages.ESP, "✅  TOUT Bots", 21, function(s)
+createSection(pages.ESP, "Bots / NPC", 20)
+createToggle(pages.ESP, "TOUT Bots", 21, function(s)
 	toggleESP("botBoxes", s); toggleESP("botNames", s)
 	toggleESP("botHealth", s); toggleESP("botHealthBar", s)
 	toggleESP("botDistance", s); toggleESP("botSkeletons", s)
 	toggleESP("botChams", s); toggleESP("botSnaplines", s)
 	toggleESP("botHeadDot", s)
 end, nil)
-createToggle(pages.ESP, "📦  Bot Boxes", 30, function(s) toggleESP("botBoxes", s) end, "espBotBoxes")
-createToggle(pages.ESP, "🏷  Bot Names", 31, function(s) toggleESP("botNames", s) end, "espBotNames")
-createToggle(pages.ESP, "❤  Bot Health", 32, function(s) toggleESP("botHealth", s) end, "espBotHealth")
-createToggle(pages.ESP, "📊  Bot Health Bar", 33, function(s) toggleESP("botHealthBar", s) end, "espBotHealthBar")
-createToggle(pages.ESP, "📏  Bot Distance", 34, function(s) toggleESP("botDistance", s) end, "espBotDistance")
-createToggle(pages.ESP, "⚫  Bot Head Dot", 35, function(s) toggleESP("botHeadDot", s) end, "espBotHeadDot")
-createToggle(pages.ESP, "💀  Bot Skeleton", 36, function(s) toggleESP("botSkeletons", s) end, "espBotSkeletons")
-createToggle(pages.ESP, "🔆  Bot Chams", 37, function(s) toggleESP("botChams", s) end, "espBotChams")
-createToggle(pages.ESP, "📐  Bot Snaplines", 38, function(s) toggleESP("botSnaplines", s) end, "espBotSnaplines")
-createBtn(pages.ESP, "🔄  Scan Bots Now", currentTheme.Button, 39, function()
+createToggle(pages.ESP, "Bot Boxes", 30, function(s) toggleESP("botBoxes", s) end, "espBotBoxes")
+createToggle(pages.ESP, "Bot Names", 31, function(s) toggleESP("botNames", s) end, "espBotNames")
+createToggle(pages.ESP, "Bot Health", 32, function(s) toggleESP("botHealth", s) end, "espBotHealth")
+createToggle(pages.ESP, "Bot Health Bar", 33, function(s) toggleESP("botHealthBar", s) end, "espBotHealthBar")
+createToggle(pages.ESP, "Bot Distance", 34, function(s) toggleESP("botDistance", s) end, "espBotDistance")
+createToggle(pages.ESP, "Bot Head Dot", 35, function(s) toggleESP("botHeadDot", s) end, "espBotHeadDot")
+createToggle(pages.ESP, "Bot Skeleton", 36, function(s) toggleESP("botSkeletons", s) end, "espBotSkeletons")
+createToggle(pages.ESP, "Bot Chams", 37, function(s) toggleESP("botChams", s) end, "espBotChams")
+createToggle(pages.ESP, "Bot Snaplines", 38, function(s) toggleESP("botSnaplines", s) end, "espBotSnaplines")
+createBtn(pages.ESP, "Scan Bots Now", currentTheme.Button, 39, function()
 	if anyBotActive() then refreshBotESP()
-	else showNotification("⚠  Active un toggle Bot ESP d'abord", 2) end
+	else showNotification("Active un toggle Bot ESP d'abord", 2) end
 end)
 
-createSection(pages.ESP, "👻  Self", 40)
-createToggle(pages.ESP, "👻  Show Self ESP", 41, function(s) toggleESP("selfESP", s) end, "espSelf")
+createSection(pages.ESP, "Self", 40)
+createToggle(pages.ESP, "Show Self ESP", 41, function(s) toggleESP("selfESP", s) end, "espSelf")
 
-createSection(pages.ESP, "🎨  Couleurs", 50)
-createColorDropdown(pages.ESP, "🔴  Enemy", 51,
+createSection(pages.ESP, "Couleurs", 50)
+createColorDropdown(pages.ESP, "Enemy", 51,
 	Color3.fromRGB(255,60,60),
 	function(c) ESP_COLOR_ENEMY = c; refreshAllESP() end,
 	"espColorEnemy"
 )
-createColorDropdown(pages.ESP, "🔵  Ally", 52,
+createColorDropdown(pages.ESP, "Ally", 52,
 	Color3.fromRGB(80,160,255),
 	function(c) ESP_COLOR_ALLY = c; refreshAllESP() end,
 	"espColorAlly"
 )
-createColorDropdown(pages.ESP, "🟡  Bot", 53,
+createColorDropdown(pages.ESP, "Bot", 53,
 	Color3.fromRGB(255,200,0),
 	function(c) ESP_COLOR_BOT = c; if anyBotActive() then refreshBotESP() end end,
 	"espColorBot"
 )
-createColorDropdown(pages.ESP, "🔷  Self", 54,
+createColorDropdown(pages.ESP, "Self", 54,
 	Color3.fromRGB(80,160,255),
 	function(c) ESP_COLOR_SELF = c; buildSelfESP() end,
 	"espColorSelf"
 )
 
-createSection(pages.ESP, "⚙  Style", 60)
-createSlider(pages.ESP, "🔲  Fill Transparence", 0, 100, 85, 61, function(val)
+createSection(pages.ESP, "Style", 60)
+createSlider(pages.ESP, "Fill Transparence", 0, 100, 85, 61, function(val)
 	ESP_FILL_TRANSPARENCY = val / 100
 	refreshAllESP()
 end, "espFill")
 local boxStyleBtn = nil
-local _, boxStyleLbl = createBtn(pages.ESP, "📦  Box Style: " .. ESP_BOX_STYLE, currentTheme.Button, 62, function(btn)
+local _, boxStyleLbl = createBtn(pages.ESP, "Box Style:" .. ESP_BOX_STYLE, currentTheme.Button, 62, function(btn)
 	ESP_BOX_STYLE = (ESP_BOX_STYLE == "corners") and "full" or "corners"
-	btn.Text = "📦  Box Style: " .. ESP_BOX_STYLE
+	btn.Text = "Box Style:" .. ESP_BOX_STYLE
 	refreshAllESP()
 end)
 boxStyleBtn = boxStyleLbl
 uiRefs.boxStyleLabel = boxStyleLbl
-createSlider(pages.ESP, "💀  Epaisseur Skeleton", 5, 50, 15, 63, function(val)
+createSlider(pages.ESP, "Epaisseur Skeleton", 5, 50, 15, 63, function(val)
 	ESP_SKELETON_WIDTH = val / 100
 	refreshAllESP()
 end, "espSkeleton")
 
-createSection(pages.ESP, "📏  Distance Max", 70)
-createSlider(pages.ESP, "👥  Joueurs (0 = infini)", 0, 2000, 0, 71, function(val)
+createSection(pages.ESP, "Distance Max", 70)
+createSlider(pages.ESP, "Joueurs (0 = infini)", 0, 2000, 0, 71, function(val)
 	ESP_MAX_DIST_PLAYER = val
 	refreshAllESP()
 end, "espDistPlayer")
-createSlider(pages.ESP, "🤖  Bots (0 = infini)", 0, 2000, 0, 72, function(val)
+createSlider(pages.ESP, "Bots (0 = infini)", 0, 2000, 0, 72, function(val)
 	ESP_MAX_DIST_BOT = val
 	if anyBotActive() then refreshBotESP() end
 end, "espDistBot")
 
-createSection(pages.Other, "👑  Credits", 60)
+createSection(pages.Other, "Credits", 60)
 
 credits = {
-	{"👑  Owner","bkz"},
-	{"🤝  Contributor","All people use menu thx you !"},
+	{"Owner","bkz"},
+	{"Contributor","All people use menu thx you !"},
 }
 
 creditRows = {}
@@ -6826,7 +7048,7 @@ onThemeChanged(function(t)
 	end
 end)
 
-createSection(pages.Other, "ℹ  Informations", 70)
+createSection(pages.Other, "Informations", 70)
 verFrame = Instance.new("Frame", pages.Other)
 verFrame.Size = UDim2.new(1, 0, 0, 90)
 verFrame.BackgroundColor3 = currentTheme.Panel
@@ -6839,7 +7061,7 @@ verPad.PaddingLeft = UDim.new(0, 12); verPad.PaddingTop = UDim.new(0, 8)
 verLabel = Instance.new("TextLabel", verFrame)
 verLabel.Size = UDim2.new(1, -12, 0, 16)
 verLabel.BackgroundTransparency = 1
-verLabel.Text = "🌐 bkz HUB  v7.2"
+verLabel.Text = "bkz HUB v7.3"
 verLabel.TextColor3 = currentTheme.Accent
 verLabel.Font = Enum.Font.GothamBold
 verLabel.TextSize = 14
@@ -6849,7 +7071,7 @@ controlsLabel = Instance.new("TextLabel", verFrame)
 controlsLabel.Size = UDim2.new(1, -12, 0, 36)
 controlsLabel.Position = UDim2.new(0, 0, 0, 20)
 controlsLabel.BackgroundTransparency = 1
-controlsLabel.Text = "🎮  [B]  Open/Close  |  [Edge] Resize\n🖱  Drag title to move  |  🔒 Lock"
+controlsLabel.Text = "[B] Open/Close | [Edge] Resize\n Drag title to move | Lock"
 controlsLabel.TextColor3 = currentTheme.Text
 controlsLabel.Font = Enum.Font.Gotham
 controlsLabel.TextSize = 12
@@ -6860,7 +7082,7 @@ featLabel = Instance.new("TextLabel", verFrame)
 featLabel.Size = UDim2.new(1, -12, 0, 16)
 featLabel.Position = UDim2.new(0, 0, 0, 58)
 featLabel.BackgroundTransparency = 1
-featLabel.Text = "🔥 Rapid Fire • Invisible • Shader HD • Server Freeze"
+featLabel.Text = "Rapid Fire • Invisible • Shader HD • Server Freeze"
 featLabel.TextColor3 = currentTheme.SubText
 featLabel.Font = Enum.Font.Gotham
 featLabel.TextSize = 10
@@ -7056,22 +7278,22 @@ function stopFreecam()
 	unfreezeCharacter()
 end
 
-createSection(pages.Other, "📷  Freecam", 50)
-createToggle(pages.Other, "📷  Freecam (Right Click)", 51, function(state)
+createSection(pages.Other, "Freecam", 50)
+createToggle(pages.Other, "Freecam (Right Click)", 51, function(state)
 	if state then startFreecam() else stopFreecam() end
 end, "freecamEnabled")
-createSlider(pages.Other, "⚡  Speed Freecam", 10, 500, 50, 52, function(val)
+createSlider(pages.Other, "Speed Freecam", 10, 500, 50, 52, function(val)
 	freecamSpeed = val
 end, "freecamSpeed")
-createBtn(pages.Other, "📍  TP Joueur → Freecam", currentTheme.Accent, 53, function()
+createBtn(pages.Other, "TP Joueur → Freecam", currentTheme.Accent, 53, function()
 	if freecamActive then
 		tpToFreecam()
-		showNotification("📍  Téléporté à la freecam", 2)
+		showNotification("Téléporté à la freecam", 2)
 	else
-		showNotification("⚠  Active la freecam d'abord", 2)
+		showNotification("Active la freecam d'abord", 2)
 	end
 end)
-local _, keysLbl = createBtn(pages.Other, "⌨  Keys: " .. keyLayout, currentTheme.Button, 54, function(btn)
+local _, keysLbl = createBtn(pages.Other, "Keys:" .. keyLayout, currentTheme.Button, 54, function(btn)
 	local layouts = {"QWERTY", "AZERTY"}
 	for i, l in ipairs(layouts) do
 		if l == keyLayout then
@@ -7079,9 +7301,9 @@ local _, keysLbl = createBtn(pages.Other, "⌨  Keys: " .. keyLayout, currentThe
 			break
 		end
 	end
-	btn.Text = "⌨  Keys: " .. keyLayout
+	btn.Text = "Keys:" .. keyLayout
 	autoSave()
-	showNotification("⌨  Layout: " .. keyLayout, 2)
+	showNotification("Layout: " .. keyLayout, 2)
 end)
 uiRefs.keysLabel = keysLbl
 
@@ -7089,15 +7311,15 @@ uiRefs.keysLabel = keysLbl
 
 
 function startESP()
-	Players.PlayerAdded:Connect(function(p)
-		p.CharacterAdded:Connect(function() task.wait(1); buildESPFor(p) end)
-	end)
-	Players.PlayerRemoving:Connect(function(p) clearESPFor(p) end)
+	track(Players.PlayerAdded:Connect(function(p)
+		track(p.CharacterAdded:Connect(function() task.wait(1); buildESPFor(p) end))
+	end))
+	track(Players.PlayerRemoving:Connect(function(p) clearESPFor(p) end))
 
-	player.CharacterAdded:Connect(function()
+	track(player.CharacterAdded:Connect(function()
 		task.wait(1)
 		if espState.selfESP then buildSelfESP() end
-	end)
+	end))
 
 	espUpdateTick = 0
 	
@@ -7127,23 +7349,24 @@ function startESP()
 	task.spawn(function()
 		while true do
 			task.wait(5)
+			if not gui or not gui.Parent then break end
 			if anyBotActive() then refreshBotESP() end
 		end
 	end)
 
 	
-	workspace.DescendantAdded:Connect(function(obj)
+	track(workspace.DescendantAdded:Connect(function(obj)
 		if anyBotActive() and obj:IsA("Model") then
 			task.wait(0.5)
 			if isBot(obj) then
 				pcall(function() buildESPBot(obj) end)
 			end
 		end
-	end)
+	end))
 
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player then
-			p.CharacterAdded:Connect(function() task.wait(1); buildESPFor(p) end)
+			track(p.CharacterAdded:Connect(function() task.wait(1); buildESPFor(p) end))
 			buildESPFor(p)
 		end
 	end
@@ -7160,7 +7383,7 @@ task.spawn(function()
 		end)
 		if ok2 and result then
 			applyConfig(result)
-			showNotification("📂 Config loaded automatically!", 3)
+			showNotification("Config loaded automatically!", 3)
 		end
 	end
 end)
@@ -7189,6 +7412,7 @@ if UIS.TouchEnabled then
 	mstroke.Color = Color3.new(1,1,1)
 	mstroke.Transparency = 0.7
 	mstroke.Thickness = 1.5
+	mbtn.MouseEnter:Connect(playHover)
 	mbtn.MouseButton1Click:Connect(function()
 		if gui.Enabled then closeMenu() else openMenu() end
 	end)
@@ -7199,7 +7423,7 @@ end
 
 if scrSuccess then
 	collectgarbage("collect")
-	print("✅  bkz HUB v7.2 chargé avec succès  (" .. player.Name .. ")")
+	print("bkz HUB v7.3 chargé avec succès (" .. player.Name .. ")")
 	task.spawn(function()
 		task.wait(1.7)
 		pcall(function() if loadingScreen then loadingScreen:Destroy() end end)
